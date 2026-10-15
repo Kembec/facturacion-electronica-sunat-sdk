@@ -1,0 +1,89 @@
+{
+  "kind": "invoice",
+  "ubl_version": "2.1",
+  "operation_type": "0101",
+  "document_type": "01",
+  "series": "F001",
+  "number": "6",
+  "issue_date": "2026-10-15T10:30:00-05:00",
+  "currency": "PEN",
+  "payment_terms": {
+    "type": "Contado"
+  },
+  "issuer": {
+    "ruc": "20123456789",
+    "legal_name": "EMPRESA DEMO ORACULO S.A.C.",
+    "trade_name": "DEMO ORACULO",
+    "email": "facturacion@example.com",
+    "telephone": "014000000",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "urbanization": "-",
+      "street": "AV. EJEMPLO 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "6",
+    "document_number": "20000000001",
+    "legal_name": "PEÑA & ASOCIADOS <CONSULTORES> S.R.L.",
+    "address": {
+      "ubigeo": "150122",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "MIRAFLORES",
+      "street": "AV. JOSÉ GÁLVEZ BARRENECHEA Nº 592 & CÍA"
+    }
+  },
+  "totals": {
+    "taxed": "104.75",
+    "igv": "18.86",
+    "total_taxes": "18.86",
+    "sale_value": "104.75",
+    "subtotal": "123.61",
+    "payable": "123.61"
+  },
+  "lines": [
+    {
+      "unit": "NIU",
+      "quantity": "1",
+      "product_code": "ESP-ÑÚ1",
+      "sunat_product_code": "10191509",
+      "description": "Café orgánico & té <premium> «Año del Niño» — ñandú",
+      "unit_value": "84.75",
+      "igv_base": "84.75",
+      "igv_rate": "18.00",
+      "igv": "15.26",
+      "affectation": "10",
+      "total_taxes": "15.26",
+      "unit_price": "100.01",
+      "line_value": "84.75"
+    },
+    {
+      "unit": "NIU",
+      "quantity": "2",
+      "product_code": "ESP002",
+      "sunat_product_code": "10191509",
+      "description": "Descripción con 'comillas' y \"dobles\" > 0",
+      "unit_value": "10.00",
+      "igv_base": "20.00",
+      "igv_rate": "18.00",
+      "igv": "3.60",
+      "affectation": "10",
+      "total_taxes": "3.60",
+      "unit_price": "11.80",
+      "line_value": "20.00"
+    }
+  ],
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON CIENTO VEINTITRES CON 61/100 SOLES"
+    }
+  ]
+}

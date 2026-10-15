@@ -1,0 +1,122 @@
+//! Root element and header of each document type, and the order of its sections, per SUNAT's
+//! UBL 2.1 guides for invoice and receipt (01, 03), credit note (07) and debit note (08).
+
+use sunat_model::{Document, DocumentType, Invoice, Note, Voucher};
+
+use crate::lines::{self, CREDIT_NOTE_LINE, DEBIT_NOTE_LINE, INVOICE_LINE};
+use crate::parties;
+use crate::totals::{self, MonetaryTotal};
+use crate::writer::XmlWriter;
+use crate::Options;
+
+const NS_CAC: &str = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2";
+const NS_CBC: &str = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
+const NS_DS: &str = "http://www.w3.org/2000/09/xmldsig#";
+const NS_EXT: &str = "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2";
+
+/// SUNAT's customization of UBL 2.1 for these documents.
+const CUSTOMIZATION_ID: &str = "2.0";
+
+pub(crate) fn render(document: &Document, options: &Options) -> Vec<u8> {
+    let mut w = XmlWriter::new();
+    match document {
+        Document::Invoice(invoice) => invoice_body(&mut w, invoice, options),
+        Document::Note(note) => note_body(&mut w, note, options),
+    }
+    w.finish()
+}
+
+fn invoice_body(w: &mut XmlWriter, invoice: &Invoice, options: &Options) {
+    let v = &invoice.voucher;
+    root(w, "Invoice", "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2");
+    header(w, v);
+    if let Some(due) = &invoice.due_date {
+        w.text("cbc:DueDate", &due.to_lima().date_string());
+    }
+    w.leaf("cbc:InvoiceTypeCode", &[("listID", invoice.operation_type.as_str())], v.document_type.code());
+    legends_and_currency(w, v);
+    parties_and_payment(w, v, options, true);
+    totals::tax_total(w, &v.totals, &v.currency);
+    totals::monetary_total(w, MonetaryTotal::Full("cac:LegalMonetaryTotal"), &v.totals, &v.currency);
+    lines::lines(w, &INVOICE_LINE, &v.lines, &v.currency);
+    w.close();
+}
+
+fn note_body(w: &mut XmlWriter, note: &Note, options: &Options) {
+    let v = &note.voucher;
+    let credit = v.document_type == DocumentType::CreditNote;
+    if credit {
+        root(w, "CreditNote", "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2");
+    } else {
+        root(w, "DebitNote", "urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2");
+    }
+    header(w, v);
+    legends_and_currency(w, v);
+    discrepancy_and_billing_reference(w, note);
+    // Payment terms apply to credit notes (reason 13 adjusts them); debit notes carry none.
+    parties_and_payment(w, v, options, credit);
+    totals::tax_total(w, &v.totals, &v.currency);
+    if credit {
+        totals::monetary_total(w, MonetaryTotal::PayableOnly, &v.totals, &v.currency);
+        lines::lines(w, &CREDIT_NOTE_LINE, &v.lines, &v.currency);
+    } else {
+        totals::monetary_total(w, MonetaryTotal::Full("cac:RequestedMonetaryTotal"), &v.totals, &v.currency);
+        lines::lines(w, &DEBIT_NOTE_LINE, &v.lines, &v.currency);
+    }
+    w.close();
+}
+
+/// Root with its namespaces in canonical order (default first, then by prefix) and the empty
+/// extension the signature goes into.
+fn root(w: &mut XmlWriter, name: &'static str, namespace: &str) {
+    w.open(
+        name,
+        &[("xmlns", namespace), ("xmlns:cac", NS_CAC), ("xmlns:cbc", NS_CBC), ("xmlns:ds", NS_DS), ("xmlns:ext", NS_EXT)],
+    );
+    w.open("ext:UBLExtensions", &[]);
+    w.open("ext:UBLExtension", &[]);
+    w.open("ext:ExtensionContent", &[]);
+    w.close();
+    w.close();
+    w.close();
+}
+
+fn header(w: &mut XmlWriter, v: &Voucher) {
+    let issued = v.issue_date.to_lima();
+    w.text("cbc:UBLVersionID", &v.ubl_version);
+    w.text("cbc:CustomizationID", CUSTOMIZATION_ID);
+    w.text("cbc:ID", &format!("{}-{}", v.series, v.number));
+    w.text("cbc:IssueDate", &issued.date_string());
+    w.text("cbc:IssueTime", &issued.time_string());
+}
+
+fn legends_and_currency(w: &mut XmlWriter, v: &Voucher) {
+    for legend in &v.legends {
+        w.leaf("cbc:Note", &[("languageLocaleID", legend.code.as_str())], &legend.value);
+    }
+    w.text("cbc:DocumentCurrencyCode", &v.currency);
+}
+
+fn discrepancy_and_billing_reference(w: &mut XmlWriter, note: &Note) {
+    let reference = &note.reference;
+    w.open("cac:DiscrepancyResponse", &[]);
+    w.text("cbc:ReferenceID", &reference.affected_document_number);
+    w.text("cbc:ResponseCode", &reference.reason_code);
+    w.text("cbc:Description", &reference.reason);
+    w.close();
+    w.open("cac:BillingReference", &[]);
+    w.open("cac:InvoiceDocumentReference", &[]);
+    w.text("cbc:ID", &reference.affected_document_number);
+    w.text("cbc:DocumentTypeCode", &reference.affected_document_type);
+    w.close();
+    w.close();
+}
+
+fn parties_and_payment(w: &mut XmlWriter, v: &Voucher, options: &Options, with_payment_terms: bool) {
+    parties::signature_reference(w, &v.issuer, options);
+    parties::supplier(w, &v.issuer);
+    parties::customer(w, &v.customer);
+    if let (true, Some(terms)) = (with_payment_terms, &v.payment_terms) {
+        totals::payment_terms(w, terms, &v.currency);
+    }
+}

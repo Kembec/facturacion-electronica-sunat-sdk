@@ -1,0 +1,17 @@
+[workspace]
+resolver = "2"
+members = [
+  "crates/sunat-model",
+  "crates/sunat-ubl",
+  "crates/sunat-xmldsig",
+  "crates/sunat-transport",
+  "crates/sunat-sdk",
+  "bindings/cli",
+  "bindings/wasm",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/Kembec/facturacion-electronica-sunat-sdk"

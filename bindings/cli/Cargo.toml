@@ -1,0 +1,20 @@
+[package]
+name = "sunat-sdk-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "sunat-sdk"
+path = "src/main.rs"
+
+[dependencies]
+base64 = "0.22"
+serde_json = "1"
+sunat-sdk = { path = "../../crates/sunat-sdk" }
+# Default features: TLS through rustls with webpki roots; certificate verification stays on.
+ureq = "2"
+
+[dev-dependencies]
+base64 = "0.22"

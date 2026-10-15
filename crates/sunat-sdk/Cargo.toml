@@ -1,0 +1,9 @@
+[package]
+name = "sunat-sdk"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+sunat-transport = { path = "../sunat-transport" }

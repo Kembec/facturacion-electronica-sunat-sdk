@@ -1,0 +1,12 @@
+[package]
+name = "sunat-ubl"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+sunat-model = { path = "../sunat-model" }
+
+[dev-dependencies]
+sunat-xmldsig = { path = "../sunat-xmldsig" }

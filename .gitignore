@@ -1,0 +1,7 @@
+/target
+/oracle/vendor
+/oracle/composer.phar
+*.pfx
+*.p12
+*.key
+.env

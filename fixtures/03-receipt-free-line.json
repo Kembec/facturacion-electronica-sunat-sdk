@@ -1,0 +1,84 @@
+{
+  "kind": "invoice",
+  "ubl_version": "2.1",
+  "operation_type": "0101",
+  "document_type": "03",
+  "series": "B001",
+  "number": "3",
+  "issue_date": "2026-10-15T10:30:00-05:00",
+  "currency": "PEN",
+  "issuer": {
+    "ruc": "20123456789",
+    "legal_name": "EMPRESA DEMO ORACULO S.A.C.",
+    "trade_name": "DEMO ORACULO",
+    "email": "facturacion@example.com",
+    "telephone": "014000000",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "urbanization": "-",
+      "street": "AV. EJEMPLO 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "1",
+    "document_number": "12345678",
+    "legal_name": "JUAN PEREZ QUISPE"
+  },
+  "totals": {
+    "taxed": "50.00",
+    "free": "100.00",
+    "free_igv": "18.00",
+    "igv": "9.00",
+    "total_taxes": "9.00",
+    "sale_value": "50.00",
+    "subtotal": "59.00",
+    "payable": "59.00"
+  },
+  "lines": [
+    {
+      "unit": "NIU",
+      "quantity": "1",
+      "product_code": "VEN001",
+      "sunat_product_code": "10191509",
+      "description": "Producto vendido",
+      "unit_value": "50.00",
+      "igv_base": "50.00",
+      "igv_rate": "18.00",
+      "igv": "9.00",
+      "affectation": "10",
+      "total_taxes": "9.00",
+      "unit_price": "59.00",
+      "line_value": "50.00"
+    },
+    {
+      "unit": "NIU",
+      "quantity": "1",
+      "product_code": "PRM001",
+      "description": "Producto de regalo (bonificacion)",
+      "unit_value": "0.00",
+      "igv_base": "100.00",
+      "igv_rate": "18.00",
+      "igv": "18.00",
+      "affectation": "13",
+      "total_taxes": "18.00",
+      "unit_price": "0.00",
+      "line_value": "100.00",
+      "free_unit_value": "100.00"
+    }
+  ],
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON CINCUENTA Y NUEVE CON 00/100 SOLES"
+    },
+    {
+      "code": "1002",
+      "value": "TRANSFERENCIA GRATUITA DE UN BIEN Y/O SERVICIO PRESTADO GRATUITAMENTE"
+    }
+  ]
+}

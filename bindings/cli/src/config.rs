@@ -6,6 +6,11 @@ pub const ENV_ENDPOINT: &str = "SUNAT_ENDPOINT";
 pub const ENV_STATUS_ENDPOINT: &str = "SUNAT_STATUS_ENDPOINT";
 pub const ENV_USER: &str = "SUNAT_SOL_USER";
 pub const ENV_PASSWORD: &str = "SUNAT_SOL_PASSWORD";
+pub const ENV_CERT_PATH: &str = "SUNAT_CERT_PATH";
+pub const ENV_KEY_PATH: &str = "SUNAT_KEY_PATH";
+
+const CONNECTION_FLAGS: &[&str] = &["endpoint", "user", "password"];
+const SIGNING_FLAGS: &[&str] = &["cert", "key"];
 
 /// Where and as whom to call SUNAT. `user` is the RUC followed by the SOL user.
 pub struct Connection {
@@ -32,7 +37,7 @@ pub fn connection(
     env: &dyn Fn(&str) -> Option<String>,
 ) -> Result<Connection, String> {
     let pick = |flag: &str, var: &str| -> Result<String, String> {
-        flag_value(args, flag)?
+        flag_value(args, CONNECTION_FLAGS, flag)?
             .or_else(|| env(var))
             .filter(|v| !v.is_empty())
             .ok_or_else(|| format!("missing --{flag} or {var}"))
@@ -44,8 +49,27 @@ pub fn connection(
     Ok(Connection { endpoint, user: pick("user", ENV_USER)?, password: pick("password", ENV_PASSWORD)? })
 }
 
-/// Value of `--name value` or `--name=value`; an unknown flag is an error.
-fn flag_value(args: &[String], name: &str) -> Result<Option<String>, String> {
+/// Paths of the PEM certificate and the PEM private key used by `sign`. The files are read by the
+/// caller; their content is never printed.
+#[derive(Debug)]
+pub struct KeyFiles {
+    pub cert: String,
+    pub key: String,
+}
+
+/// `--cert`/SUNAT_CERT_PATH and `--key`/SUNAT_KEY_PATH; flags take precedence.
+pub fn key_files(args: &[String], env: &dyn Fn(&str) -> Option<String>) -> Result<KeyFiles, String> {
+    let pick = |flag: &str, var: &str| -> Result<String, String> {
+        flag_value(args, SIGNING_FLAGS, flag)?
+            .or_else(|| env(var))
+            .filter(|v| !v.is_empty())
+            .ok_or_else(|| format!("missing --{flag} or {var}"))
+    };
+    Ok(KeyFiles { cert: pick("cert", ENV_CERT_PATH)?, key: pick("key", ENV_KEY_PATH)? })
+}
+
+/// Value of `--name value` or `--name=value`; a flag outside `allowed` is an error.
+fn flag_value(args: &[String], allowed: &[&str], name: &str) -> Result<Option<String>, String> {
     let mut found = None;
     let mut iter = args.iter();
     while let Some(arg) = iter.next() {
@@ -56,7 +80,7 @@ fn flag_value(args: &[String], name: &str) -> Result<Option<String>, String> {
             Some((key, value)) => (key, Some(value.to_string())),
             None => (flag, None),
         };
-        if !["endpoint", "user", "password"].contains(&key) {
+        if !allowed.contains(&key) {
             return Err(format!("unknown flag --{key}"));
         }
         let value = match inline {
@@ -96,6 +120,16 @@ mod tests {
         let err = connection(&args(&["--endpoint", "http://x", "--user", "u", "--password", "p"]), ENV_ENDPOINT, &none);
         assert_eq!(err.unwrap_err(), "endpoint must use https://");
         assert!(connection(&args(&["--token", "x"]), ENV_ENDPOINT, &none).is_err());
+    }
+
+    #[test]
+    fn key_files_come_from_flags_or_environment() {
+        let env = env_of(&[(ENV_CERT_PATH, "/env/cert.pem"), (ENV_KEY_PATH, "/env/key.pem")]);
+        let files = key_files(&args(&["--key=/flag/key.pem"]), &env).unwrap();
+        assert_eq!((files.cert.as_str(), files.key.as_str()), ("/env/cert.pem", "/flag/key.pem"));
+        let none = |_: &str| None;
+        assert_eq!(key_files(&args(&["--cert", "c.pem"]), &none).unwrap_err(), "missing --key or SUNAT_KEY_PATH");
+        assert!(key_files(&args(&["--endpoint", "https://x"]), &none).is_err());
     }
 
     #[test]

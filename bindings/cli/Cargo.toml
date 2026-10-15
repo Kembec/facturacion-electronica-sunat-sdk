@@ -12,7 +12,10 @@ path = "src/main.rs"
 [dependencies]
 base64 = "0.22"
 serde_json = "1"
+sunat-model = { path = "../../crates/sunat-model" }
 sunat-sdk = { path = "../../crates/sunat-sdk" }
+sunat-ubl = { path = "../../crates/sunat-ubl" }
+sunat-xmldsig = { path = "../../crates/sunat-xmldsig" }
 # Default features: TLS through rustls with webpki roots; certificate verification stays on.
 ureq = "2"
 

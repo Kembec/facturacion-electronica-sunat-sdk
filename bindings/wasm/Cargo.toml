@@ -9,3 +9,14 @@ repository.workspace = true
 crate-type = ["cdylib", "rlib"]
 
 [dependencies]
+serde_json = "1"
+sunat-model = { path = "../../crates/sunat-model" }
+sunat-ubl = { path = "../../crates/sunat-ubl" }
+sunat-xmldsig = { path = "../../crates/sunat-xmldsig" }
+# Exact pin: wasm-bindgen-cli must match it (see .github/workflows/ci.yml).
+wasm-bindgen = "=0.2.129"
+
+# rsa draws its blinding randomness through rand_core's OsRng (getrandom 0.2); on
+# wasm32-unknown-unknown getrandom needs the `js` backend (crypto.getRandomValues).
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+getrandom = { version = "0.2", features = ["js"] }

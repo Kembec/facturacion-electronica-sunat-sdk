@@ -1,0 +1,73 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.94.1"
+  # Must equal the exact wasm-bindgen pin in bindings/wasm/Cargo.toml.
+  WASM_BINDGEN_VERSION: "0.2.129"
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+          rustup default "$RUST_TOOLCHAIN"
+      - uses: actions/setup-python@v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Independent verifier venv
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install lxml==6.0.2 cryptography==46.0.3
+          echo "SUNAT_XMLDSIG_PYTHON=$RUNNER_TEMP/venv/bin/python" >> "$GITHUB_ENV"
+      - run: cargo test --workspace --locked
+
+  wasm:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Rust toolchain with wasm32
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target wasm32-unknown-unknown
+          rustup default "$RUST_TOOLCHAIN"
+      - name: Check the wasm-bindgen pin
+        run: grep -q "wasm-bindgen = \"=$WASM_BINDGEN_VERSION\"" bindings/wasm/Cargo.toml
+      - run: cargo install wasm-bindgen-cli --version "$WASM_BINDGEN_VERSION" --locked
+      - run: cargo build -p sunat-sdk-wasm --target wasm32-unknown-unknown --release --locked
+      - run: wasm-bindgen --target nodejs --out-dir bindings/wasm/pkg target/wasm32-unknown-unknown/release/sunat_sdk_wasm.wasm
+      - uses: actions/setup-node@v4.4.0
+        with:
+          node-version: "22.11.0"
+      - run: node bindings/wasm/test/sign-fixture.mjs
+
+  php:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+          rustup default "$RUST_TOOLCHAIN"
+      - run: cargo build -p sunat-sdk-cli --release --locked
+      - name: Expose the CLI binary
+        run: echo "SUNAT_SDK_BIN=$GITHUB_WORKSPACE/target/release/sunat-sdk" >> "$GITHUB_ENV"
+      - uses: shivammathur/setup-php@2.32.0
+        with:
+          php-version: "8.1"
+          tools: composer:2.8.4
+      - name: PHPUnit
+        working-directory: bindings/php
+        run: |
+          composer install --no-interaction --no-progress
+          vendor/bin/phpunit

@@ -8,6 +8,7 @@
         "ext-json": "*"
     },
     "require-dev": {
+        "ext-dom": "*",
         "phpunit/phpunit": "^9.6 || ^10.5 || ^11.5 || ^12.0"
     },
     "autoload": {

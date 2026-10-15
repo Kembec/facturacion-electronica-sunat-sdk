@@ -1,7 +1,9 @@
-//! Runs `build` and `sign` through the binary on every `fixtures/*.json`: the built XML equals
-//! `tests/vectors/<case>.unsigned.xml` under inclusive C14N (the vectors differ only in the
-//! declaration), and signing it with `tests/vectors/test-cert/` gives the `DigestValue` and
-//! `SignatureValue` of `<case>.signed.xml`. Also the error paths: stderr JSON, exit 1, empty stdout.
+//! Runs `build` and `sign` through the binary on every voucher fixture (`fixtures/0[1378]-*.json`;
+//! the `ra-`/`rc-` summaries are phase 2, not `build` input): the built XML equals
+//! `tests/vectors/<case>.unsigned.xml` under inclusive C14N (the vectors come from another
+//! serializer: declaration, CDATA and empty elements differ), and signing it with
+//! `tests/vectors/test-cert/` gives the `DigestValue` and `SignatureValue` of `<case>.signed.xml`.
+//! Also the error paths: stderr JSON, exit 1, empty stdout.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -60,6 +62,7 @@ fn cases() -> Vec<String> {
     let mut cases: Vec<String> = std::fs::read_dir(repository().join("fixtures"))
         .unwrap()
         .filter_map(|entry| entry.ok()?.file_name().into_string().ok()?.strip_suffix(".json").map(str::to_owned))
+        .filter(|case| ["01-", "03-", "07-", "08-"].iter().any(|prefix| case.starts_with(prefix)))
         .collect();
     cases.sort();
     cases

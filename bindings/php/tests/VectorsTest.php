@@ -8,7 +8,11 @@ use Kembec\SunatSdk\SigningKey;
 use Kembec\SunatSdk\SunatSdk;
 use PHPUnit\Framework\Attributes\DataProvider;
 
-/** The 12 fixtures, through the real binary, must give exactly the XML and signature of their vectors. */
+/**
+ * The 12 fixtures, through the real binary, must give their vectors' XML, unsigned and signed, under
+ * inclusive C14N, and their exact `DigestValue` and `SignatureValue`. The vectors come from another serializer
+ * (declaration, CDATA, empty elements), so the bytes differ by design.
+ */
 final class VectorsTest extends BinaryTestCase
 {
     /**
@@ -40,7 +44,7 @@ final class VectorsTest extends BinaryTestCase
     {
         $result = $this->sdk()->build($this->fixture($name));
 
-        self::assertSame($this->vector($name, 'unsigned'), $result->getXml());
+        self::assertSame(self::canonical($this->vector($name, 'unsigned')), self::canonical($result->getXml()));
         self::assertSame($this->expectedFileName($name), $result->getFileName());
     }
 
@@ -55,9 +59,20 @@ final class VectorsTest extends BinaryTestCase
         $signed = $sdk->sign($unsigned, self::testKey());
         $expected = $this->vector($name, 'signed');
 
-        self::assertSame($expected, $signed->getXml());
+        self::assertSame(self::canonical($expected), self::canonical($signed->getXml()));
         self::assertStringContainsString('<ds:DigestValue>' . $signed->getDigestValue() . '</ds:DigestValue>', $expected);
         self::assertStringContainsString('<ds:SignatureValue>' . $signed->getSignatureValue() . '</ds:SignatureValue>', $expected);
+        self::assertStringContainsString('<ds:DigestValue>' . $signed->getDigestValue() . '</ds:DigestValue>', $signed->getXml());
+        self::assertStringContainsString('<ds:SignatureValue>' . $signed->getSignatureValue() . '</ds:SignatureValue>', $signed->getXml());
+    }
+
+    /** Inclusive C14N 1.0 without comments, the form the signature is computed over. */
+    private static function canonical(string $xml): string
+    {
+        $document = new \DOMDocument();
+        self::assertTrue($document->loadXML($xml), 'XML does not parse');
+
+        return (string) $document->C14N(false, false);
     }
 
     private function sdk(): SunatSdk

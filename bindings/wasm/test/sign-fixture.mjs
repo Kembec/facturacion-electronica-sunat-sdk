@@ -1,4 +1,5 @@
-// Builds and signs every fixture through the wasm binding and compares with the vectors.
+// Builds and signs every voucher fixture (01, 03, 07, 08) through the wasm binding and compares
+// with the vectors; the ra-/rc- summaries are phase 2, not build input.
 // Run after: wasm-bindgen --target nodejs --out-dir bindings/wasm/pkg <the .wasm>
 // Usage: node bindings/wasm/test/sign-fixture.mjs
 import assert from 'node:assert/strict';
@@ -21,7 +22,7 @@ const elementText = (xml, element) => {
 const cert = read('tests', 'vectors', 'test-cert', 'test-cert.pem');
 const key = read('tests', 'vectors', 'test-cert', 'test-key.pem');
 const cases = readdirSync(join(root, 'fixtures'))
-  .filter((name) => name.endsWith('.json'))
+  .filter((name) => /^0[1378]-.*\.json$/.test(name))
   .map((name) => name.slice(0, -'.json'.length))
   .sort();
 assert.equal(cases.length, 12, 'fixtures');

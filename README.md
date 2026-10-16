@@ -25,7 +25,7 @@ Guías y ejemplos: **https://fe.kembec.com**
 | Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) |
 | Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` |
 
-Este README describe la 0.1.0-beta.3, publicada en npm, PyPI, Packagist y GitHub. Es una versión beta: por eso las
+Este README describe la 0.1.0-beta.4, publicada en npm, PyPI, Packagist y GitHub. Es una versión beta: por eso las
 instalaciones de arriba la piden de forma explícita (`@beta` en npm y Composer, `--pre` en pip). Lo que cambió desde la
 anterior está en [Versiones](#versiones).
 
@@ -37,7 +37,7 @@ huella de la firma (su `DigestValue`), `+te61a2ub5MlTFf8tKTPNGWEXKI=`: la del ar
 archivos a una carpeta vacía:
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.3
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.4
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -113,9 +113,9 @@ Los crates no están en crates.io: se usan como dependencia git del tag. `sunat-
 
 ```toml
 [dependencies]
-sunat-model = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.3" }
-sunat-ubl = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.3" }
-sunat-xmldsig = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.3" }
+sunat-model = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.4" }
+sunat-ubl = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.4" }
+sunat-xmldsig = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.4" }
 ```
 
 ```rust
@@ -143,7 +143,7 @@ haces tú. Lo que expone cada crate está en la [arquitectura](docs/architecture
 En Linux x86_64, el binario estático del release:
 
 ```bash
-url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.3
+url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.4
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl"
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl.sha256"
 sha256sum -c sunat-sdk-x86_64-unknown-linux-musl.sha256
@@ -253,12 +253,26 @@ detracción con esas operaciones y la rechaza con cualquier otra.
 base, cargo 62 del catálogo 53). El cliente debe tener RUC; que sea agente de retención lo valida SUNAT contra su
 padrón en producción (la beta no lo hace).
 
-La guía de remisión, el comprobante de retención y el de percepción no forman parte del SDK. El detalle de cada campo
+**Guía de remisión remitente (09)**: se arma, se firma y se valida contra sus vectores, el esquema OASIS y las reglas de la
+SUNAT; no se envía, porque la SUNAT no tiene ambiente de pruebas para ella. Quedan fuera los traslados de importación y
+exportación y la guía del transportista (31).
+
+El comprobante de retención y el de percepción no forman parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).
 
 ## Versiones
 
 Un tag publica a la vez el binario, el paquete npm, el de PHP y el de Python ([`docs/releasing.md`](docs/releasing.md)).
+La 0.1.0-beta.4 suma, frente a la 0.1.0-beta.3:
+
+- la consulta de estado de comprobantes (`validity`, Consulta Integrada) para facturas, boletas y notas, en la CLI, PHP,
+  JavaScript y Python;
+- la detracción en facturas y boletas con operación 1001 y 1003;
+- la retención del IGV informada en el comprobante (cargo 62 del catálogo 53);
+- el IVAP, en facturas, boletas y notas;
+- la orden de compra y las guías de remisión relacionadas;
+- la guía de remisión remitente (09): armado, firma y validación, sin envío.
+
 La 0.1.0-beta.3 es la primera que llega a PyPI. Frente a la 0.1.0-beta.2, que armaba, firmaba, comprimía, enviaba y
 consultaba facturas, boletas y notas desde la CLI y PHP, y solo las armaba y firmaba desde JavaScript, trae:
 

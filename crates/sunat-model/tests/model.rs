@@ -164,3 +164,56 @@ fn summary_line_rate_and_customer_name_are_checked() {
         }
     }
 }
+
+const REFERENCES: &str = include_str!("../../../fixtures/01-invoice-references.json");
+
+/// SUNAT beta, 16/10/2026: what it observed (4005, 4006, 4233) or rejected (2364) on a cited guide or order.
+#[test]
+fn references_are_checked_as_beta_checks_them() {
+    let document = Document::from_json(REFERENCES).unwrap();
+    let voucher = document.voucher().unwrap();
+    assert_eq!(voucher.order_reference.as_deref(), Some("OC-2026-0457"));
+    assert_eq!(voucher.despatch_references.len(), 3);
+
+    let guide = |number: &str, kind: &str| edited(REFERENCES, |v| v["despatch_references"] = serde_json::json!([{ "document_type": kind, "number": number }]));
+    for number in ["T001-12", "TAB1-1", "V001-3", "G001-9", "0001-123", "EG01-5", "EG04-1", "EG07-9", "T001-00000012"] {
+        assert!(guide(number, "09").is_ok(), "{number}");
+    }
+    assert!(guide("T001-1", "31").is_ok(), "type and series are not crossed");
+    for number in ["XX-5", "E1-5", "EG05-1", "EG08-1", "t001-1", "T001-123456789", "T001-", "T001", "G00A-1", "00A1-1"] {
+        match guide(number, "09") {
+            Err(ModelError::Invalid { path, .. }) => assert_eq!(path, "$.despatch_references[0].number", "{number}"),
+            other => panic!("{number}: {other:?}"),
+        }
+    }
+    match guide("T001-12", "99") {
+        Err(ModelError::Invalid { path, .. }) => assert_eq!(path, "$.despatch_references[0].document_type"),
+        other => panic!("type 99: {other:?}"),
+    }
+    let twice = edited(REFERENCES, |v| {
+        v["despatch_references"] = serde_json::json!([
+            { "document_type": "09", "number": "T001-12" },
+            { "document_type": "31", "number": "T001-12" },
+            { "document_type": "09", "number": "T001-12" },
+        ])
+    });
+    match twice {
+        Err(ModelError::Invalid { path, .. }) => assert_eq!(path, "$.despatch_references[2].number"),
+        other => panic!("repeated: {other:?}"),
+    }
+    assert!(edited(REFERENCES, |v| v["despatch_references"][0]["unknown"] = serde_json::json!(1)).is_err());
+}
+
+#[test]
+fn purchase_order_takes_20_characters_without_whitespace() {
+    let order = |value: &str| edited(REFERENCES, |v| v["order_reference"] = serde_json::json!(value));
+    for value in ["12345678901234567890", "ÑANDÚ/9.5_x", "A\u{a0}B", "X"] {
+        assert!(order(value).is_ok(), "{value:?}");
+    }
+    for value in ["", "OC 1", "  X", "OC\t1", "OC\n1", "123456789012345678901"] {
+        match order(value) {
+            Err(ModelError::Invalid { path, .. }) => assert_eq!(path, "$.order_reference", "{value:?}"),
+            other => panic!("{value:?}: {other:?}"),
+        }
+    }
+}

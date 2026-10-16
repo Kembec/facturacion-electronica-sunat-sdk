@@ -80,6 +80,24 @@ fn cdr_reads_fields_and_class() {
     );
 }
 
+#[test]
+fn cdr_with_code_0_and_an_observation_note_is_observed() {
+    let xml = concat!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
+        "<ar:ApplicationResponse xmlns:ar=\"urn:oasis:names:specification:ubl:schema:xsd:ApplicationResponse-2\" ",
+        "xmlns:cac=\"urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2\" ",
+        "xmlns:cbc=\"urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2\">",
+        "<cbc:Note>4287 - El precio unitario difiere del calculado</cbc:Note>",
+        "<cac:DocumentResponse><cac:Response><cbc:ReferenceID>F001-7</cbc:ReferenceID>",
+        "<cbc:ResponseCode>0</cbc:ResponseCode><cbc:Description>La Factura numero F001-7, ha sido aceptada</cbc:Description>",
+        "</cac:Response></cac:DocumentResponse></ar:ApplicationResponse>"
+    );
+    let out = cdr(&json!({ "cdr_base64": STANDARD.encode(xml) })).unwrap();
+    assert_eq!(out["response_code"], "0");
+    assert_eq!(out["notes"], json!(["4287 - El precio unitario difiere del calculado"]));
+    assert_eq!(out["class"], "observed");
+}
+
 /// The `contentFile` of a sendBill envelope, unzipped.
 fn sent_xml(envelope: &str) -> Vec<u8> {
     let start = envelope.find("<contentFile>").unwrap() + "<contentFile>".len();

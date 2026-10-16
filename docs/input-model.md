@@ -36,6 +36,7 @@ own sections below.
 | `note` | only for 07/08, see Note |
 | `order_reference` | optional, the purchase or service order number, see Related documents |
 | `despatch_references` | optional, `[{ "document_type": "09", "number": "T001-45" }]`, see Related documents |
+| `igv_retention` | optional, 01/03/07/08, see IGV retention |
 
 ## Related documents
 
@@ -72,6 +73,23 @@ transport) need line details the SDK does not model and are rejected as out of s
 in catalog 54 (3033) or 59 (3174) is left to SUNAT. The legend `2006` («Operación sujeta a detracción»)
 goes in `legends` like any other. Vectors `01-invoice-detraction` (F001-921) and
 `03-receipt-detraction` (B001-921) were accepted by beta on 16/10/2026 with code 0 and no notes.
+
+## IGV retention
+
+`{ "factor": "0.03", "amount": "4.44", "base_amount": "148.00" }`: the IGV a customer designated as retention agent
+withholds, informed in the document. Rendered as a global `cac:AllowanceCharge` with `ChargeIndicator` `false`,
+catalog 53 code `62`, `MultiplierFactorNumeric` (the factor, positive, up to 3 integer digits and 5 decimals),
+`Amount` and `BaseAmount` (positive, up to 2 decimals, in the document currency), right before `cac:TaxTotal`. It
+changes no total: the customer pays `payable` minus `amount`.
+
+The caller decides whether the retention applies and computes it, as for every amount: SUNAT checks the amount
+against `base_amount` × `factor` within 1 (3263) and that `base_amount` is not above the total (3264). The SDK
+rejects the formats (3025, 2968, 3016) and a customer without RUC (3262). Whether the customer is in SUNAT's
+register of retention agents (3262) and the issuer is not (3269) is checked by SUNAT against its register, which
+beta does not apply: on 16/10/2026 beta accepted, with code 0 and no notes, vectors `01-invoice-igv-retention`
+(F001-622), `03-receipt-igv-retention` (B001-622), `07-credit-note-igv-retention` (FC01-622) and
+`08-debit-note-igv-retention` (FD01-622), whose customer 20000000001 is not an agent. In production that customer
+is rejected with 3262.
 
 ## Issuer
 

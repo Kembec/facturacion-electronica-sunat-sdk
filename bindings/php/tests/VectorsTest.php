@@ -9,7 +9,7 @@ use Kembec\SunatSdk\SunatSdk;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
- * The 30 fixtures, through the real binary, must give their vectors' XML, unsigned and signed, under
+ * The 34 fixtures, through the real binary, must give their vectors' XML, unsigned and signed, under
  * inclusive C14N, and their exact `DigestValue` and `SignatureValue`. All but the `09-` vectors come
  * from another serializer (declaration, CDATA, empty elements), so the bytes differ by design.
  */
@@ -32,9 +32,9 @@ final class VectorsTest extends BinaryTestCase
         return $cases;
     }
 
-    public function testThereAreThirtyFixtures(): void
+    public function testThereAreThirtyFourFixtures(): void
     {
-        self::assertCount(30, self::fixtures());
+        self::assertCount(34, self::fixtures());
     }
 
     /**

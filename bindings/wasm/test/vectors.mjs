@@ -3,7 +3,7 @@
 // is built and signed and must carry the DigestValue and SignatureValue of its vector. No Node
 // imports: it runs in a page.
 
-export const EXPECTED_CASES = 30;
+export const EXPECTED_CASES = 34;
 
 /** Fixture names (without `.json`), sorted. */
 export function selectCases(fileNames) {

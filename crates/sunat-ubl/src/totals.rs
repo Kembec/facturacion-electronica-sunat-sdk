@@ -1,10 +1,10 @@
 //! Document-level sections: payment terms («Forma de pago»), the tax total with one subtotal per
 //! scheme («Total de tributos») and the monetary totals («Totales del comprobante»).
 
-use sunat_model::{Decimal, Detraction, PaymentTerms, Totals};
+use sunat_model::{Decimal, Detraction, IgvRetention, PaymentTerms, Totals};
 
 use crate::amount::{shortest, two_decimals};
-use crate::lines::tax_scheme;
+use crate::lines::{factor_text, tax_scheme};
 use crate::tax::{TaxScheme, EXEMPT, EXPORT, FREE, IGV, UNAFFECTED};
 use crate::writer::XmlWriter;
 
@@ -56,6 +56,19 @@ pub(crate) fn payment_terms(w: &mut XmlWriter, terms: &PaymentTerms, currency: &
             }
         }
     }
+}
+
+/// The IGV retention as a global allowance with catalog 53 code `62`, right before the tax total,
+/// where UBL places `cac:AllowanceCharge` in invoices, receipts and both notes.
+pub(crate) fn igv_retention(w: &mut XmlWriter, retention: &IgvRetention, currency: &str) {
+    let money = [("currencyID", currency)];
+    w.open("cac:AllowanceCharge", &[]);
+    w.text("cbc:ChargeIndicator", "false");
+    w.text("cbc:AllowanceChargeReasonCode", "62");
+    w.text("cbc:MultiplierFactorNumeric", &factor_text(&retention.factor));
+    w.leaf("cbc:Amount", &money, &two_decimals(&retention.amount));
+    w.leaf("cbc:BaseAmount", &money, &two_decimals(&retention.base_amount));
+    w.close();
 }
 
 /// `cac:TaxTotal`: the total of taxes, then one subtotal per scheme with a non-zero base, in

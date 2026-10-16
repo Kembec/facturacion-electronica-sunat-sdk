@@ -111,6 +111,12 @@ fn check_summary_line(index: usize, line: &SummaryLine) -> Result<(), ModelError
     check_format(&path("status"), &line.status, "catalog 19: \"1\", \"2\" or \"3\"", |s| matches!(s, "1" | "2" | "3"))?;
     require_text(&path("customer_document_type"), &line.customer_document_type)?;
     require_text(&path("customer_document_number"), &line.customer_document_number)?;
+    if let Some(name) = &line.customer_name {
+        check_format(&path("customer_name"), name, "3 to 250 characters, no line breaks or tabs (SUNAT 2022)", summary_customer_name)?;
+    }
+    if let Some(rate) = &line.igv_rate {
+        check_summary_rate(&path("igv_rate"), rate, note)?;
+    }
     match (&line.reference_document, note) {
         (Some(_), false) => Err(ModelError::invalid(path("reference_document"), "applies to notes (07, 08) only")),
         (None, true) => Err(ModelError::missing(path("reference_document"))),
@@ -121,6 +127,23 @@ fn check_summary_line(index: usize, line: &SummaryLine) -> Result<(), ModelError
         }
         (None, false) => Ok(()),
     }
+}
+
+/// Field 10.3 of the daily summary: any character but whitespace other than the space, not blank.
+fn summary_customer_name(text: &str) -> bool {
+    let length = text.chars().count();
+    (3..=250).contains(&length) && !text.trim().is_empty() && !text.chars().any(|c| c.is_whitespace() && c != ' ')
+}
+
+/// The IGV rates SUNAT accepts on a summary line: 18 or 10.5 for a receipt, and also 10 for a note
+/// (its receipt may be from 2025). Errors 3102 (format) and 3504 (value).
+fn check_summary_rate(path: &str, rate: &Decimal, note: bool) -> Result<(), ModelError> {
+    let ok = !rate.is_negative() && fits(rate, 3, 5);
+    check_format(path, rate.as_str(), "a positive rate with up to 3 integer digits and 5 decimals (SUNAT 3102)", |_| ok)?;
+    let value = rate.to_f64();
+    let allowed: &[f64] = if note { &[18.0, 10.5, 10.0] } else { &[18.0, 10.5] };
+    let expected = if note { "18, 10.5 or 10 (SUNAT 3504)" } else { "18 or 10.5 for a receipt (SUNAT 3504)" };
+    check_format(path, rate.as_str(), expected, |_| allowed.contains(&value))
 }
 
 fn check_voided(voided: &Voided) -> Result<(), ModelError> {

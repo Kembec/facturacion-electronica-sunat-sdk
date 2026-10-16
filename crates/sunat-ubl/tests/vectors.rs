@@ -1,13 +1,13 @@
-//! Every fixture (`fixtures/*.json`: vouchers 01, 03, 07, 08, daily summaries `rc-` and void
-//! communications `ra-`) rendered by `build` equals `tests/vectors/<case>.unsigned.xml` under
-//! inclusive Canonical XML 1.0.
+//! Every fixture (`fixtures/*.json`: vouchers 01, 03, 07, 08, despatch advices 09, daily summaries
+//! `rc-` and void communications `ra-`) rendered by `build` equals
+//! `tests/vectors/<case>.unsigned.xml` under inclusive Canonical XML 1.0.
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
 use sunat_model::Document;
 
-const EXPECTED_CASES: usize = 22;
+const EXPECTED_CASES: usize = 28;
 const DECLARATION: &[u8] = b"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 
 fn repository() -> PathBuf {

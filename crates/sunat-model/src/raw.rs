@@ -5,7 +5,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::{
-    Client, Company, DateTime, Document, DocumentType, Invoice, Legend, Line, ModelError, Note, NoteReference,
+    Client, Company, DateTime, DespatchReference, Document, DocumentType, Invoice, Legend, Line, ModelError, Note, NoteReference,
     PaymentTerms, Totals, Voucher,
 };
 
@@ -29,6 +29,9 @@ struct RawDocument {
     #[serde(default)]
     legends: Vec<Legend>,
     note: Option<NoteReference>,
+    order_reference: Option<String>,
+    #[serde(default)]
+    despatch_references: Vec<DespatchReference>,
 }
 
 pub(crate) fn parse(json: &str) -> Result<Document, ModelError> {
@@ -36,6 +39,9 @@ pub(crate) fn parse(json: &str) -> Result<Document, ModelError> {
     if let Some(kind @ ("summary" | "voided")) = value.get("kind").and_then(Value::as_str) {
         let kind = kind.to_owned();
         return crate::daily::parse(&kind, value);
+    }
+    if value.get("kind").and_then(Value::as_str) == Some("despatch") {
+        return crate::despatch::parse(value);
     }
     crate::scope::check(&value)?;
     let raw: RawDocument = serde_json::from_value(value).map_err(|e| ModelError::Json(e.to_string()))?;
@@ -59,6 +65,8 @@ impl RawDocument {
             totals: self.totals,
             lines: self.lines,
             legends: self.legends,
+            order_reference: self.order_reference,
+            despatch_references: self.despatch_references,
         };
         match self.kind.as_str() {
             "invoice" => {
@@ -72,7 +80,7 @@ impl RawDocument {
                 let reference = self.note.ok_or_else(|| ModelError::missing("$.note"))?;
                 Ok(Document::Note(Note { voucher, reference }))
             }
-            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\", \"note\", \"summary\" or \"voided\"")),
+            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\", \"note\", \"summary\", \"voided\" or \"despatch\"")),
         }
     }
 }

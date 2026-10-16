@@ -18,8 +18,6 @@ const DOCUMENT_KEYS: &[(&str, &str)] = &[
     ("prepayments", "advances"),
     ("detraction", "detraction"),
     ("perception", "perception"),
-    ("despatches", "despatch references"),
-    ("despatch_references", "despatch references"),
 ];
 
 const TOTALS_KEYS: &[(&str, &str)] = &[

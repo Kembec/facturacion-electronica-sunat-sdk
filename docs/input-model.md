@@ -1,11 +1,11 @@
-# Input model (phase 1)
+# Input model
 
 One JSON document per voucher, snake_case English field names. Decimal amounts are JSON strings
 (`"118.00"`), never floats. Amounts are given by the caller: the SDK renders and validates, it does not
 compute taxes.
 
-Phase 1 scope: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV only
-(affectations 10-16, 20, 21, 30-37, 40; 17 IVAP is out of phase 1). Out of phase 1, rejected with an
+Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV only
+(affectations 10-16, 20, 21, 30-37, 40; 17 IVAP is not supported). Not supported, rejected with an
 explicit error: ISC, ICBPER, IVAP, other taxes, global discounts or charges, line charges, line
 discounts other than catalog 53 code `00` or in notes, advances, detraction, perception, despatch
 references.
@@ -67,9 +67,9 @@ already net of the declared discount (3271) and accepted the same receipt with o
 `reason_code` (catalog 09 or 10), `reason`, `affected_document_type`, `affected_document_number`
 (`"F001-123"`).
 
-# Phase 2: daily summary (RC) and void communication (RA)
+# Daily summary (RC) and void communication (RA)
 
-Out of phase 2, rejected with an explicit error: perception, ICBPER, ISC and IVAP in summary lines;
+Not supported, rejected with an explicit error: perception, ICBPER, ISC and IVAP in summary lines;
 reversal summaries (RR); despatch (GRE).
 
 ## Summary (`kind: "summary"`, RC)

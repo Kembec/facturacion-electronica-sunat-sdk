@@ -1,7 +1,8 @@
 # CLAUDE.md — facturacion-electronica-sunat-sdk
 
 SDK for SUNAT (Peru) electronic invoicing: one Rust core, builds for PHP, JS/WASM, Python and Go.
-Status: phase 1 (01, 03, 07, 08) in progress. Contracts: `docs/architecture.md`, `docs/input-model.md`.
+Covers invoices (01), receipts (03), credit (07) and debit (08) notes, daily summaries (RC) and void
+communications (RA). Contracts: `docs/architecture.md`, `docs/input-model.md`.
 
 ## Rules of this repository
 

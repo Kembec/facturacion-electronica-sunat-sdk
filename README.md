@@ -1,211 +1,249 @@
 # facturacion-electronica-sunat-sdk
 
-Facturación electrónica de la SUNAT (Perú) desde PHP, JavaScript o la línea de comandos, con un mismo núcleo en Rust:
-los tres producen el mismo XML y la misma firma. Es para quien programa el sistema de facturación de un emisor
-electrónico: tu sistema calcula los importes y decide qué emitir; el SDK arma el XML, lo firma, lo envía y lee la
-respuesta de la SUNAT.
+Facturación electrónica de la SUNAT (Perú) para **Rust, JavaScript y TypeScript, Python y PHP**, y desde la línea de
+comandos. Tu sistema calcula los importes y decide qué emitir; el SDK arma el XML de la factura, la boleta, la nota de
+crédito o de débito, el resumen diario o la comunicación de baja, lo firma con tu certificado, lo envía al web service
+de la SUNAT y lee lo que responde. Es para quien programa el sistema de facturación de un emisor electrónico.
 
-**Estado:** versión 0.1.0-beta.2. Genera y firma facturas, boletas, notas de crédito, notas de débito, resúmenes
-diarios y comunicaciones de baja, y en cada cambio el CI exige, en los tres, la firma exacta de 20 vectores de prueba.
-La beta de la SUNAT aceptó los 14 vectores de comprobantes y procesó los 6 de resúmenes y bajas (16/10/2026). Los
-paquetes de Composer y npm aún no están publicados.
+SUNAT (Peru) e-invoicing SDK for Rust, JavaScript/TypeScript (Node, browser, WebAssembly), Python and PHP: UBL XML,
+XML-DSig signature, SOAP web service and CDR.
 
-Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec.com**
+Detrás de todos los lenguajes está el mismo núcleo en Rust, así que un mismo documento da el mismo XML y la misma firma
+en cualquiera de ellos. El CI lo exige en cada cambio con 22 vectores de prueba, y la beta de la SUNAT aceptó esos
+documentos el 16/10/2026.
 
-## Qué hace hoy
+Guías y ejemplos: **https://fe.kembec.com**
 
-| Capacidad | Estado | Cómo se comprueba |
+## Elige tu lenguaje
+
+| Lenguaje | Paquete | Instalación |
 |---|---|---|
-| Factura (01), boleta (03), nota de crédito (07) y nota de débito (08): XML UBL 2.1 y firma | Comprobado en CI | En cada cambio, el CI genera y firma los 14 casos de comprobantes de `fixtures/` y exige el XML de `tests/vectors/` en forma canónica, y exactamente su `DigestValue` y su `SignatureValue`. Lo hace por la CLI, por PHP y por el paquete npm en Node 18, Node 22 y Chrome. Un verificador en Python, que no comparte código con el núcleo, acepta las firmas. |
-| Descuento por línea que reduce la base del IGV (catálogo 53, código 00), en factura y boleta | Comprobado en CI y en la beta de la SUNAT | Dos de esos 14 casos, `01-invoice-line-discount` y `03-receipt-line-discount`, lo llevan; cada descuento se escribe como `cac:AllowanceCharge` con `ChargeIndicator` en `false`. El 16/10/2026 la beta aceptó los dos (F001-7 y B001-4): código 0, sin observaciones. |
-| ZIP y lectura de la CDR | Comprobado en CI, sin red | Pruebas con CDR sintéticas, escritas según los ejemplos del manual de la SUNAT. |
-| Envío (`send`) | Comprobado en la beta de la SUNAT | El 16/10/2026 la beta aceptó los 14 vectores firmados, enviados por la CLI tal como están en `tests/vectors/`: código 0, sin observaciones. |
-| Consulta de la CDR (`status`) | Implementado, sin probar contra la SUNAT | La SUNAT ofrece `getStatusCdr` solo en producción. El sobre sigue el ejemplo del manual. |
-| Resumen diario (RC) y comunicación de baja (RA): XML UBL 2.0, firma, envío y consulta por ticket | Comprobado en CI; envío comprobado en la beta | El CI genera y firma los 6 casos `rc-` y `ra-` de `fixtures/` con las mismas exigencias que los 14 comprobantes. El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. Desde PHP se envían y consultan con la CLI. |
-| Envío y consultas desde JavaScript (`soapRequest`, `soapResponse`, `soapTimeout`) | Comprobado en CI, sin red | El paquete npm arma el POST de `send`, `summary`, `ticket` y `status` y lee la respuesta con el mismo código de la CLI. Lo prueban las pruebas unitarias del binding y la prueba de Node del CI, sin red y con respuestas escritas a mano. Todavía no se ha enviado nada a la SUNAT desde JavaScript. |
-| Guía de remisión, retención y percepción | No incluidos | — |
+| JavaScript y TypeScript (Node 18 o posterior, navegador) | [`@kembec/facturacion-electronica-sunat-sdk`](https://www.npmjs.com/package/@kembec/facturacion-electronica-sunat-sdk), WebAssembly | `npm install @kembec/facturacion-electronica-sunat-sdk` |
+| PHP 7.4 o posterior | [`kembec/facturacion-electronica-sunat-sdk`](https://packagist.org/packages/kembec/facturacion-electronica-sunat-sdk), cliente del binario | `composer require kembec/facturacion-electronica-sunat-sdk:^0.1@beta` |
+| Python 3.10 o posterior | `facturacion-electronica-sunat-sdk`, wheels con el núcleo compilado | en PyPI desde la versión siguiente a 0.1.0-beta.2; hasta entonces, [desde este repositorio](bindings/python/README.md#instalación) |
+| Rust | los crates de [`crates/`](crates) | dependencia git del tag, [abajo](#rust) |
+| Línea de comandos | binario `sunat-sdk` | [release de GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64) o `cargo build` |
 
-Un tipo de documento se da por incorporado cuando cumple tres criterios: su XML coincide con los vectores, su firma da
-los mismos valores y la acepta un verificador independiente, y la beta de la SUNAT lo acepta. Los cuatro tipos de la
-primera fila cumplen los tres.
+La versión publicada es la 0.1.0-beta.2. Este README describe `main`: lo que la 0.1.0-beta.2 todavía no trae está en
+[Versiones](#versiones).
 
-**Solo IGV, y sin cálculo de impuestos.** Los importes los calcula tu sistema y llegan como texto (`"118.00"`): el SDK
-los valida y los escribe. Rechaza con un error explícito ISC, ICBPER, IVAP y otros tributos, descuentos y cargos
-globales, cargos por línea, descuentos por línea con un código distinto de 00 o en notas de crédito y débito,
-anticipos, detracción, percepción y referencias a guías. En los resúmenes rechaza además percepción,
-ICBPER, ISC e IVAP en las líneas, y los resúmenes de reversión (RR).
+## Tu primer comprobante, en cualquier lenguaje
 
-**Con descuento por línea, `unit_value` es el valor antes del descuento.** El SDK valida el formato de cada descuento
-(`factor`, `amount`, `base_amount`), pero la aritmética es de tu sistema: `line_value` debe ser `unit_value` ×
-`quantity` menos los descuentos. En la beta, el mismo caso con un `unit_value` ya neto del descuento dio el rechazo 3271
-en la factura y la observación 4288 en la boleta. El detalle está en el
-[modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
-
-## Instalación
-
-> **Composer y npm, todavía no.** Los paquetes están preparados, pero no están en Packagist ni en npm: hoy
-> `composer require` y `npm install` fallan. `vendor/bin/sunat-sdk-install` descarga el binario del release de su misma
-> versión, 0.1.0-beta.2, que todavía no está publicado. Cada sección muestra cómo se instalará y cómo usarlo hoy desde
-> este repositorio.
-
-### Línea de comandos
-
-Hoy se compila con Rust; el CI usa la versión 1.94.1.
+La misma factura de prueba, firmada con el certificado de prueba del repositorio, da en todos los lenguajes el
+`DigestValue` `+te61a2ub5MlTFf8tKTPNGWEXKI=`, el de su vector
+[`tests/vectors/01-invoice-taxed-cash.signed.xml`](tests/vectors/01-invoice-taxed-cash.signed.xml). Baja los tres
+archivos a una carpeta vacía:
 
 ```bash
-git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git
-cd facturacion-electronica-sunat-sdk
-cargo build -p sunat-sdk-cli --release --locked
-export PATH="$PWD/target/release:$PATH"
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.2
+curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
+curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
+curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
 ```
 
-Comprueba en tu máquina lo mismo que el CI: firma un caso de prueba con el certificado del repositorio y compara el
-`DigestValue` con el de su vector.
+Ese certificado es autogenerado y no sirve para emitir. El documento de entrada es un JSON con la forma del
+[modelo de entrada](docs/input-model.md).
 
-```bash
-sunat-sdk build < fixtures/01-invoice-taxed-cash.json \
-  | sunat-sdk sign --cert tests/vectors/test-cert/test-cert.pem --key tests/vectors/test-cert/test-key.pem \
-  > firmada.json
-grep -o '"digest_value":"[^"]*"' firmada.json
-grep -o '<ds:DigestValue>[^<]*' tests/vectors/01-invoice-taxed-cash.signed.xml
-# los dos dan +te61a2ub5MlTFf8tKTPNGWEXKI=
+### JavaScript y TypeScript
+
+```js
+// primer-comprobante.mjs, después de npm install @kembec/facturacion-electronica-sunat-sdk
+import { readFileSync } from 'node:fs';
+import { load } from '@kembec/facturacion-electronica-sunat-sdk';
+
+const read = (file) => readFileSync(file, 'utf8');
+const sdk = await load();
+const { file_name, xml } = JSON.parse(sdk.build(read('01-invoice-taxed-cash.json')));
+const signed = JSON.parse(sdk.sign(xml, read('test-cert.pem'), read('test-key.pem')));
+console.log(file_name, signed.digest_value); // 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
 ```
 
-Ese certificado es autogenerado y no sirve para emitir. Cada comando lee un JSON por la entrada estándar y escribe un
-JSON por la salida; `send`, `summary`, `ticket` y `status` toman la URL y las credenciales SOL de opciones o del entorno. El contrato
-completo está en [`docs/cli.md`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md), y el
-modelo de entrada, en
-[`docs/input-model.md`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
-
-Cada [release](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) trae el binario estático para
-Linux x86_64 y su SHA-256. El único publicado, v0.1.0-beta.1, es anterior a `summary`, `ticket` y a la generación de
-resúmenes y bajas.
+Los tipos vienen en el paquete. El envío a la SUNAT, el uso en el navegador y en Cloudflare Workers están en el
+[README del paquete](bindings/wasm/npm/README.md).
 
 ### PHP
 
-PHP 7.4 o posterior, con la extensión `json` (el instalador del binario usa además `openssl`). Cada llamada ejecuta el
-binario `sunat-sdk` una vez.
-
-Cuando el paquete esté publicado:
+El paquete de PHP ejecuta el binario `sunat-sdk`. En Linux x86_64, `vendor/bin/sunat-sdk-install` lo descarga del
+release de su misma versión, comprueba su SHA-256 e imprime `SUNAT_SDK_BIN=<ruta>`; en otra plataforma, compílalo como
+en [Línea de comandos](#línea-de-comandos).
 
 ```bash
-composer require kembec/facturacion-electronica-sunat-sdk
-vendor/bin/sunat-sdk-install
-```
-
-`sunat-sdk-install` descarga del release de la misma versión el binario de Linux x86_64, lo deja ejecutable solo si su
-SHA-256 coincide e imprime `SUNAT_SDK_BIN=<ruta>`: esa ruta es el primer argumento de `SunatSdk`. Composer no lo ejecuta
-por su cuenta. En otra plataforma, compila el binario como en la sección anterior.
-
-Hoy, con este repositorio clonado al lado de tu proyecto y la CLI ya compilada, declara el clon como repositorio `path`
-en el `composer.json` de tu proyecto y corre `composer install`:
-
-```json
-{
-    "repositories": [
-        { "type": "path", "url": "../facturacion-electronica-sunat-sdk" }
-    ],
-    "require": {
-        "kembec/facturacion-electronica-sunat-sdk": "*@dev"
-    }
-}
+composer require kembec/facturacion-electronica-sunat-sdk:^0.1@beta
+export "$(vendor/bin/sunat-sdk-install)"
 ```
 
 ```php
+<?php // primer-comprobante.php
+require 'vendor/autoload.php';
+
 use Kembec\SunatSdk\SigningKey;
 use Kembec\SunatSdk\SunatSdk;
 
-// La ruta que imprime sunat-sdk-install (hoy, target/release/sunat-sdk del clon)
-// y el tiempo máximo por llamada, en segundos
-$sdk = new SunatSdk('/ruta/a/sunat-sdk', 120.0);
-
-$built  = $sdk->build($documento); // array, objeto o JSON con la forma de docs/input-model.md
-$signed = $sdk->sign($built->getXml(), new SigningKey('/ruta/cert.pem', '/ruta/clave.pem'));
-
-echo $built->getFileName();      // por ejemplo, 20123456789-01-F001-1
-echo $signed->getDigestValue();
+$sdk = new SunatSdk(getenv('SUNAT_SDK_BIN'), 120.0); // ruta del binario y tiempo máximo por llamada, en segundos
+$built = $sdk->build(file_get_contents('01-invoice-taxed-cash.json'));
+$signed = $sdk->sign($built->getXml(), new SigningKey('test-cert.pem', 'test-key.pem'));
+echo $built->getFileName(), ' ', $signed->getDigestValue(), PHP_EOL; // 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
 ```
 
-Los errores llegan como excepciones que heredan de `SunatSdkException`. Un error SOAP de la SUNAT no es una excepción,
-sino un resultado (`isFault()`). `send`, `status`, `zip` y `cdr`, y la tabla de excepciones, están en el
-[README del binding](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/bindings/php/README.md).
-Los resúmenes y las bajas se arman y firman con `build` y `sign`; para enviarlos y consultar su ticket, usa la CLI.
+El envío, la consulta de la CDR y los errores están en el [README del cliente PHP](bindings/php/README.md).
 
-### JavaScript (WebAssembly)
+### Python
 
-Lo mismo que la CLI, con la misma API en Node 18 o posterior y en el navegador: `build`, `sign`, `zip` y `cdr` en
-memoria, y el envío y las consultas a la SUNAT con tu propio `fetch`. El paquete no hace red. `soapRequest` te da el
-POST ya armado, tú lo envías, y `soapResponse` convierte la respuesta en el mismo JSON que imprime la CLI. No necesita
-un binario ni un proceso aparte, así que puede ir donde la CLI no llega y solo hay `fetch`, como un Cloudflare Worker;
-ahí todavía no se ha probado.
+```python
+# primer_comprobante.py
+import sunat_sdk
 
-Cuando el paquete esté publicado:
+def read(file):
+    with open(file, encoding="utf-8") as f:
+        return f.read()
 
-```bash
-npm install @kembec/facturacion-electronica-sunat-sdk
+built = sunat_sdk.build(read("01-invoice-taxed-cash.json"))
+signed = sunat_sdk.sign(built["xml"], read("test-cert.pem"), read("test-key.pem"))
+print(built["file_name"], signed["digest_value"])  # 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
 ```
 
-```js
-import { load } from '@kembec/facturacion-electronica-sunat-sdk';
+La instalación y el envío a la SUNAT (`exchange`) están en el [README del paquete de Python](bindings/python/README.md).
 
-const sdk = await load();
-const { file_name, xml } = JSON.parse(sdk.build(documentJson));
-const signed = JSON.parse(sdk.sign(xml, certPem, keyPem)); // { xml, digest_value, signature_value }
+### Rust
 
-// Una llamada al web service de la SUNAT: el paquete arma el POST y lee la respuesta; el fetch es tuyo.
-async function exchange(kind, input, url, seconds = 60) {
-  const post = JSON.parse(sdk.soapRequest(kind, input, solUser, solPassword)); // solUser: RUC + usuario SOL
-  const signal = AbortSignal.timeout(seconds * 1000);
-  try {
-    const res = await fetch(url, { ...post, signal });
-    return JSON.parse(sdk.soapResponse(kind, input, res.status, new Uint8Array(await res.arrayBuffer())));
-  } catch (error) {
-    if (!signal.aborted) throw error;
-    return JSON.parse(sdk.soapTimeout(kind, input, seconds)); // en send y summary lanza un Error
-  }
+Los crates no están en crates.io: se usan como dependencia git del tag. `sunat-model` lee y valida el documento,
+`sunat-ubl` arma el XML y `sunat-xmldsig` lo firma.
+
+```toml
+[dependencies]
+sunat-model = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.2" }
+sunat-ubl = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.2" }
+sunat-xmldsig = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.2" }
+```
+
+```rust
+use std::fs;
+
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let document = sunat_model::Document::from_json(&fs::read_to_string("01-invoice-taxed-cash.json")?)?;
+    let unsigned = sunat_ubl::build(&document)?;
+    let signed = sunat_xmldsig::sign(
+        &unsigned,
+        &fs::read_to_string("test-cert.pem")?,
+        &fs::read_to_string("test-key.pem")?,
+    )?;
+    fs::write(format!("{}.xml", document.file_name()), signed)?; // 20123456789-01-F001-1.xml
+    Ok(())
 }
-
-const sent = await exchange('send', JSON.stringify({ name: file_name, xml: signed.xml }), billServiceUrl);
-// { outcome: 'cdr', cdr, cdr_zip_base64 } o { outcome: 'fault', code, message, class }
 ```
 
-Todas las funciones devuelven texto JSON y lanzan un `Error` con el motivo cuando la entrada no sirve. Cada llamada a
-la SUNAT recibe la misma entrada que su comando de la CLI (`send` y `summary`, `{ name, xml }`; `ticket`, `{ ticket }`;
-`status`, `{ ruc, document_type, series, number }`) y devuelve lo mismo que imprime
-([`docs/cli.md`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md)). `send`,
-`summary` y `ticket` van a la URL del billService, y `status`, a la del billConsultService.
+El XML firmado lleva el mismo `<ds:DigestValue>` del vector. El núcleo no hace red: `sunat-transport` arma el ZIP y
+los sobres SOAP y lee las respuestas, y `sunat-sdk` da las llamadas al web service en el JSON de la CLI; el POST HTTP lo
+haces tú. Lo que expone cada crate está en la [arquitectura](docs/architecture.md).
 
-- Si `ticket` o `status` no reciben respuesta (un estado HTTP distinto de 200 y 500, o se acabó la espera), el
-  resultado es `{ outcome: 'no_verdict', ... }`: no dice nada del documento, así que se vuelve a consultar y nunca se
-  reenvía.
-- En `send` y `summary`, ese mismo caso lanza un `Error`, porque el documento pudo haber llegado.
-- Un error SOAP de la SUNAT no lanza: llega como `{ outcome: 'fault', ... }`.
-- Desde el navegador, el envío no se ha probado: depende de que la SUNAT acepte peticiones de otro origen (CORS).
+### Línea de comandos
 
-`load` también acepta el módulo WebAssembly ya compilado, que es lo que piden entornos como Cloudflare Workers. El CI
-lo prueba así en Node, pero no en Workers ni con bundlers; esos casos están descritos en el
-[README del paquete](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/bindings/wasm/npm/README.md).
-
-Hoy, el paquete se arma desde este repositorio con los mismos pasos del CI. Necesitas `rustup` y Node 18 o posterior:
+En Linux x86_64, el binario estático del release:
 
 ```bash
-rustup target add wasm32-unknown-unknown
-cargo install wasm-bindgen-cli --version 0.2.129 --locked
-bindings/wasm/scripts/build.sh
-(cd bindings/wasm/npm && npm pack)
+url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.2
+curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl"
+curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl.sha256"
+sha256sum -c sunat-sdk-x86_64-unknown-linux-musl.sha256
+install -m 755 sunat-sdk-x86_64-unknown-linux-musl /usr/local/bin/sunat-sdk
 ```
 
-Y en tu proyecto:
+En otra plataforma, compílalo con Rust (el CI usa la 1.94.1):
 
 ```bash
-npm install ../facturacion-electronica-sunat-sdk/bindings/wasm/npm/kembec-facturacion-electronica-sunat-sdk-0.1.0-beta.2.tgz
+git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git
+cargo build --manifest-path facturacion-electronica-sunat-sdk/Cargo.toml -p sunat-sdk-cli --release --locked
+# el binario queda en facturacion-electronica-sunat-sdk/target/release/sunat-sdk
 ```
+
+```bash
+sunat-sdk build < 01-invoice-taxed-cash.json \
+  | sunat-sdk sign --cert test-cert.pem --key test-key.pem \
+  | grep -o '"digest_value":"[^"]*"'
+# "digest_value":"+te61a2ub5MlTFf8tKTPNGWEXKI="
+```
+
+Cada comando lee un JSON por la entrada estándar y escribe un JSON por la salida. `send`, `summary`, `ticket` y
+`status` toman la URL del web service y las credenciales SOL de opciones o del entorno, nunca del código. El contrato
+completo está en [`docs/cli.md`](docs/cli.md).
+
+## Qué cubre
+
+| Documento | Formato | Qué hace el SDK |
+|---|---|---|
+| Factura (01), boleta (03), nota de crédito (07) y nota de débito (08) | UBL 2.1 | arma, firma, comprime, envía (`sendBill`) y consulta la CDR (`getStatusCdr`) |
+| Resumen diario (RC) de boletas y sus notas | UBL 2.0 | arma, firma, envía (`sendSummary`) y consulta el ticket (`getStatus`) |
+| Comunicación de baja (RA) de facturas y sus notas | UBL 2.0 | arma, firma, envía (`sendSummary`) y consulta el ticket (`getStatus`) |
+
+- **IGV** con las tasas de 18 % y 10,5 %: operaciones gravadas, exoneradas, inafectas, de exportación y gratuitas
+  (afectaciones 10 a 16, 20, 21, 30 a 37 y 40), en soles y en dólares, al contado o a crédito en cuotas.
+- **Descuento por línea** que reduce la base del IGV (catálogo 53, código 00), en facturas y boletas.
+- **Firma** XML-DSig enveloped como la pide la SUNAT (RSA-SHA1, C14N inclusiva), con tu certificado y tu llave en PEM;
+  la llave, RSA sin cifrar.
+- **Respuesta de la SUNAT**: el SDK lee la CDR y la clasifica (aceptada, observada, rechazada, excepción). Un error SOAP
+  es un resultado, no una excepción, y una consulta que no recibe respuesta dice `no_verdict`: se vuelve a consultar y
+  nunca se reenvía.
+
+Todos los lenguajes reciben el mismo documento de entrada; lo que cambia es cómo llega a la SUNAT:
+
+| | Arma, firma, ZIP y CDR | Envía y consulta |
+|---|---|---|
+| Línea de comandos | `build`, `sign`, `zip`, `cdr` | `send`, `summary`, `ticket`, `status`, con HTTP y TLS verificado |
+| PHP | `build`, `sign`, `zip`, `cdr` | `send` y `status`; resúmenes y bajas, con la CLI |
+| JavaScript y TypeScript | `build`, `sign`, `zip`, `cdr`, en memoria | `soapRequest` arma el POST, tu `fetch` lo envía y `soapResponse` lee la respuesta |
+| Python | `build`, `sign`, `zip`, `cdr`, en memoria | `exchange` hace el POST con TLS verificado; `soap_request` y `soap_response` para tu propio cliente HTTP |
+| Rust | `sunat-model`, `sunat-ubl`, `sunat-xmldsig`, `sunat-transport` | `sunat_sdk::exchange` arma la petición y lee la respuesta; el HTTP es tuyo |
+
+## Cómo se comprueba
+
+Un tipo de documento entra al SDK cuando cumple tres condiciones: su XML coincide con los vectores de
+[`tests/vectors/`](tests/vectors), su firma da exactamente el mismo `DigestValue` y el mismo `SignatureValue` y la acepta
+un verificador independiente, y la beta de la SUNAT lo acepta.
+
+- **En cada cambio**, el CI arma y firma los 22 casos de [`fixtures/`](fixtures) por la CLI, por PHP, por el paquete
+  npm en Node 18, Node 22 y Chrome, y por el paquete de Python instalado, y exige el `DigestValue` y el `SignatureValue`
+  exactos de su vector. Un verificador en Python que no comparte código con el núcleo acepta las firmas.
+- **En la beta de la SUNAT**, el 16/10/2026, enviados con la CLI: los 15 comprobantes, aceptados con código 0 y sin
+  observaciones; los 7 resúmenes y bajas, procesados con código 0.
+- **Sin red**, con respuestas escritas a mano: el envío y las consultas desde JavaScript y Python, que comparten con la
+  CLI el código que arma la petición y lee la respuesta. Los envíos a la beta se hicieron con la CLI.
+- La consulta de la CDR (`status`) sigue el ejemplo del manual; la SUNAT solo la ofrece en producción, así que no se ha
+  probado contra ella. Tampoco el envío desde el navegador, que depende de que la SUNAT acepte peticiones de otro origen
+  (CORS).
+
+## Alcance
+
+**Los importes los calcula tu sistema.** Llegan como texto (`"118.00"`); el SDK los valida y los escribe, no calcula
+impuestos. Con descuento por línea, `unit_value` es el valor antes del descuento y `line_value` es `unit_value` ×
+`quantity` menos los descuentos: en la beta, un `unit_value` ya neto del descuento dio el rechazo 3271 en la factura y
+la observación 4288 en la boleta.
+
+**Lo que el SDK no cubre lo rechaza con un error explícito**, en vez de generar un XML que la SUNAT rechazaría:
+
+- en comprobantes: ISC, ICBPER, IVAP y otros tributos, descuentos y cargos globales, cargos por línea, descuentos por
+  línea con un código distinto de 00 o en notas de crédito y débito, anticipos, detracción, percepción y referencias a
+  guías;
+- en resúmenes diarios: percepción, ICBPER, ISC e IVAP en las líneas, y los resúmenes de reversión (RR).
+
+La guía de remisión, el comprobante de retención y el de percepción no forman parte del SDK. El detalle de cada campo
+está en el [modelo de entrada](docs/input-model.md).
+
+## Versiones
+
+Un tag publica a la vez el binario, el paquete npm, el de PHP y el de Python ([`docs/releasing.md`](docs/releasing.md)).
+La 0.1.0-beta.2, publicada en npm, Packagist y como binario, arma, firma, comprime, envía y consulta facturas, boletas y
+notas desde la CLI y PHP, y las arma y firma desde JavaScript. Desde la versión siguiente, como ya está en `main`:
+
+- resúmenes diarios y comunicaciones de baja (`build`, y `summary` y `ticket` en la CLI);
+- descuento por línea;
+- `zip`, `cdr` y el envío y las consultas desde JavaScript;
+- `no_verdict` en `ticket` y `status`, y la CDR observada (código 0 con una nota de 4000 o más);
+- el paquete de Python en PyPI.
 
 ## Documentación y soporte
 
-- Contratos: [arquitectura](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/architecture.md),
-  [CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md) y
-  [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
+- Guías y ejemplos: https://fe.kembec.com
+- Contratos: [arquitectura](docs/architecture.md), [CLI](docs/cli.md) y [modelo de entrada](docs/input-model.md).
 - Errores y preguntas: [issues de GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/issues).
 
 ## Derechos y licencia

@@ -1,27 +1,61 @@
 # @kembec/facturacion-electronica-sunat-sdk
 
-Arma, firma y envía a la SUNAT (Perú) los comprobantes electrónicos desde JavaScript: facturas (01), boletas (03),
-notas de crédito (07) y notas de débito (08) en UBL 2.1, y resúmenes diarios (RC) y comunicaciones de baja (RA) en
-UBL 2.0. Es para sistemas en JavaScript que emiten comprobantes: corre en Node 18 o posterior y en el navegador con la
-misma API, y usa el mismo núcleo en Rust que la CLI y el cliente PHP del
-[repositorio](https://github.com/Kembec/facturacion-electronica-sunat-sdk). El paquete no hace red: arma el POST, tú
-lo envías con tu `fetch`, y convierte la respuesta en el mismo JSON que imprime la CLI.
+Facturación electrónica de la SUNAT (Perú) desde **JavaScript y TypeScript**: arma el XML de facturas (01), boletas
+(03), notas de crédito (07) y notas de débito (08) en UBL 2.1, y de resúmenes diarios (RC) y comunicaciones de baja
+(RA) en UBL 2.0, lo firma, lo comprime y te deja enviarlo a la SUNAT con tu propio `fetch`. Corre con la misma API en
+Node 18 o posterior y en el navegador, sin binarios ni procesos aparte: es el núcleo en Rust del
+[SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk) compilado a WebAssembly, el mismo que usan sus
+versiones para PHP, Python, Rust y la línea de comandos, así que el mismo documento da la misma firma en todas.
 
-**Estado:** versión 0.1.0-beta.2, todavía no publicada en npm; mientras tanto, el paquete se arma desde el repositorio
-como explica [su README](https://github.com/Kembec/facturacion-electronica-sunat-sdk#javascript-webassembly). En cada
-cambio, el CI instala el paquete empaquetado en un proyecto limpio y exige la firma exacta de los 20 vectores de prueba
-en Node 18, Node 22 y Chrome. Son las mismas firmas que la beta de la SUNAT aceptó el 16/10/2026, enviadas por la CLI.
-El envío y las consultas desde JavaScript (`soapRequest`, `soapResponse`, `soapTimeout`) los prueban las pruebas
-unitarias y la prueba de Node del CI, sin red; todavía no se ha enviado nada a la SUNAT desde este paquete.
-Guías y ejemplos: https://fe.kembec.com
+SUNAT (Peru) e-invoicing for JavaScript and TypeScript, in WebAssembly: UBL XML, XML-DSig signature and the SOAP web
+service, in Node and in the browser.
+
+Tu sistema calcula los importes; el paquete los valida y los escribe, no calcula impuestos. Guías y ejemplos:
+https://fe.kembec.com
+
+## Instalación
+
+```bash
+npm install @kembec/facturacion-electronica-sunat-sdk
+```
+
+Los tipos de TypeScript vienen en el paquete (`index.d.ts`).
+
+## Tu primer comprobante
+
+Baja a una carpeta vacía la factura de prueba y el certificado de prueba del repositorio. Ese certificado es
+autogenerado y no sirve para emitir.
+
+```bash
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.2
+curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
+curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
+curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
+```
 
 ```js
+// primer-comprobante.mjs
+import { readFileSync } from 'node:fs';
 import { load } from '@kembec/facturacion-electronica-sunat-sdk';
 
+const read = (file) => readFileSync(file, 'utf8');
 const sdk = await load();
-const { file_name, xml } = JSON.parse(sdk.build(documentJson));
-const signed = JSON.parse(sdk.sign(xml, certPem, keyPem)); // { xml, digest_value, signature_value }
+const { file_name, xml } = JSON.parse(sdk.build(read('01-invoice-taxed-cash.json')));
+const signed = JSON.parse(sdk.sign(xml, read('test-cert.pem'), read('test-key.pem')));
+console.log(file_name, signed.digest_value); // 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
+```
 
+`+te61a2ub5MlTFf8tKTPNGWEXKI=` es el `DigestValue` del vector
+[`01-invoice-taxed-cash`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/tests/vectors/01-invoice-taxed-cash.signed.xml):
+el mismo que dan la CLI, PHP, Python y Rust. Tus documentos llevan la forma del
+[modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
+
+## Enviar a la SUNAT
+
+El paquete no hace red: `soapRequest` te da el POST ya armado, tú lo envías y `soapResponse` convierte la respuesta en
+el mismo JSON que imprime la CLI.
+
+```js
 // Una llamada al web service de la SUNAT: el paquete arma el POST y lee la respuesta; el fetch es tuyo.
 async function exchange(kind, input, url, seconds = 60) {
   const post = JSON.parse(sdk.soapRequest(kind, input, solUser, solPassword)); // solUser: RUC + usuario SOL
@@ -39,10 +73,18 @@ const sent = await exchange('send', JSON.stringify({ name: file_name, xml: signe
 // { outcome: 'cdr', cdr, cdr_zip_base64 } o { outcome: 'fault', code, message, class }
 ```
 
+`zip`, `cdr`, `soapRequest`, `soapResponse` y `soapTimeout` llegan en la versión siguiente a 0.1.0-beta.2; la
+0.1.0-beta.2 trae `build` y `sign`.
+
+## API
+
+Todas las funciones reciben y devuelven texto JSON, y lanzan un `Error` con el motivo cuando la entrada no sirve.
+
 - `build(documentJson)`: el documento con la forma del
-  [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
-- `sign(xml, certPem, keyPem, signatureId?)`: la llave PEM tiene que ser RSA sin cifrar;
-  `signatureId` es `signatureKG` si no se indica.
+  [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md) →
+  `{ file_name, xml }`.
+- `sign(xml, certPem, keyPem, signatureId?)`: la llave PEM tiene que ser RSA sin cifrar; `signatureId` es
+  `signatureKG` si no se indica → `{ xml, digest_value, signature_value }`.
 - `zip(inputJson)`: `{ name, xml }` (o `xml_base64`) → `{ file_name, zip_base64 }`.
 - `cdr(inputJson)`: `{ cdr_base64 }` (zip o XML) → `{ reference_id, response_code, description, notes, class }`.
 - `soapRequest(exchange, inputJson, user, password)`: `exchange` es `send`, `summary`, `ticket` o `status`, e
@@ -59,10 +101,7 @@ const sent = await exchange('send', JSON.stringify({ name: file_name, xml: signe
   resultado es `{ outcome: 'no_verdict', reason, http_status, message }` (`ticket` agrega el mismo `ticket`): no dice
   nada del documento, así que se vuelve a consultar y nunca se reenvía. En `send` y `summary`, ese mismo caso lanza un
   `Error`, porque el documento pudo haber llegado.
-- Todas devuelven texto JSON y lanzan un `Error` con el motivo cuando la entrada no sirve. Los tipos de cada resultado
-  están en `index.d.ts`.
 - El certificado, la llave y las credenciales SOL los pasa quien llama: el paquete no los busca en archivos ni en el entorno.
-- Desde el navegador, el envío no se ha probado: depende de que la SUNAT acepte peticiones de otro origen (CORS).
 
 ## Dónde se carga el WebAssembly
 
@@ -74,11 +113,18 @@ import wasm from '@kembec/facturacion-electronica-sunat-sdk/wasm';
 const sdk = await load(wasm);
 ```
 
-`load` acepta un `WebAssembly.Module`, los bytes, una URL o una `Response`. El CI prueba la carga por defecto en Node y
-en Chrome, y el paso del módulo compilado en Node; no en Workers ni con bundlers.
+`load` acepta un `WebAssembly.Module`, los bytes, una URL o una `Response`.
 
 En Node 18, donde `globalThis.crypto` no existe sin una opción de arranque, `load` lo define con
 `webcrypto` de `node:crypto`: la firma lo necesita. Si ya existe, no lo toca.
+
+## Cómo se comprueba
+
+En cada cambio, el CI instala el paquete empaquetado en un proyecto limpio y exige, en Node 18, Node 22 y Chrome, el
+`DigestValue` y el `SignatureValue` exactos de los 22 vectores de prueba del repositorio: las mismas firmas que la beta de la SUNAT aceptó el
+16/10/2026, enviadas con la CLI. La carga con el módulo ya compilado se prueba en Node; en Cloudflare Workers y con
+bundlers no se ha probado. El envío desde JavaScript se prueba sin red, con respuestas escritas a mano, y desde el
+navegador depende de que la SUNAT acepte peticiones de otro origen (CORS), que no se ha probado.
 
 ## Licencia
 

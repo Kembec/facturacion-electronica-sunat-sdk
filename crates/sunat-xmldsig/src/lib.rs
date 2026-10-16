@@ -17,6 +17,7 @@
 mod c14n;
 mod error;
 mod keys;
+mod rsa_sha1;
 mod sign;
 mod verify;
 mod xml;

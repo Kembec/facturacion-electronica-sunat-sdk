@@ -7,10 +7,7 @@
 //! signature only when no ancestor already binds `ds` to the XML-DSig namespace.
 
 use base64::{engine::general_purpose::STANDARD, Engine};
-use rand_core::OsRng;
 use roxmltree::{Document, Node};
-use rsa::pkcs1v15::SigningKey;
-use rsa::signature::{RandomizedSigner, SignatureEncoding};
 use sha1::{Digest, Sha1};
 
 use crate::keys::{self, CertificateBlock};
@@ -34,7 +31,7 @@ pub fn sign_with_id(xml: &[u8], cert_pem: &str, key_pem: &str, signature_id: &st
     }
     let certificates = keys::load_certificates(cert_pem)?;
     let key = keys::load_private_key(key_pem)?;
-    if key.to_public_key() != certificates[0].public_key {
+    if *key.public_key() != certificates[0].public_key {
         return Err(SignError::KeyCertificateMismatch);
     }
 
@@ -50,10 +47,7 @@ pub fn sign_with_id(xml: &[u8], cert_pem: &str, key_pem: &str, signature_id: &st
 
     let unsigned = splice.assemble(&head, "", &tail);
     let signed_info = canonical_signed_info(&unsigned, splice.signature_offset())?;
-    let signature = SigningKey::<Sha1>::new(key)
-        .try_sign_with_rng(&mut OsRng, &signed_info)
-        .map_err(|_| SignError::Crypto("RSA-SHA1 signing failed"))?;
-    let value = STANDARD.encode(signature.to_bytes());
+    let value = STANDARD.encode(key.sign_sha1(&signed_info)?);
 
     let mut out = String::with_capacity(xml.len() + head.len() + tail.len() + value.len());
     out.push_str(source.bom);

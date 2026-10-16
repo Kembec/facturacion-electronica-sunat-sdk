@@ -4,7 +4,8 @@
 //! verification). `sign` reads `--cert`/SUNAT_CERT_PATH and `--key`/SUNAT_KEY_PATH (PEM files).
 //! `send` reads `--endpoint` or SUNAT_ENDPOINT, `status` reads `--endpoint` or
 //! SUNAT_STATUS_ENDPOINT; both read `--user`/SUNAT_SOL_USER (RUC + SOL user) and
-//! `--password`/SUNAT_SOL_PASSWORD.
+//! `--password`/SUNAT_SOL_PASSWORD, and `--timeout`/SUNAT_HTTP_TIMEOUT_SECONDS (whole seconds,
+//! 1 to 300, default 90) for the HTTP wait.
 
 mod commands;
 mod config;
@@ -16,7 +17,7 @@ use std::process::ExitCode;
 
 use serde_json::{json, Value};
 
-const USAGE: &str = "usage: sunat-sdk <build|sign|zip|send|status|cdr> [--cert PEM --key PEM] [--endpoint URL] [--user RUCUSER] [--password PASS] < input.json";
+const USAGE: &str = "usage: sunat-sdk <build|sign|zip|send|status|cdr> [--cert PEM --key PEM] [--endpoint URL] [--user RUCUSER] [--password PASS] [--timeout SECONDS] < input.json";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -60,11 +61,13 @@ fn run(args: &[String]) -> Result<Value, String> {
         "cdr" => commands::cdr(&offline(rest)?),
         "send" => {
             let conn = config::connection(rest, config::ENV_ENDPOINT, &env)?;
-            commands::send(&read_input()?, &conn, &http::post_soap)
+            let post = |endpoint: &str, action: &str, envelope: &str| http::post_soap(endpoint, action, envelope, conn.timeout);
+            commands::send(&read_input()?, &conn, &post)
         }
         "status" => {
             let conn = config::connection(rest, config::ENV_STATUS_ENDPOINT, &env)?;
-            commands::status(&read_input()?, &conn, &http::post_soap)
+            let post = |endpoint: &str, action: &str, envelope: &str| http::post_soap(endpoint, action, envelope, conn.timeout);
+            commands::status(&read_input()?, &conn, &post)
         }
         _ => Err(USAGE.into()),
     }

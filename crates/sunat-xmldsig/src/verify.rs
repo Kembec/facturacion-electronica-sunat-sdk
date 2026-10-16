@@ -7,8 +7,6 @@
 
 use base64::{engine::general_purpose::STANDARD, Engine};
 use roxmltree::Node;
-use rsa::pkcs1v15::{Signature, VerifyingKey};
-use rsa::signature::Verifier;
 use sha1::{Digest, Sha1};
 
 use crate::xml::{self, ALG_C14N, ALG_ENVELOPED, ALG_RSA_SHA1, ALG_SHA1, DSIG_NS};
@@ -65,13 +63,7 @@ pub fn verify(xml: &[u8]) -> Result<Verification, SignError> {
     let digest_matches = digest.as_slice() == expected_digest.as_slice();
 
     let canonical_signed_info = c14n::canonicalize_subtree(&doc, signed_info);
-    let signature_matches = Signature::try_from(signature_value.as_slice())
-        .map(|sig| {
-            VerifyingKey::<Sha1>::new(public_key)
-                .verify(&canonical_signed_info, &sig)
-                .is_ok()
-        })
-        .unwrap_or(false);
+    let signature_matches = public_key.verify_sha1(&canonical_signed_info, &signature_value);
 
     Ok(Verification {
         digest_matches,

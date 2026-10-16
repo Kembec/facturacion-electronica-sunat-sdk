@@ -153,4 +153,4 @@ jobs:
         run: |
           dist_tag=""
           case "$GITHUB_REF_NAME" in *-*) dist_tag="--tag beta" ;; esac
-          npm publish npm/*.tgz --provenance --access public $dist_tag
+          npm publish ./npm/*.tgz --provenance --access public $dist_tag

@@ -1,0 +1,61 @@
+{
+  "kind": "despatch",
+  "ubl_version": "2.1",
+  "document_type": "09",
+  "series": "T001",
+  "number": "2",
+  "issue_date": "2026-10-15T18:45:00-05:00",
+  "issuer": {
+    "ruc": "20123456789",
+    "legal_name": "EMPRESA DEMO ORACULO S.A.C.",
+    "trade_name": "DEMO ORACULO",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "urbanization": "-",
+      "street": "AV. EJEMPLO 123",
+      "establishment_code": "0000"
+    }
+  },
+  "recipient": {
+    "document_type": "6",
+    "document_number": "20123456789",
+    "legal_name": "EMPRESA DEMO ORACULO S.A.C."
+  },
+  "shipment": {
+    "reason_code": "04",
+    "reason_description": "Traslado entre establecimientos de la misma empresa",
+    "transport_mode": "01",
+    "start_date": "2026-10-16",
+    "gross_weight": "1.250",
+    "weight_unit": "TNE",
+    "carrier": {
+      "ruc": "20555666777",
+      "legal_name": "TRANSPORTES DEMO S.R.L.",
+      "mtc_registration": "MTC1508123CNG"
+    },
+    "origin": {
+      "ubigeo": "150101",
+      "address": "AV. EJEMPLO 123, LIMA",
+      "establishment_code": "0000",
+      "establishment_ruc": "20123456789"
+    },
+    "destination": {
+      "ubigeo": "150135",
+      "address": "AV. INDUSTRIAL 789, SAN MARTÍN DE PORRES",
+      "establishment_code": "0002",
+      "establishment_ruc": "20123456789"
+    }
+  },
+  "lines": [
+    {
+      "quantity": "40",
+      "unit": "BX",
+      "description": "Cajas de cuadernos para la tienda de Lima Norte",
+      "product_code": "CUA-CAJA"
+    }
+  ]
+}

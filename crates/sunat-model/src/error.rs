@@ -11,6 +11,9 @@ pub enum ModelError {
     Missing { path: String },
     /// A value is present but not acceptable.
     Invalid { path: String, reason: String },
+    /// The document breaks one of SUNAT's validation rules, checked before sending: `code` is the
+    /// error SUNAT would answer (`"1001"`).
+    Rule { path: String, code: &'static str, reason: String },
 }
 
 impl ModelError {
@@ -20,6 +23,18 @@ impl ModelError {
 
     pub(crate) fn missing(path: impl Into<String>) -> Self {
         Self::Missing { path: path.into() }
+    }
+
+    pub(crate) fn rule(code: &'static str, path: impl Into<String>, reason: impl Into<String>) -> Self {
+        Self::Rule { path: path.into(), code, reason: reason.into() }
+    }
+
+    /// SUNAT's error code for a `Rule` error.
+    pub fn sunat_code(&self) -> Option<&'static str> {
+        match self {
+            Self::Rule { code, .. } => Some(code),
+            _ => None,
+        }
     }
 }
 
@@ -32,6 +47,7 @@ impl fmt::Display for ModelError {
             }
             Self::Missing { path } => write!(f, "{path}: required"),
             Self::Invalid { path, reason } => write!(f, "{path}: {reason}"),
+            Self::Rule { path, code, reason } => write!(f, "{path}: {reason} (SUNAT ERR-{code})"),
         }
     }
 }

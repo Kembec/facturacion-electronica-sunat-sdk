@@ -29,6 +29,7 @@ impl Document {
             }
             Document::Summary(summary) => check_summary(summary),
             Document::Voided(voided) => check_voided(voided),
+            Document::Despatch(despatch) => crate::despatch_rules::check(despatch),
         }
     }
 }

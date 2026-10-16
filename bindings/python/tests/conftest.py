@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
-EXPECTED_CASES = 26
+EXPECTED_CASES = 28
 
 
 def read(relative: str) -> str:
@@ -17,7 +17,7 @@ def read(relative: str) -> str:
 
 def cases() -> list[str]:
     names = sorted(p.stem for p in (ROOT / "fixtures").glob("*.json"))
-    return [n for n in names if n[:2] in {"01", "03", "07", "08", "ra", "rc"}]
+    return [n for n in names if n[:2] in {"01", "03", "07", "08", "09", "ra", "rc"}]
 
 
 @pytest.fixture(scope="session")

@@ -40,6 +40,9 @@ pub(crate) fn parse(json: &str) -> Result<Document, ModelError> {
         let kind = kind.to_owned();
         return crate::daily::parse(&kind, value);
     }
+    if value.get("kind").and_then(Value::as_str) == Some("despatch") {
+        return crate::despatch::parse(value);
+    }
     crate::scope::check(&value)?;
     let raw: RawDocument = serde_json::from_value(value).map_err(|e| ModelError::Json(e.to_string()))?;
     raw.into_document()
@@ -77,7 +80,7 @@ impl RawDocument {
                 let reference = self.note.ok_or_else(|| ModelError::missing("$.note"))?;
                 Ok(Document::Note(Note { voucher, reference }))
             }
-            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\", \"note\", \"summary\" or \"voided\"")),
+            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\", \"note\", \"summary\", \"voided\" or \"despatch\"")),
         }
     }
 }

@@ -1,0 +1,87 @@
+{
+  "kind": "despatch",
+  "ubl_version": "2.1",
+  "document_type": "09",
+  "series": "T001",
+  "number": "1",
+  "issue_date": "2026-10-15T10:30:00-05:00",
+  "note": "Entregar en almacén de recepción",
+  "issuer": {
+    "ruc": "20123456789",
+    "legal_name": "EMPRESA DEMO ORACULO S.A.C.",
+    "trade_name": "DEMO ORACULO",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "urbanization": "-",
+      "street": "AV. EJEMPLO 123",
+      "establishment_code": "0000"
+    }
+  },
+  "recipient": {
+    "document_type": "6",
+    "document_number": "20987654321",
+    "legal_name": "CLIENTE DEMO S.A."
+  },
+  "related_documents": [
+    {
+      "document_type": "01",
+      "document_number": "F001-123",
+      "description": "Factura",
+      "issuer_ruc": "20123456789"
+    }
+  ],
+  "shipment": {
+    "reason_code": "01",
+    "reason_description": "Venta",
+    "transport_mode": "02",
+    "start_date": "2026-10-15",
+    "gross_weight": "125.500",
+    "weight_unit": "KGM",
+    "packages": "3",
+    "vehicles": [
+      {
+        "plate": "ABC123"
+      },
+      {
+        "plate": "XYZ9876"
+      }
+    ],
+    "drivers": [
+      {
+        "document_type": "1",
+        "document_number": "45678912",
+        "first_name": "JUAN CARLOS",
+        "family_name": "PÉREZ QUISPE",
+        "license": "Q45678912"
+      }
+    ],
+    "origin": {
+      "ubigeo": "150101",
+      "address": "AV. EJEMPLO 123, LIMA",
+      "establishment_code": "0000",
+      "establishment_ruc": "20123456789"
+    },
+    "destination": {
+      "ubigeo": "040101",
+      "address": "CALLE MERCADERES 456, AREQUIPA"
+    }
+  },
+  "lines": [
+    {
+      "quantity": "10",
+      "unit": "NIU",
+      "description": "Cuaderno A4 cuadriculado 100 hojas",
+      "product_code": "CUA-A4-100",
+      "sunat_product_code": "14111514"
+    },
+    {
+      "quantity": "2.5",
+      "unit": "KGM",
+      "description": "Papel bond reciclado & cartón"
+    }
+  ]
+}

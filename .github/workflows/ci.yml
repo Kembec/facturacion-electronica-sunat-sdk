@@ -91,7 +91,9 @@ jobs:
           "$RUNNER_TEMP/build/bin/maturin" sdist --out "$RUNNER_TEMP/dist" -m bindings/python/Cargo.toml
       - name: Version equals the Cargo workspace version
         run: python bindings/python/scripts/check_version.py --dist "$RUNNER_TEMP/dist"
-      - run: "$RUNNER_TEMP/build/bin/twine" check --strict "$RUNNER_TEMP"/dist/*
+      - name: twine check
+        run: |
+          "$RUNNER_TEMP/build/bin/twine" check --strict "$RUNNER_TEMP"/dist/*
       - name: The sdist compiles and passes the vectors
         run: bindings/python/scripts/test_wheel.sh "$RUNNER_TEMP"/dist/*.tar.gz python
 

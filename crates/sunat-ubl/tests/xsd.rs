@@ -1,4 +1,4 @@
-//! The despatch advices (`tests/despatch/*.json`), built and signed, validate against the OASIS
+//! The despatch advices (`fixtures/09-*.json`), built and signed, validate against the OASIS
 //! UBL 2.1 `DespatchAdvice` schema (`tests/xsd/ubl-2.1`). SUNAT has no test environment for despatch
 //! advices, so this schema check, the signature and the model's rules are what is verified before
 //! sending.
@@ -23,7 +23,7 @@ fn read(path: PathBuf) -> String {
 }
 
 fn signed(case: &str) -> Vec<u8> {
-    let json = read(repository().join("tests/despatch").join(format!("{case}.json")));
+    let json = read(repository().join("fixtures").join(format!("{case}.json")));
     let document = Document::from_json(&json).unwrap_or_else(|e| panic!("{case}: {e}"));
     let xml = sunat_ubl::build(&document).unwrap_or_else(|e| panic!("{case}: {e}"));
     let cert = read(repository().join("tests/vectors/test-cert/test-cert.pem"));

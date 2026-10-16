@@ -5,8 +5,8 @@ for native builds, WebAssembly (edge) and language bindings. TLS verification is
 
 | Crate | Owns | Public contract |
 |---|---|---|
-| `sunat-model` | input types (`docs/input-model.md`), serde, validation of scope | `Document` (`Invoice`, `Note`, `Summary`, `Voided`), `Document::from_json(&str) -> Result<Document, ModelError>`, `Document::file_name() -> String` (`RUC-TIPO-SERIE-NUMERO`, `RUC-RC-YYYYMMDD-N`, `RUC-RA-YYYYMMDD-N`) |
-| `sunat-ubl` | UBL 2.1 rendering of 01/03/07/08, from SUNAT's XML guides; UBL 2.0 daily summary (RC) and void communication (RA) | `build(&Document) -> Result<Vec<u8>, UblError>`: XML declaration + root element in canonical form, with the empty `ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent` that receives the signature |
+| `sunat-model` | input types (`docs/input-model.md`), serde, validation of scope | `Document` (`Invoice`, `Note`, `Summary`, `Voided`, `Despatch`), `Document::from_json(&str) -> Result<Document, ModelError>`, `Document::file_name() -> String` (`RUC-TIPO-SERIE-NUMERO`, `RUC-RC-YYYYMMDD-N`, `RUC-RA-YYYYMMDD-N`, `RUC-09-SERIE-NUMERO`); a despatch advice is checked against SUNAT's rules with their error codes |
+| `sunat-ubl` | UBL 2.1 rendering of 01/03/07/08, from SUNAT's XML guides; UBL 2.0 daily summary (RC) and void communication (RA); UBL 2.1 sender's despatch advice (09) | `build(&Document) -> Result<Vec<u8>, UblError>`: XML declaration + root element in canonical form, with the empty `ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent` that receives the signature |
 | `sunat-xmldsig` | enveloped XML-DSig as SUNAT requires it: RSA-SHA1, SHA1 digest, inclusive C14N, `Reference URI=""`, signature in the first empty `ext:ExtensionContent` | `sign(xml, cert_pem, key_pem)`, `sign_with_id(..)`, `verify(xml) -> Result<Verification, SignError>` |
 | `sunat-transport` | zip, SOAP envelopes (WS-Security UsernameToken), response and CDR parsing | `zip_document(name, xml)`, `send_bill_envelope(sol_user_full, sol_password, zip_name, zip)`, `parse_send_bill_response(&[u8]) -> SendBillOutcome { Cdr(Vec<u8>) \| Fault { code, message } }`, `read_cdr(&[u8]) -> Cdr { reference_id, response_code, description, notes }`, `get_status_cdr_envelope(...)`, `parse_get_status_cdr_response(...)` |
 | `sunat-sdk` | facade, response classification, and the web-service calls as JSON (`exchange`) | `exchange::request(Exchange, input, user, password) -> envelope` and `exchange::read(Exchange, input, Reply) -> outcome`, the JSON of `docs/cli.md` for `send`, `summary`, `ticket` and `status`, shared by the CLI and the WebAssembly binding; re-exports; `classify(code) -> ResponseClass` and `classify_cdr(code, notes)`, which makes a code 0 with a 4xxx note observed (0 accepted; 100-1999 exception; 1033 already registered; 1032 number voided or rejected; 2000-3999 rejected; 2323/2324 void-communication codes; ≥4000 observed) |
@@ -25,6 +25,11 @@ Signature identifiers default to the ones in SUNAT's invoice guide example (`IDS
 2. Signature: signing that XML with `tests/vectors/test-cert/` gives the same `DigestValue` and
    `SignatureValue` as `tests/vectors/<case>.signed.xml`, and an independent verifier accepts it.
 3. SUNAT beta: accepted (`ResponseCode` 0 or ≥4000) with the public beta credentials.
+
+The sender's despatch advice (09) cannot meet 3: SUNAT has no test environment for despatch
+advices. Its vectors are written by the SDK itself, so 1 and 2 guard against regressions; in their
+place it passes the OASIS UBL 2.1 schema and one test per SUNAT rule code it can check offline
+(`docs/input-model.md`, «Despatch advice (09)»).
 
 `tests/vectors/test-cert/` is a self-generated test certificate, valid for no taxpayer. No other
 certificate or credential enters the repository.

@@ -5,9 +5,9 @@ use serde_json::{json, Value};
 use sunat_model::{Document, ModelError};
 
 /// Reason 01 (sale), private transport, two vehicles and a driver.
-const SALE: &str = include_str!("../../../tests/despatch/09-despatch-sale.json");
+const SALE: &str = include_str!("../../../fixtures/09-despatch-sale.json");
 /// Reason 04 (between establishments of the same company), public transport.
-const BETWEEN: &str = include_str!("../../../tests/despatch/09-despatch-between-establishments.json");
+const BETWEEN: &str = include_str!("../../../fixtures/09-despatch-between-establishments.json");
 
 fn with(base: &str, edit: impl FnOnce(&mut Value)) -> Result<Document, ModelError> {
     let mut value: Value = serde_json::from_str(base).unwrap();

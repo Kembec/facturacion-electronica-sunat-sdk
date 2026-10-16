@@ -7,7 +7,8 @@ compute taxes.
 Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV only
 (affectations 10-16, 20, 21, 30-37, 40; 17 IVAP is not supported). Not supported, rejected with an
 explicit error: ISC, ICBPER, IVAP, other taxes, global discounts or charges, line charges, line
-discounts other than catalog 53 code `00` or in notes, advances, detraction, perception.
+discounts other than catalog 53 code `00` or in notes, advances, detraction on operation types 1002 and
+1004, perception.
 
 The daily summary (RC), the void communication (RA) and the sender's despatch advice (09) have their
 own sections below.
@@ -18,13 +19,14 @@ own sections below.
 |---|---|
 | `kind` | `"invoice"` (01, 03) or `"note"` (07, 08) |
 | `ubl_version` | `"2.1"` |
-| `operation_type` | catalog 51, invoice only (`"0101"`) |
+| `operation_type` | catalog 51, invoice only (`"0101"`; `"1001"` or `"1003"` with `detraction`) |
 | `document_type` | `"01"`, `"03"`, `"07"`, `"08"` |
 | `series` | `"F001"`, `"B001"` |
 | `number` | string, no padding added |
 | `issue_date` | ISO 8601 with offset, `"2026-10-15T10:30:00-05:00"` |
 | `due_date` | optional, invoice only |
 | `currency` | `"PEN"`, `"USD"` |
+| `detraction` | invoice and receipt only, see Detraction |
 | `payment_terms` | `{ "type": "Contado" }` or `{ "type": "Credito", "amount": "...", "currency": "PEN", "installments": [{ "amount": "...", "currency": "PEN", "due_date": "2026-11-15T00:00:00-05:00" }] }` |
 | `issuer` | see Issuer |
 | `customer` | see Customer |
@@ -52,6 +54,24 @@ observed on 16/10/2026, so nothing reaches SUNAT with a note on it:
 
 Vectors `01-invoice-references` (F001-6001), `03-receipt-references`, `07-credit-note-references` and
 `08-debit-note-references` (6001 each) were accepted by beta with code 0 and no notes.
+
+## Detraction
+
+`{ "code": "037", "percent": "12.00", "amount": "141.60", "account": "00-741-123456",
+"payment_means_code": "001" }`: `code` (catalog 54, 3 digits), `percent` (positive, up to 3 integer digits
+and 5 decimals), `amount` (positive, up to 2 decimals, always in soles), `account` (the supplier's
+Banco de la Nación account, 1 to 100 characters) and `payment_means_code` (catalog 59, 3 digits). Rendered
+as `cac:PaymentMeans` and `cac:PaymentTerms` with `cbc:ID` `Detraccion`, before the form of payment;
+the amount carries `currencyID="PEN"` whatever the document currency (SUNAT 3208).
+
+The caller decides whether the sale is subject to detraction and computes the amount, as for every
+amount; SUNAT checks neither the rate nor the amount against the total. The SDK rejects what SUNAT
+rejects: `detraction` is required with operation types 1001 to 1004 (3127, 3034) and refused with any
+other (3128); 1003 takes code `028` (3129); 1002 (hydrobiological resources) and 1004 (freight
+transport) need line details the SDK does not model and are rejected as out of scope. Whether a code is
+in catalog 54 (3033) or 59 (3174) is left to SUNAT. The legend `2006` («Operación sujeta a detracción»)
+goes in `legends` like any other. Vectors `01-invoice-detraction` (F001-921) and
+`03-receipt-detraction` (B001-921) were accepted by beta on 16/10/2026 with code 0 and no notes.
 
 ## Issuer
 

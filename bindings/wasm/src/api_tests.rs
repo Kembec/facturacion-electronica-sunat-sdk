@@ -19,7 +19,7 @@ fn cases() -> Vec<String> {
         .filter_map(|entry| entry.unwrap().file_name().into_string().unwrap().strip_suffix(".json").map(str::to_owned))
         .collect();
     cases.sort();
-    assert_eq!(cases.len(), 28, "fixtures");
+    assert_eq!(cases.len(), 30, "fixtures");
     cases
 }
 

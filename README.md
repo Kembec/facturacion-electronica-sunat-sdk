@@ -149,7 +149,7 @@ bindings/wasm/scripts/build.sh
 Y en tu proyecto:
 
 ```bash
-npm install ../facturacion-electronica-sunat-sdk/bindings/wasm/npm/kembec-facturacion-electronica-sunat-sdk-0.1.0-beta.1.tgz
+npm install ../facturacion-electronica-sunat-sdk/bindings/wasm/npm/kembec-facturacion-electronica-sunat-sdk-0.1.0-beta.2.tgz
 ```
 
 ## Derechos y licencia

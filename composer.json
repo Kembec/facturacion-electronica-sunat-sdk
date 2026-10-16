@@ -1,0 +1,34 @@
+{
+    "name": "kembec/facturacion-electronica-sunat-sdk",
+    "description": "PHP client for the sunat-sdk binary: build, sign, zip, send and query SUNAT (Peru) electronic vouchers.",
+    "type": "library",
+    "keywords": ["sunat", "peru", "facturacion electronica", "ubl", "xmldsig", "einvoicing"],
+    "homepage": "https://github.com/Kembec/facturacion-electronica-sunat-sdk",
+    "license": "MIT",
+    "authors": [
+        { "name": "Manuel Benancio" }
+    ],
+    "support": {
+        "issues": "https://github.com/Kembec/facturacion-electronica-sunat-sdk/issues",
+        "source": "https://github.com/Kembec/facturacion-electronica-sunat-sdk"
+    },
+    "require": {
+        "php": ">=7.4",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "ext-dom": "*",
+        "phpunit/phpunit": "^9.6 || ^10.5 || ^11.5 || ^12.0"
+    },
+    "suggest": {
+        "ext-openssl": "Needed by vendor/bin/sunat-sdk-install to download the prebuilt binary over HTTPS"
+    },
+    "autoload": {
+        "psr-4": { "Kembec\\SunatSdk\\": "bindings/php/src/" }
+    },
+    "autoload-dev": {
+        "psr-4": { "Kembec\\SunatSdk\\Tests\\": "bindings/php/tests/" }
+    },
+    "bin": ["bindings/php/bin/sunat-sdk-install"],
+    "config": { "sort-packages": true }
+}

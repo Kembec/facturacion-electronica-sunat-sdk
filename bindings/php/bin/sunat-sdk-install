@@ -1,0 +1,56 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+// Installs the prebuilt sunat-sdk matching this package's version. Usage:
+//   vendor/bin/sunat-sdk-install [--dir=<directory>]
+// Prints SUNAT_SDK_BIN=<absolute path> on stdout; progress and errors go to stderr.
+
+use Kembec\SunatSdk\Exception\SunatSdkException;
+use Kembec\SunatSdk\Install\BinaryInstaller;
+use Kembec\SunatSdk\SunatSdk;
+
+$autoloaders = [
+    $GLOBALS['_composer_autoload_path'] ?? null,
+    dirname(__DIR__, 5) . '/autoload.php',        // vendor/kembec/<package>/bindings/php/bin
+    dirname(__DIR__, 3) . '/vendor/autoload.php', // a clone of the repository
+];
+foreach ($autoloaders as $autoloader) {
+    if (is_string($autoloader) && is_file($autoloader)) {
+        require $autoloader;
+        break;
+    }
+}
+if (!class_exists(BinaryInstaller::class)) {
+    fwrite(STDERR, "sunat-sdk-install: Composer's autoload.php was not found; run composer install first.\n");
+    exit(1);
+}
+
+$directory = BinaryInstaller::defaultDirectory();
+foreach (array_slice($argv, 1) as $argument) {
+    if ($argument === '--help' || $argument === '-h') {
+        fwrite(STDOUT, "Usage: sunat-sdk-install [--dir=<directory>]\n"
+            . 'Downloads sunat-sdk v' . SunatSdk::VERSION . ' (Linux x86_64), verifies its SHA-256 and prints SUNAT_SDK_BIN=<path>.' . "\n"
+            . 'Default directory: ' . $directory . "\n");
+        exit(0);
+    }
+    if (strpos($argument, '--dir=') === 0 && strlen($argument) > 6) {
+        $directory = substr($argument, 6);
+        continue;
+    }
+    fwrite(STDERR, "sunat-sdk-install: unknown argument {$argument}; see --help\n");
+    exit(2);
+}
+
+$installer = new BinaryInstaller();
+try {
+    $path = $installer->install($directory);
+} catch (SunatSdkException $e) {
+    fwrite(STDERR, 'sunat-sdk-install: ' . $e->getMessage() . "\n");
+    exit(1);
+}
+
+fwrite(STDERR, 'Downloaded ' . $installer->releaseUrl(BinaryInstaller::ASSET) . "\n"
+    . 'SHA-256 verified; sunat-sdk v' . SunatSdk::VERSION . " installed. Pass this path to new SunatSdk(...):\n");
+fwrite(STDOUT, 'SUNAT_SDK_BIN=' . $path . "\n");

@@ -5,3 +5,8 @@
 *.p12
 *.key
 .env
+/vendor
+/composer.lock
+/composer.phar
+/.phpunit.cache
+/.phpunit.result.cache

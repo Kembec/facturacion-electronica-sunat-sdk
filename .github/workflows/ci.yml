@@ -66,8 +66,25 @@ jobs:
         with:
           php-version: "8.1"
           tools: composer:2.8.4
+      - run: composer validate --strict
+      # Includes VersionTest: SunatSdk::VERSION must equal the Cargo workspace version.
       - name: PHPUnit
-        working-directory: bindings/php
         run: |
           composer install --no-interaction --no-progress
           vendor/bin/phpunit
+      - name: The Packagist dist carries only the PHP client and installs
+        run: |
+          set -euo pipefail
+          git archive --format=tar --prefix=pkg/ HEAD | tar -x -C "$RUNNER_TEMP"
+          ( cd "$RUNNER_TEMP/pkg" && find . -type f | sort ) | tee "$RUNNER_TEMP/dist.txt"
+          allowed='^\./(composer\.json|LICENSE|NOTICE|README\.md|bindings/php/(README\.md|bin/sunat-sdk-install|src/.+\.php))$'
+          if grep -vE "$allowed" "$RUNNER_TEMP/dist.txt"; then
+            echo "files outside the PHP client in the dist"
+            exit 1
+          fi
+          mkdir "$RUNNER_TEMP/consumer"
+          cd "$RUNNER_TEMP/consumer"
+          echo '{"repositories":[{"type":"path","url":"../pkg","options":{"symlink":false}}],"require":{"kembec/facturacion-electronica-sunat-sdk":"*@dev"}}' > composer.json
+          composer install --no-interaction --no-progress
+          php -r 'require "vendor/autoload.php"; echo Kembec\SunatSdk\SunatSdk::VERSION, PHP_EOL;'
+          vendor/bin/sunat-sdk-install --help

@@ -4,8 +4,8 @@ Facturación electrónica de la SUNAT (Perú) desde PHP, JavaScript o la línea 
 los tres producen el mismo XML y la misma firma.
 
 **Estado:** genera y firma facturas, boletas, notas de crédito y notas de débito, y en cada cambio el CI exige, en los
-tres, la firma exacta de 12 vectores de prueba. La aceptación en la beta de la SUNAT todavía no está comprobada, y los
-paquetes de Composer y npm aún no están publicados.
+tres, la firma exacta de 12 vectores de prueba. La beta de la SUNAT aceptó esos 12 y los 6 resúmenes y bajas de
+prueba (16/10/2026). Los paquetes de Composer y npm aún no están publicados.
 
 Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec.com**
 
@@ -15,13 +15,14 @@ Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec
 |---|---|---|
 | Factura (01), boleta (03), nota de crédito (07) y nota de débito (08): XML UBL 2.1 y firma | Comprobado en CI | En cada cambio, el CI genera y firma los 12 casos de `fixtures/` y exige el XML de `tests/vectors/` en forma canónica, y exactamente su `DigestValue` y su `SignatureValue`. Lo hace por la CLI, por PHP y por el paquete npm en Node 18, Node 22 y Chrome. Un verificador en Python, que no comparte código con el núcleo, acepta las firmas. |
 | ZIP y lectura de la CDR | Comprobado en CI, sin red | Pruebas con CDR sintéticas, escritas según los ejemplos del manual de la SUNAT. |
-| Envío (`send`) y consulta de la CDR (`status`) | Implementado, sin probar contra la SUNAT | Los sobres SOAP siguen los ejemplos del manual. Su aceptación en la beta todavía no está comprobada. |
-| Resumen diario (RC) y comunicación de baja (RA) | Solo el contrato | Modelo de entrada y vectores firmados. `build` todavía no los genera. |
+| Envío (`send`) | Comprobado en la beta de la SUNAT | El 16/10/2026 la beta aceptó los 12 vectores firmados, enviados por la CLI tal como están en `tests/vectors/`: código 0, sin observaciones. |
+| Consulta de la CDR (`status`) | Implementado, sin probar contra la SUNAT | La SUNAT ofrece `getStatusCdr` solo en producción. El sobre sigue el ejemplo del manual. |
+| Resumen diario (RC) y comunicación de baja (RA) | Envío y consulta por ticket comprobados en la beta; `build` todavía no los genera | El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. |
 | Guía de remisión, retención y percepción | No incluidos | — |
 
 Un tipo de documento se da por incorporado cuando cumple tres criterios: su XML coincide con los vectores, su firma da
 los mismos valores y la acepta un verificador independiente, y la beta de la SUNAT lo acepta. Los cuatro tipos de la
-primera fila cumplen los dos primeros; el tercero falta.
+primera fila cumplen los tres.
 
 **Solo IGV, y sin cálculo de impuestos.** Los importes los calcula tu sistema y llegan como texto (`"118.00"`): el SDK
 los valida y los escribe. Rechaza con un error explícito ISC, ICBPER, IVAP y otros tributos, descuentos o cargos
@@ -57,7 +58,7 @@ grep -o '<ds:DigestValue>[^<]*' tests/vectors/01-invoice-taxed-cash.signed.xml
 ```
 
 Ese certificado es autogenerado y no sirve para emitir. Cada comando lee un JSON por la entrada estándar y escribe un
-JSON por la salida; `send` y `status` toman la URL y las credenciales SOL de opciones o del entorno. El contrato
+JSON por la salida; `send`, `summary`, `ticket` y `status` toman la URL y las credenciales SOL de opciones o del entorno. El contrato
 completo está en [`docs/cli.md`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md), y el
 modelo de entrada, en
 [`docs/input-model.md`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).

@@ -19,6 +19,9 @@ use crate::SignError;
 const SHA1_DIGEST_INFO: [u8; 15] = [
     0x30, 0x21, 0x30, 0x09, 0x06, 0x05, 0x2b, 0x0e, 0x03, 0x02, 0x1a, 0x05, 0x00, 0x04, 0x14,
 ];
+/// `rsaEncryption` (RFC 8017 appendix C). pkcs1 exports it only behind its `pkcs8` feature.
+pub(crate) const RSA_ENCRYPTION_OID: pkcs8::ObjectIdentifier =
+    pkcs8::ObjectIdentifier::new_unwrap("1.2.840.113549.1.1.1");
 /// Same bounds the `rsa` crate applied, so the keys accepted before are accepted now.
 const MAX_MODULUS_BITS: usize = 4096;
 const MAX_PUBLIC_EXPONENT: u64 = (1 << 33) - 1;
@@ -115,7 +118,7 @@ impl PrivateKey {
     /// From a DER `PrivateKeyInfo` (PKCS#8, `PRIVATE KEY`) whose algorithm is rsaEncryption.
     pub(crate) fn from_pkcs8_der(der: &[u8]) -> Option<Self> {
         let info = pkcs8::PrivateKeyInfo::try_from(der).ok()?;
-        if info.algorithm.oid != pkcs1::ALGORITHM_OID {
+        if info.algorithm.oid != RSA_ENCRYPTION_OID {
             return None;
         }
         Self::from_pkcs1_der(info.private_key)

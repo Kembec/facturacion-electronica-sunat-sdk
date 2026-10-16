@@ -64,7 +64,7 @@ pub(crate) fn certificate_public_key(der: &[u8]) -> Result<PublicKey, SignError>
     let cert = Certificate::from_der(der)
         .map_err(|_| SignError::InvalidCertificate("certificate does not parse as X.509"))?;
     let spki = &cert.tbs_certificate.subject_public_key_info;
-    if spki.algorithm.oid != pkcs1::ALGORITHM_OID {
+    if spki.algorithm.oid != crate::rsa_sha1::RSA_ENCRYPTION_OID {
         return Err(SignError::InvalidCertificate("certificate key is not RSA"));
     }
     spki.subject_public_key

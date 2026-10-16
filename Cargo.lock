@@ -668,7 +668,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "sunat-model"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 dependencies = [
  "serde",
  "serde_json",
@@ -676,14 +676,14 @@ dependencies = [
 
 [[package]]
 name = "sunat-sdk"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 dependencies = [
  "sunat-transport",
 ]
 
 [[package]]
 name = "sunat-sdk-cli"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 dependencies = [
  "base64",
  "serde_json",
@@ -696,7 +696,7 @@ dependencies = [
 
 [[package]]
 name = "sunat-sdk-wasm"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 dependencies = [
  "serde_json",
  "sunat-model",
@@ -707,7 +707,7 @@ dependencies = [
 
 [[package]]
 name = "sunat-transport"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 dependencies = [
  "base64",
  "quick-xml",
@@ -716,7 +716,7 @@ dependencies = [
 
 [[package]]
 name = "sunat-ubl"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 dependencies = [
  "sunat-model",
  "sunat-xmldsig",
@@ -724,7 +724,7 @@ dependencies = [
 
 [[package]]
 name = "sunat-xmldsig"
-version = "0.1.0-beta.1"
+version = "0.1.0-beta.2"
 dependencies = [
  "base64",
  "crypto-bigint",

@@ -5,9 +5,9 @@ PyPI, and the PHP package on Packagist.
 
 1. Set `version` in `[workspace.package]` of `Cargo.toml`. CI fails if `SunatSdk::VERSION` (PHP) or
    `bindings/wasm/npm/package.json` differ from it. The Python package takes it from there as PEP 440
-   (`0.1.0-beta.3` is `0.1.0b3`); `bindings/python/scripts/check_version.py` fails if a wheel, the sdist or the tag
+   (`0.1.0-beta.4` is `0.1.0b4`); `bindings/python/scripts/check_version.py` fails if a wheel, the sdist or the tag
    differ.
-2. Merge to `main` and push the tag `v<version>`. A version with `-` (`0.1.0-beta.3`) is a prerelease and goes to
+2. Merge to `main` and push the tag `v<version>`. A version with `-` (`0.1.0-beta.4`) is a prerelease and goes to
    npm under the `beta` dist-tag.
 3. `release.yml` builds and tests the artifacts, then waits on the `release` environment (only `v*` tags, the owner
    approves).
@@ -27,4 +27,4 @@ repository `facturacion-electronica-sunat-sdk`, workflow `release.yml`, environm
 To move PyPI to Trusted Publishing: add a trusted publisher on pypi.org (project `facturacion-electronica-sunat-sdk`,
 owner `Kembec`, repository `facturacion-electronica-sunat-sdk`, workflow `release.yml`, environment `release`), drop the
 `password` input from `publish-pypi` and delete `PYPI_API_TOKEN`. A version with `-` is
-a PEP 440 prerelease (`0.1.0b3`), which `pip install` skips unless asked with `--pre` or `==0.1.0b3`.
+a PEP 440 prerelease (`0.1.0b4`), which `pip install` skips unless asked with `--pre` or `==0.1.0b4`.

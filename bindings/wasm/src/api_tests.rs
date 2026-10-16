@@ -100,3 +100,23 @@ fn soap_request_is_fetch_options_and_soap_response_matches_the_cli() {
     assert!(soap_request_json("zip", doc, "u", "p").is_err());
     assert_eq!(parse(&zip_json(doc).unwrap())["file_name"], "20100066603-01-F001-1.zip");
 }
+
+#[test]
+fn validity_steps_are_fetch_options_and_outcomes_like_the_cli() {
+    let token_call = parse(&validity_token_request_json("abc-123", "s3cr=t", None).unwrap());
+    assert_eq!(token_call["url"], "https://api-seguridad.sunat.gob.pe/v1/clientesextranet/abc-123/oauth2/token/");
+    assert!(token_call["body"].as_str().unwrap().ends_with("client_secret=s3cr%3Dt"));
+    let token = parse(&validity_token_response_json(200, br#"{"access_token":"t0k","token_type":"JWT","expires_in":3600}"#).unwrap());
+    assert_eq!(token["access_token"], "t0k");
+
+    let input = r#"{"ruc":"20100066603","document_type":"03","series":"B001","number":7,"issue_date":"2026-10-15","total":"118.00"}"#;
+    let query = parse(&validity_request_json(input, "t0k", Some("https://api.test/x")).unwrap());
+    assert_eq!(query["url"], "https://api.test/x/20100066603/validarcomprobante");
+    assert_eq!(query["headers"]["Authorization"], "Bearer t0k");
+    let found = parse(&validity_response_json(200, br#"{"success":true,"message":"ok","data":{"estadoCp":"0"}}"#).unwrap());
+    assert_eq!((found["outcome"].as_str(), found["state"].as_str()), (Some("validity"), Some("not_reported")));
+    assert_eq!(parse(&validity_response_json(401, b"").unwrap())["stage"], "query");
+    assert_eq!(parse(&validity_timeout_json("token", 30).unwrap())["reason"], "timeout");
+    assert!(validity_timeout_json("send", 30).is_err());
+    assert!(validity_request_json(r#"{"ruc":"1"}"#, "t0k", None).is_err());
+}

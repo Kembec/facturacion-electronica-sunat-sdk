@@ -8,7 +8,7 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[3]
-EXPECTED_CASES = 22
+EXPECTED_CASES = 26
 
 
 def read(relative: str) -> str:

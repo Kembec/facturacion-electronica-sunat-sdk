@@ -167,6 +167,16 @@ pub struct NoteReference {
     pub affected_document_number: String,
 }
 
+/// A despatch guide the document cites (one `cac:DespatchDocumentReference`).
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct DespatchReference {
+    /// Catalog 01: `"09"` (sender's guide) or `"31"` (carrier's guide).
+    pub document_type: String,
+    /// `SERIES-NUMBER`, e.g. `T001-45`.
+    pub number: String,
+}
+
 /// Fields every document (01, 03, 07, 08) carries.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Voucher {
@@ -182,6 +192,9 @@ pub struct Voucher {
     pub totals: Totals,
     pub lines: Vec<Line>,
     pub legends: Vec<Legend>,
+    /// Purchase order or service order number (`cac:OrderReference`).
+    pub order_reference: Option<String>,
+    pub despatch_references: Vec<DespatchReference>,
 }
 
 /// Invoice (01) or receipt (03).

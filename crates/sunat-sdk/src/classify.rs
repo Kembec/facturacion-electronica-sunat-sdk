@@ -6,7 +6,8 @@
 pub enum ResponseClass {
     /// 0: accepted without observations.
     Accepted,
-    /// 4000 and above: accepted with observations (the notes of the CDR).
+    /// 4000 and above, or a CDR with code 0 and an observation note (4000 and above): accepted
+    /// with observations.
     Observed,
     /// 100-1999 except 1032 and 1033: the file was not processed; the document counts as not
     /// reported and may be sent again after fixing it.
@@ -67,6 +68,25 @@ pub fn classify_code(code: &str) -> Option<ResponseClass> {
     code.trim().parse::<u32>().ok().map(classify)
 }
 
+/// Classifies a CDR by its `ResponseCode` and its `cbc:Note`s. SUNAT accepts with code 0 and
+/// writes the observations as notes (`"4287 - ..."`, manual annex B.10), so code 0 with an
+/// observation note is `Observed`. `None` if the code is not a number.
+pub fn classify_cdr(response_code: &str, notes: &[String]) -> Option<ResponseClass> {
+    let class = classify_code(response_code)?;
+    let observed = notes.iter().any(|note| note_code(note).is_some_and(|code| code >= 4000));
+    if class == ResponseClass::Accepted && observed {
+        return Some(ResponseClass::Observed);
+    }
+    Some(class)
+}
+
+/// The code a CDR note starts with: `"4287 - El precio ..."` and `"4001-..."` give 4287 and 4001.
+fn note_code(note: &str) -> Option<u32> {
+    let note = note.trim_start();
+    let digits = note.len() - note.trim_start_matches(|c: char| c.is_ascii_digit()).len();
+    note[..digits].parse().ok()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -107,6 +127,18 @@ mod tests {
         assert_eq!(classify_code("1033"), Some(AlreadyRegistered));
         assert_eq!(classify_code(""), None);
         assert_eq!(classify_code("CDR"), None);
+    }
+
+    #[test]
+    fn a_cdr_with_code_0_and_an_observation_note_is_observed() {
+        let notes = |list: &[&str]| list.iter().map(|n| n.to_string()).collect::<Vec<_>>();
+        assert_eq!(classify_cdr("0", &[]), Some(Accepted));
+        assert_eq!(classify_cdr("0", &notes(&["4287 - El precio unitario difiere"])), Some(Observed));
+        assert_eq!(classify_cdr("0", &notes(&["sin código", " 4001-Observación"])), Some(Observed));
+        assert_eq!(classify_cdr("0", &notes(&["Texto libre", "3999 - no es observación"])), Some(Accepted));
+        assert_eq!(classify_cdr("2047", &notes(&["4287 - ..."])), Some(Rejected), "a note never softens a rejection");
+        assert_eq!(classify_cdr("4031", &[]), Some(Observed));
+        assert_eq!(classify_cdr("CDR", &notes(&["4287 - ..."])), None);
     }
 
     #[test]

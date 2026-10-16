@@ -36,6 +36,9 @@ final class OfflineCommandsTest extends BinaryTestCase
         self::assertSame('0', $cdr->getResponseCode());
         self::assertSame('La Factura numero F001-1, ha sido aceptada', $cdr->getDescription());
         self::assertSame(['4252 - El dato ingresado como atributo @listName es incorrecto'], $cdr->getNotes());
-        self::assertTrue($cdr->isAccepted());
+        // Code 0 with an observation note: SUNAT registered it, with observations (contract S3).
+        self::assertSame('observed', $cdr->getClass());
+        self::assertFalse($cdr->isAccepted());
+        self::assertTrue($cdr->isValidDocument());
     }
 }

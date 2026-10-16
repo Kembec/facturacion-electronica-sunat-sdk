@@ -8,7 +8,7 @@ use sunat_sdk::transport::{
     SOAP_ACTION_GET_STATUS_CDR, SOAP_ACTION_SEND_BILL,
 };
 use sunat_sdk::{
-    classify_code, get_status_cdr_envelope, parse_get_status_cdr_response,
+    classify_cdr, classify_code, get_status_cdr_envelope, parse_get_status_cdr_response,
     parse_send_bill_response, read_cdr, send_bill_envelope, zip_document, zip_file_name, Cdr,
     SendBillOutcome, StatusCdrOutcome,
 };
@@ -95,7 +95,7 @@ fn cdr_json(cdr: &Cdr) -> Value {
         "response_code": cdr.response_code,
         "description": cdr.description,
         "notes": cdr.notes,
-        "class": classify_code(&cdr.response_code).map(|c| c.as_str()),
+        "class": classify_cdr(&cdr.response_code, &cdr.notes).map(|c| c.as_str()),
     })
 }
 

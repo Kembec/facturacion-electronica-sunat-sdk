@@ -165,10 +165,8 @@ fn without_extension_content_the_signature_goes_last_in_the_root() {
 
 #[test]
 fn a_key_from_another_certificate_is_refused_without_leaking_it() {
-    use rsa::pkcs8::{EncodePrivateKey, LineEnding};
     let case = &cases()[0];
-    let other = rsa::RsaPrivateKey::new(&mut rand_core::OsRng, 1024).unwrap();
-    let other_pem = other.to_pkcs8_pem(LineEnding::LF).unwrap();
+    let other_pem = String::from_utf8(read(&vectors_dir().join("test-cert/other-key.pem"))).unwrap();
     let err = sign(&unsigned(case), &cert_pem(), &other_pem).unwrap_err();
     assert_eq!(err, SignError::KeyCertificateMismatch);
 

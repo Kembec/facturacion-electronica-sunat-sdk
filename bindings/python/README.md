@@ -97,7 +97,7 @@ sent = sunat_sdk.exchange(
 
 ## Cómo se comprueba
 
-En cada cambio, el CI instala el paquete en un entorno limpio y exige, para los 28 vectores de prueba del repositorio, el
+En cada cambio, el CI instala el paquete en un entorno limpio y exige, para los 30 vectores de prueba del repositorio, el
 XML sin firmar igual al del vector en C14N y el `DigestValue` y el `SignatureValue` exactos: las mismas firmas que dieron
 código 0 en la beta de la SUNAT el 16/10/2026, enviadas con la CLI. `exchange` se prueba contra un servidor local, sin
 red.

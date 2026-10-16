@@ -4,6 +4,9 @@
 mod daily;
 mod datetime;
 mod decimal;
+mod despatch;
+mod despatch_rules;
+mod despatch_transport;
 mod error;
 mod raw;
 mod references;
@@ -14,6 +17,7 @@ mod validate;
 pub use daily::{DocumentReference, Summary, SummaryLine, Voided, VoidedLine};
 pub use datetime::{Date, DateTime, LimaDateTime};
 pub use decimal::Decimal;
+pub use despatch::{Carrier, Despatch, DespatchLine, DespatchParty, Driver, Place, RelatedDocument, Shipment, Vehicle};
 pub use error::ModelError;
 pub use scope::is_xml_text;
 pub use types::{
@@ -22,13 +26,14 @@ pub use types::{
 };
 
 /// Documents: invoice or receipt (`Invoice`), credit or debit note (`Note`). Summaries: daily summary
-/// (`Summary`, RC) and void communication (`Voided`, RA).
+/// (`Summary`, RC) and void communication (`Voided`, RA). Despatch: sender's despatch advice (`Despatch`, 09).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Document {
     Invoice(Invoice),
     Note(Note),
     Summary(Summary),
     Voided(Voided),
+    Despatch(Despatch),
 }
 
 impl Document {
@@ -44,12 +49,12 @@ impl Document {
         match self {
             Document::Invoice(invoice) => Some(&invoice.voucher),
             Document::Note(note) => Some(&note.voucher),
-            Document::Summary(_) | Document::Voided(_) => None,
+            Document::Summary(_) | Document::Voided(_) | Document::Despatch(_) => None,
         }
     }
 
     /// The name SUNAT expects for the XML and its zip: `RUC-TYPE-SERIES-NUMBER`, or
-    /// `RUC-RC-YYYYMMDD-N` and `RUC-RA-YYYYMMDD-N`.
+    /// `RUC-RC-YYYYMMDD-N` and `RUC-RA-YYYYMMDD-N`; a despatch advice is `RUC-09-SERIES-NUMBER`.
     pub fn file_name(&self) -> String {
         match self {
             Document::Invoice(Invoice { voucher, .. }) | Document::Note(Note { voucher, .. }) => format!(
@@ -61,6 +66,7 @@ impl Document {
             ),
             Document::Summary(summary) => format!("{}-{}", summary.issuer.ruc, summary.identifier()),
             Document::Voided(voided) => format!("{}-{}", voided.issuer.ruc, voided.identifier()),
+            Document::Despatch(despatch) => format!("{}-09-{}", despatch.issuer.ruc, despatch.identifier()),
         }
     }
 }

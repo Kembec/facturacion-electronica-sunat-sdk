@@ -1,7 +1,7 @@
-//! Runs `build` and `sign` through the binary on every fixture (vouchers `0[1378]-`, daily summaries
-//! `rc-` and void communications `ra-`): the built XML equals
-//! `tests/vectors/<case>.unsigned.xml` under inclusive C14N (the vectors come from another
-//! serializer: declaration, CDATA and empty elements differ), and signing it with
+//! Runs `build` and `sign` through the binary on every fixture (vouchers `0[1378]-`, despatch
+//! advices `09-`, daily summaries `rc-` and void communications `ra-`): the built XML equals
+//! `tests/vectors/<case>.unsigned.xml` under inclusive C14N (all but the `09-` vectors come
+//! from another serializer: declaration, CDATA and empty elements differ), and signing it with
 //! `tests/vectors/test-cert/` gives the `DigestValue` and `SignatureValue` of `<case>.signed.xml`.
 //! Also the error paths: stderr JSON, exit 1, empty stdout.
 
@@ -11,7 +11,7 @@ use std::process::{Command, Output, Stdio};
 
 use serde_json::{json, Value};
 
-const EXPECTED_CASES: usize = 28;
+const EXPECTED_CASES: usize = 30;
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")

@@ -214,7 +214,7 @@ Un tipo de documento entra al SDK cuando cumple tres condiciones: su XML coincid
 [`tests/vectors/`](tests/vectors), su firma da exactamente el mismo `DigestValue` y el mismo `SignatureValue` y la acepta
 un verificador independiente, y la beta de la SUNAT lo acepta.
 
-- **En cada cambio**, el CI arma y firma los 28 casos de [`fixtures/`](fixtures) por la CLI, por PHP, por el paquete
+- **En cada cambio**, el CI arma y firma los 30 casos de [`fixtures/`](fixtures) por la CLI, por PHP, por el paquete
   npm en Node 18, Node 22 y Chrome, y por el paquete de Python instalado, y exige el `DigestValue` y el `SignatureValue`
   exactos de su vector. Un verificador en Python que no comparte código con el núcleo acepta las firmas.
 - **En la beta de la SUNAT**, el 16/10/2026, enviados con la CLI: los 15 comprobantes, aceptados con código 0 y sin

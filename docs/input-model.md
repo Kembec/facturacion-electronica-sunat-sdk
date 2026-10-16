@@ -10,6 +10,9 @@ explicit error: ISC, ICBPER, IVAP, other taxes, global discounts or charges, lin
 discounts other than catalog 53 code `00` or in notes, advances, detraction on operation types 1002 and
 1004, perception.
 
+The daily summary (RC), the void communication (RA) and the sender's despatch advice (09) have their
+own sections below.
+
 ## Document
 
 | Field | Notes |
@@ -162,3 +165,76 @@ dates are `YYYY-MM-DD`.
 
 `build` renders both (`file_name` `RUC-RC-YYYYMMDD-N` or `RUC-RA-YYYYMMDD-N`). Both are sent with
 `sendSummary` and return a ticket; the CDR comes from `getStatus` with that ticket.
+
+# Despatch advice (09)
+
+The sender's despatch advice (guía de remisión remitente): UBL 2.1 `DespatchAdvice`, SUNAT
+customization 2.0. `build` renders it with `file_name` `RUC-09-SERIES-NUMBER` and `sign` signs it like
+any other document. Sending it is not covered: SUNAT receives despatch advices only through its REST
+service, not through `sendBill`.
+
+Not supported, rejected with an explicit error: transfer reasons `08`, `09` and `18` (imports, exports,
+itinerant issuer: ports, airports, containers and customs data), related documents `49` and `80`
+(they need an item with its tariff heading) and any `document_type` other than `09`, such as the
+carrier's despatch advice (31). The carrier's vehicle and driver registration indicator is not
+rendered.
+
+## Despatch (`kind: "despatch"`)
+
+| Field | Notes |
+|---|---|
+| `ubl_version` | `"2.1"` (2110) |
+| `document_type` | `"09"` (1051) |
+| `series` | `T` and 3 uppercase letters or digits, `"T001"` (1001) |
+| `number` | 1 to 8 digits, string |
+| `issue_date` | ISO 8601 with offset |
+| `note` | optional |
+| `issuer` | the sender, see Issuer (`ruc` and `legal_name` required) |
+| `recipient` | `{ "document_type", "document_number", "legal_name" }`, catalog 06 |
+| `seller` | optional, same shape; checked for reasons 02, 07 and 13 |
+| `buyer` | optional, same shape; checked for reasons 03 and 13 |
+| `related_documents` | optional, `[{ "document_type", "document_number", "description", "issuer_ruc" }]`, catalog 61; `issuer_ruc` is required for 01, 03, 04, 09, 12 and 48 (3380) |
+| `shipment` | see Shipment |
+| `lines` | 1 to 9999: `{ "quantity", "unit", "description", "product_code", "sunat_product_code" }`; `quantity` positive with up to 10 decimals, `unit` catalog 03, `sunat_product_code` catalog 25 (up to 8 digits) |
+
+## Shipment
+
+| Field | Notes |
+|---|---|
+| `reason_code` | catalog 20: `01`-`07`, `13`, `14`, `17` |
+| `reason_description` | required for reason `13` (3457) |
+| `transport_mode` | catalog 18: `"01"` public (a carrier moves the goods), `"02"` private (the sender does) |
+| `start_date` | `"2026-10-15"`, not before the issue date; required in private transport or with M1 or L vehicles (3406) |
+| `gross_weight`, `weight_unit` | required; up to 12 integer digits and 3 decimals; `"KGM"` or `"TNE"` |
+| `packages` | optional, number of packages or pallets |
+| `m1_or_l_vehicle` | `true` when the goods travel in M1 or L category vehicles: then no driver, at most one plate, and the carrier is not required |
+| `carrier` | public transport only, required unless `m1_or_l_vehicle`: `{ "ruc", "legal_name", "mtc_registration" }`; not the sender (2560) |
+| `vehicles` | private transport (at least the main one), or one plate with `m1_or_l_vehicle`: `[{ "plate" }]`, the first is the main vehicle; 6 to 8 uppercase letters or digits |
+| `drivers` | private transport without `m1_or_l_vehicle`, at least the main one: `[{ "document_type", "document_number", "first_name", "family_name", "license" }]`, the first is the main driver; `license` 9 or 10 uppercase letters or digits |
+| `origin`, `destination` | `{ "ubigeo", "address", "establishment_code", "establishment_ruc" }`; the establishment code and RUC go together, and reason `04` (between establishments of the same company) requires both with the sender's RUC |
+
+In public transport the carrier names its own vehicles and drivers, so the despatch advice carries
+none (3354, 3455).
+
+## What is checked, and what is not
+
+SUNAT has no test environment for despatch advices: its beta does not receive them. A despatch advice
+is checked here by:
+
+1. Its SUNAT validation rules that read only the XML (sheet «Guía-Remitente2_0», type XSL), each
+   rejected with the code SUNAT would answer: `{"error": "$.shipment.carrier.ruc: must not be the
+   sender (SUNAT ERR-2560)"}`. Observations (4000 and above) are not enforced. One test per code in
+   `crates/sunat-model/tests/despatch_rules.rs`.
+2. Its vectors: `fixtures/09-despatch-sale.json` (reason 01, private transport) and
+   `fixtures/09-despatch-between-establishments.json` (reason 04, public transport) give
+   `tests/vectors/09-*.unsigned.xml` and the `DigestValue` and `SignatureValue` of
+   `tests/vectors/09-*.signed.xml` through the core, the CLI, PHP, npm and Python. These two vectors
+   were written by this SDK, not by another serializer: they guard against regressions, they do not
+   prove compatibility. The independent verifier accepts their signatures.
+3. The OASIS UBL 2.1 `DespatchAdvice` schema (`tests/xsd/ubl-2.1`), validated with lxml on both signed
+   vectors (`crates/sunat-ubl/tests/xsd.rs`).
+
+Not checked here, because SUNAT answers them from its registries or at reception: the reception date
+(2108, 2329), the sender's, recipient's and carrier's taxpayer status, RENIEC identities, the MTC
+registration, the registered establishments (3366, 3367, 3370, 3371, 3412) and whether the related
+documents were issued.

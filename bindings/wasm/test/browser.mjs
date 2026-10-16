@@ -6,7 +6,6 @@ import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { createRequire } from 'node:module';
-import { tmpdir } from 'node:os';
 import { dirname, extname, join, normalize, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -78,13 +77,15 @@ const server = createServer((request, response) => {
 
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const address = `http://127.0.0.1:${server.address().port}/`;
-const profile = mkdtempSync(join(tmpdir(), 'sdk-chrome-'));
+// Inside the consumer directory, which test-package.sh removes once every process has ended.
+const profile = mkdtempSync(join(here, '.chrome-profile-'));
 // --no-sandbox: CI runners lack the user namespaces Chrome's sandbox needs; the page is our own.
 const chrome = spawn(
   chromeBinary(),
   ['--headless=new', '--no-sandbox', '--disable-gpu', '--no-first-run', '--no-default-browser-check',
     `--user-data-dir=${profile}`, address],
-  { stdio: ['ignore', 'ignore', 'pipe'] },
+  // Own process group, so the kill below also reaches the helper processes Chrome forks.
+  { stdio: ['ignore', 'ignore', 'pipe'], detached: true },
 );
 let chromeLog = '';
 chrome.stderr.on('data', (chunk) => (chromeLog += chunk));
@@ -95,16 +96,20 @@ const result = await outcome;
 clearTimeout(timer);
 for (const line of result.lines ?? []) console.log(line);
 
-// Chrome keeps writing its profile until it has exited: wait for it before removing the directory
-// (CI run 38838510084 failed with ENOTEMPTY when the removal raced the kill).
+// Chrome's helpers keep writing the profile after the main process exits (CI runs 38838510084 and
+// 38838889253: ENOTEMPTY on removal), so the whole group is killed and the removal is best effort.
 chrome.removeAllListeners('exit');
 if (chrome.exitCode === null && chrome.signalCode === null) {
   const exited = new Promise((resolve) => chrome.once('exit', resolve));
-  chrome.kill();
+  process.kill(-chrome.pid, 'SIGKILL');
   await exited;
 }
 server.close();
-rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+try {
+  rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+} catch (error) {
+  console.warn(`profile left for the caller to remove: ${error.message}`);
+}
 
 if (!result.ok) {
   console.error(result.error);

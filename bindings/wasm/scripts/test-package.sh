@@ -10,7 +10,8 @@ tarball="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 tests="$root/bindings/wasm/test"
 consumer="$(mktemp -d)"
-trap 'rm -r "$consumer"' EXIT
+# A second try covers a Chrome helper that was still dying when the first removal ran.
+trap 'rm -r "$consumer" 2>/dev/null || { sleep 1; rm -r "$consumer"; } || true' EXIT
 
 cp "$tests"/{vectors,node-consumer,browser,browser-page}.mjs "$tests/types-consumer.mts" "$consumer/"
 cd "$consumer"

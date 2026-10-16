@@ -1,4 +1,4 @@
-//! Phase 2 input (`docs/input-model.md`, «Phase 2»): the daily summary (RC) of receipts and the
+//! Summary input (`docs/input-model.md`, «Daily summary (RC) and void communication (RA)»): the daily summary (RC) of receipts and the
 //! notes that modify them, and the void communication (RA). Both go to SUNAT with `sendSummary`.
 
 use serde::de::DeserializeOwned;

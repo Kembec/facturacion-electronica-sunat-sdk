@@ -1,4 +1,4 @@
-# Architecture (phases 1 and 2)
+# Architecture
 
 Sans-IO core: crates build and parse bytes; only `bindings/` do network or file I/O. That keeps one core
 for native builds, WebAssembly (edge) and language bindings. TLS verification is never disabled.

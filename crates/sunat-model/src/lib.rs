@@ -1,4 +1,4 @@
-//! sunat-model: the input of phases 1 and 2 (`docs/input-model.md`), its JSON form and its scope
+//! sunat-model: the input (`docs/input-model.md`), its JSON form and its scope
 //! checks.
 
 mod daily;
@@ -20,7 +20,7 @@ pub use types::{
     Totals, Voucher,
 };
 
-/// Phase 1: invoice or receipt (`Invoice`), credit or debit note (`Note`). Phase 2: daily summary
+/// Documents: invoice or receipt (`Invoice`), credit or debit note (`Note`). Summaries: daily summary
 /// (`Summary`, RC) and void communication (`Voided`, RA).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Document {
@@ -38,7 +38,7 @@ impl Document {
         Ok(document)
     }
 
-    /// The voucher of a phase 1 document; `None` for a summary or a void communication.
+    /// The voucher of a document (01, 03, 07, 08); `None` for a summary or a void communication.
     pub fn voucher(&self) -> Option<&Voucher> {
         match self {
             Document::Invoice(invoice) => Some(&invoice.voucher),

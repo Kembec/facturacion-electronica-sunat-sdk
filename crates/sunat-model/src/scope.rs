@@ -1,4 +1,4 @@
-//! Checks on the raw JSON before it is typed: features outside phase 1 get a named error instead
+//! Checks on the raw JSON before it is typed: unsupported features get a named error instead
 //! of a generic "unknown field", and no string may hold a character XML 1.0 forbids.
 
 use serde_json::Value;

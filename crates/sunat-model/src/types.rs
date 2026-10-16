@@ -5,7 +5,7 @@ use serde::Deserialize;
 
 use crate::{DateTime, Decimal};
 
-/// Catalog 01 document types of phase 1.
+/// Catalog 01 document types the SDK renders.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum DocumentType {
     Invoice,
@@ -167,7 +167,7 @@ pub struct NoteReference {
     pub affected_document_number: String,
 }
 
-/// Fields every phase 1 document carries.
+/// Fields every document (01, 03, 07, 08) carries.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Voucher {
     pub ubl_version: String,

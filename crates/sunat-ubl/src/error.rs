@@ -5,7 +5,7 @@ use sunat_model::ModelError;
 /// Why a document could not be rendered.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum UblError {
-    /// The document is outside phase 1 or misses a field the XML needs.
+    /// The document uses an unsupported feature or misses a field the XML needs.
     Model(ModelError),
     /// A rendering option is unusable.
     InvalidOption(&'static str),

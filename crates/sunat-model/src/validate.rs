@@ -1,6 +1,6 @@
 use crate::{Company, Decimal, Document, DocumentType, Line, LineDiscount, ModelError, Summary, SummaryLine, Voided, Voucher};
 
-/// Catalog 07 codes phase 1 renders. 17 (IVAP) is excluded: it needs IVAP totals.
+/// Catalog 07 codes the SDK renders. 17 (IVAP) is excluded: it needs IVAP totals.
 const AFFECTATIONS: &[&str] = &[
     "10", "11", "12", "13", "14", "15", "16", "20", "21", "30", "31", "32", "33", "34", "35", "36", "37", "40",
 ];

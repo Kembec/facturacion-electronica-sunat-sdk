@@ -28,8 +28,6 @@ fn out_of_scope_features_get_named_errors() {
             other => panic!("{feature}: {other:?}"),
         }
     }
-    let ivap = with(|v| v["lines"][0]["affectation"] = serde_json::json!("17"));
-    assert!(matches!(ivap, Err(ModelError::OutOfScope { .. })));
 }
 
 #[test]

@@ -4,9 +4,9 @@ One JSON document per voucher, snake_case English field names. Decimal amounts a
 (`"118.00"`), never floats. Amounts are given by the caller: the SDK renders and validates, it does not
 compute taxes.
 
-Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV only
-(affectations 10-16, 20, 21, 30-37, 40; 17 IVAP is not supported). Not supported, rejected with an
-explicit error: ISC, ICBPER, IVAP, other taxes, global discounts or charges, line charges, line
+Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV (affectations
+10-16, 20, 21, 30-37, 40) and IVAP (affectation 17, see IVAP). Not supported, rejected with an
+explicit error: ISC, ICBPER, other taxes, global discounts or charges, line charges, line
 discounts other than catalog 53 code `00` or in notes, advances, detraction on operation types 1002 and
 1004, perception.
 
@@ -85,8 +85,23 @@ issuer's), `email`, `telephone`.
 
 ## Totals
 
-`taxed`, `unaffected`, `exempt`, `export`, `free`, `free_igv`, `igv`, `total_taxes`, `sale_value`,
-`subtotal`, `rounding`, `payable`. An absent total is not rendered.
+`taxed`, `unaffected`, `exempt`, `export`, `free`, `free_igv`, `igv`, `ivap_base`, `ivap`,
+`total_taxes`, `sale_value`, `subtotal`, `rounding`, `payable`. An absent total is not rendered.
+
+## IVAP
+
+Sale of rice under the IVAP (Impuesto a la Venta de Arroz Pilado), in invoices, receipts and notes.
+Every line takes `affectation` `"17"`, with the tax in the line's IGV fields (`igv_base`, `igv_rate`
+`"4.00"`, `igv`); the document carries `totals.ivap_base` and `totals.ivap`, rendered as a
+`cac:TaxSubtotal` with scheme `1016` `IVAP` `VAT`, and each line's subtotal takes the same scheme.
+
+The SDK rejects what SUNAT rejects: a line with another affectation next to a line with 17 (2644), a
+document with lines 17 and no `ivap_base` or `ivap`, those totals without lines 17, and a credit or
+debit note with lines 17 whose `reason_code` is not `"12"`, «Ajustes afectos al IVAP» in catalogs 09
+and 10 (3230: beta rejected a credit note with type 07 and a debit note with type 02). The amounts and the legend `2007`
+(«Operación sujeta al IVAP») stay with the caller; the vectors carry it in `legends`. Vectors
+`01-invoice-ivap` (F001-1701), `03-receipt-ivap` (B001-1701), `07-credit-note-ivap` (FC01-1702) and
+`08-debit-note-ivap` (FD01-1702) were accepted by beta on 16/10/2026 with code 0 and no notes.
 
 ## Line
 
@@ -106,7 +121,7 @@ already net of the declared discount (3271) and accepted the same receipt with o
 
 ## Note (07, 08)
 
-`reason_code` (catalog 09 or 10), `reason`, `affected_document_type`, `affected_document_number`
+`reason_code` (catalog 09 or 10; `"12"` with IVAP lines), `reason`, `affected_document_type`, `affected_document_number`
 (`"F001-123"`).
 
 # Daily summary (RC) and void communication (RA)

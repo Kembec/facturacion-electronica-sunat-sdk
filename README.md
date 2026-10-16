@@ -214,7 +214,7 @@ Un tipo de documento entra al SDK cuando cumple tres condiciones: su XML coincid
 [`tests/vectors/`](tests/vectors), su firma da exactamente el mismo `DigestValue` y el mismo `SignatureValue` y la acepta
 un verificador independiente, y la beta de la SUNAT lo acepta.
 
-- **En cada cambio**, el CI arma y firma los 30 casos de [`fixtures/`](fixtures) por la CLI, por PHP, por el paquete
+- **En cada cambio**, el CI arma y firma los 34 casos de [`fixtures/`](fixtures) por la CLI, por PHP, por el paquete
   npm en Node 18, Node 22 y Chrome, y por el paquete de Python instalado, y exige el `DigestValue` y el `SignatureValue`
   exactos de su vector. Un verificador en Python que no comparte código con el núcleo acepta las firmas.
 - **En la beta de la SUNAT**, el 16/10/2026, enviados con la CLI: los 15 comprobantes, aceptados con código 0 y sin
@@ -234,7 +234,7 @@ la observación 4288 en la boleta.
 
 **Lo que el SDK no cubre lo rechaza con un error explícito**, en vez de generar un XML que la SUNAT rechazaría:
 
-- en comprobantes: ISC, ICBPER, IVAP y otros tributos, descuentos y cargos globales, cargos por línea, descuentos por
+- en comprobantes: ISC, ICBPER y otros tributos, descuentos y cargos globales, cargos por línea, descuentos por
   línea con un código distinto de 00 o en notas de crédito y débito, anticipos, detracción en operaciones 1002 y 1004 y percepción;
 - en resúmenes diarios: percepción, ICBPER, ISC e IVAP en las líneas, y los resúmenes de reversión (RR).
 
@@ -245,6 +245,9 @@ la observación 4288 en la boleta.
 **Detracción**: en facturas y boletas con operación 1001 o 1003 (`detraction`: código de bien o servicio, porcentaje,
 monto en soles, cuenta del Banco de la Nación y medio de pago). El monto lo calcula tu sistema; el SDK exige la
 detracción con esas operaciones y la rechaza con cualquier otra.
+
+**IVAP**: venta de arroz pilado en facturas, boletas y notas, con todas las líneas en afectación 17 y los totales
+`ivap_base` e `ivap`. Las notas de crédito y débito van con el tipo 12, «Ajustes afectos al IVAP».
 
 La guía de remisión, el comprobante de retención y el de percepción no forman parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).

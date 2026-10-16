@@ -80,6 +80,10 @@ pub struct Totals {
     pub free: Option<Decimal>,
     pub free_igv: Option<Decimal>,
     pub igv: Option<Decimal>,
+    /// Base of the lines with affectation 17, sale of rice under the IVAP (`TaxSubtotal` 1016).
+    pub ivap_base: Option<Decimal>,
+    /// IVAP of those lines, 4 % of `ivap_base`.
+    pub ivap: Option<Decimal>,
     pub total_taxes: Option<Decimal>,
     pub sale_value: Option<Decimal>,
     pub subtotal: Option<Decimal>,

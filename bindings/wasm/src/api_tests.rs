@@ -75,3 +75,28 @@ fn sign_error_does_not_carry_key_material() {
     let key_line = key().lines().nth(1).unwrap().to_owned();
     assert!(!message.contains(&key_line[1..]), "error must not carry key material");
 }
+
+#[test]
+fn soap_request_is_fetch_options_and_soap_response_matches_the_cli() {
+    let doc = r#"{"name": "20100066603-01-F001-1", "xml": "<Invoice/>"}"#;
+    let post = parse(&soap_request_json("send", doc, "20100066603MODDATOS", "moddatos").unwrap());
+    assert_eq!(post["method"], "POST");
+    assert_eq!(post["headers"], serde_json::json!({ "Content-Type": "text/xml; charset=utf-8", "SOAPAction": "\"urn:sendBill\"" }));
+    assert!(post["body"].as_str().unwrap().contains("<fileName>20100066603-01-F001-1.zip</fileName>"));
+
+    let cdr_zip = std::fs::read(root().join("crates/sunat-transport/tests/data/R-20150147718-01-FT01-982.zip")).unwrap();
+    let cdr_base64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &cdr_zip);
+    let answer = format!("<S:Envelope xmlns:S=\"s\"><S:Body><n:sendBillResponse xmlns:n=\"n\"><applicationResponse>{cdr_base64}</applicationResponse></n:sendBillResponse></S:Body></S:Envelope>");
+    let sent = parse(&soap_response_json("send", doc, 200, answer.as_bytes()).unwrap());
+    assert_eq!((sent["outcome"].as_str(), sent["cdr"]["class"].as_str()), (Some("cdr"), Some("rejected")));
+    let read_alone = parse(&cdr_json(&format!(r#"{{"cdr_base64": "{cdr_base64}"}}"#)).unwrap());
+    assert_eq!(read_alone, sent["cdr"]);
+
+    let ticket = r#"{"ticket": "1760620000123"}"#;
+    let unauthorized = parse(&soap_response_json("ticket", ticket, 401, b"").unwrap());
+    assert_eq!((unauthorized["outcome"].as_str(), unauthorized["ticket"].as_str()), (Some("no_verdict"), Some("1760620000123")));
+    assert_eq!(parse(&soap_timeout_json("status", "{}", 45).unwrap())["reason"], "timeout");
+    assert!(soap_timeout_json("send", doc, 45).unwrap_err().contains("outcome is unknown"));
+    assert!(soap_request_json("zip", doc, "u", "p").is_err());
+    assert_eq!(parse(&zip_json(doc).unwrap())["file_name"], "20100066603-01-F001-1.zip");
+}

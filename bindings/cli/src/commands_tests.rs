@@ -1,5 +1,9 @@
 use std::cell::RefCell;
 
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine;
+use serde_json::json;
+
 use super::*;
 
 const CDR_REJECTED_ZIP: &[u8] = include_bytes!("../../../crates/sunat-transport/tests/data/R-20150147718-01-FT01-982.zip");

@@ -13,6 +13,7 @@ for native builds, WebAssembly (edge) and language bindings. TLS verification is
 | `bindings/cli` | `sunat-sdk` binary: JSON on stdin, JSON on stdout; HTTP with TLS verification | `build`, `sign`, `zip`, `send`, `status`, `cdr`; endpoints and credentials from flags or environment, never in code |
 | `bindings/php` | Composer package for PHP consumers, calling the CLI | mirrors the CLI commands |
 | `bindings/wasm` | npm package: the core compiled to WebAssembly, no I/O | `build`, `sign`, `zip`, `cdr`; `soapRequest` gives the `fetch` options of an exchange and `soapResponse` / `soapTimeout` read what came back into the CLI's outcome: the caller does the POST |
+| `bindings/python` | PyPI package `facturacion-electronica-sunat-sdk` (`import sunat_sdk`): abi3 wheels (PyO3, maturin) over the same in-memory commands as `bindings/wasm` | `build`, `sign`, `zip`, `cdr`, `soap_request`, `soap_response`, `soap_timeout` with the CLI's JSON (mapping or JSON text in, `dict` out); `exchange` does the POST with `urllib` and verified TLS |
 
 Signature identifiers default to the ones in SUNAT's invoice guide example (`IDSignKG`, `#signatureKG`,
 `signatureKG`).

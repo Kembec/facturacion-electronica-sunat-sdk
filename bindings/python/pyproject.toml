@@ -1,0 +1,35 @@
+[build-system]
+requires = ["maturin==1.15.0"]
+build-backend = "maturin"
+
+[project]
+name = "facturacion-electronica-sunat-sdk"
+# From the Cargo workspace version (0.1.0-beta.2 -> 0.1.0b2); scripts/check_version.py fails if they differ.
+dynamic = ["version"]
+description = "SUNAT (Peru) electronic invoicing: builds the UBL XML of invoices, receipts, credit and debit notes, daily summaries and void communications, signs it, zips it and reads SUNAT's answers."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+# Copied from the repository root before each build, as the npm package does (gitignored here).
+license-files = ["LICENSE", "NOTICE"]
+keywords = ["sunat", "peru", "facturacion-electronica", "ubl", "xmldsig"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Natural Language :: Spanish",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Rust",
+  "Topic :: Office/Business :: Financial :: Accounting",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Homepage = "https://fe.kembec.com"
+Repository = "https://github.com/Kembec/facturacion-electronica-sunat-sdk"
+Issues = "https://github.com/Kembec/facturacion-electronica-sunat-sdk/issues"
+
+[tool.maturin]
+module-name = "sunat_sdk._native"
+python-source = "python"
+manifest-path = "Cargo.toml"

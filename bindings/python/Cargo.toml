@@ -1,0 +1,21 @@
+[package]
+name = "sunat-sdk-python"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+name = "_native"
+crate-type = ["cdylib"]
+# The module is tested as the installed wheel (bindings/python/tests), not by `cargo test`.
+test = false
+doctest = false
+
+[dependencies]
+# Exact pin: the abi3 wheels and the maturin version in pyproject.toml are built against it.
+pyo3 = { version = "=0.30.1", features = ["abi3-py310"] }
+# The same in-memory commands as the npm package (bindings/wasm/src/api.rs), so both bindings
+# return the same JSON for the same input.
+sunat-sdk-wasm = { path = "../wasm" }

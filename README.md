@@ -214,7 +214,7 @@ Un tipo de documento entra al SDK cuando cumple tres condiciones: su XML coincid
 [`tests/vectors/`](tests/vectors), su firma da exactamente el mismo `DigestValue` y el mismo `SignatureValue` y la acepta
 un verificador independiente, y la beta de la SUNAT lo acepta.
 
-- **En cada cambio**, el CI arma y firma los 34 casos de [`fixtures/`](fixtures) por la CLI, por PHP, por el paquete
+- **En cada cambio**, el CI arma y firma los 38 casos de [`fixtures/`](fixtures) por la CLI, por PHP, por el paquete
   npm en Node 18, Node 22 y Chrome, y por el paquete de Python instalado, y exige el `DigestValue` y el `SignatureValue`
   exactos de su vector. Un verificador en Python que no comparte código con el núcleo acepta las firmas.
 - **En la beta de la SUNAT**, el 16/10/2026, enviados con la CLI: los 15 comprobantes, aceptados con código 0 y sin
@@ -248,6 +248,10 @@ detracción con esas operaciones y la rechaza con cualquier otra.
 
 **IVAP**: venta de arroz pilado en facturas, boletas y notas, con todas las líneas en afectación 17 y los totales
 `ivap_base` e `ivap`. Las notas de crédito y débito van con el tipo 12, «Ajustes afectos al IVAP».
+
+**Retención del IGV informada en el comprobante**: en facturas, boletas y notas (`igv_retention`: factor, importe y
+base, cargo 62 del catálogo 53). El cliente debe tener RUC; que sea agente de retención lo valida SUNAT contra su
+padrón en producción (la beta no lo hace).
 
 La guía de remisión, el comprobante de retención y el de percepción no forman parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).

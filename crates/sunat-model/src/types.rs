@@ -199,6 +199,21 @@ pub struct Voucher {
     /// Purchase order or service order number (`cac:OrderReference`).
     pub order_reference: Option<String>,
     pub despatch_references: Vec<DespatchReference>,
+    pub igv_retention: Option<IgvRetention>,
+}
+
+/// IGV the customer withholds as a retention agent, informed in the document as a global
+/// `cac:AllowanceCharge` with catalog 53 code `62` (`ChargeIndicator` false). It does not change
+/// any total: the customer pays `payable` minus `amount` and deposits `amount` with SUNAT.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct IgvRetention {
+    /// The retention rate as a factor (`"0.03"` for 3 %).
+    pub factor: Decimal,
+    /// `base_amount` × `factor`: SUNAT checks it within 1 (3263).
+    pub amount: Decimal,
+    /// The amount of the operation, IGV included: SUNAT rejects it above `payable` (3264).
+    pub base_amount: Decimal,
 }
 
 /// Payment to the supplier's Banco de la Nación account that the customer withholds («detracción»,

@@ -76,7 +76,7 @@ fn discounts(w: &mut XmlWriter, line: &Line, currency: &str) {
 }
 
 /// The factor never in exponent form, which SUNAT rejects: below 1e-4 it prints with five decimals.
-fn factor_text(factor: &Decimal) -> String {
+pub(crate) fn factor_text(factor: &Decimal) -> String {
     let text = shortest(factor);
     if text.contains('E') {
         format!("{:.5}", factor.to_f64())

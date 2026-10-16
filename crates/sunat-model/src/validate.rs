@@ -1,8 +1,8 @@
 use crate::{Company, Decimal, Detraction, Document, DocumentType, IgvRetention, Invoice, Line, LineDiscount, ModelError, Summary, SummaryLine, Voided, Voucher};
 
-/// Catalog 07 codes the SDK renders. 17 (IVAP) is excluded: it needs IVAP totals.
+/// Catalog 07 codes the SDK renders.
 const AFFECTATIONS: &[&str] = &[
-    "10", "11", "12", "13", "14", "15", "16", "20", "21", "30", "31", "32", "33", "34", "35", "36", "37", "40",
+    "10", "11", "12", "13", "14", "15", "16", "17", "20", "21", "30", "31", "32", "33", "34", "35", "36", "37", "40",
 ];
 
 impl Document {
@@ -23,6 +23,7 @@ impl Document {
                     return Err(ModelError::OutOfScope { path, feature: "line discounts in credit and debit notes" });
                 }
                 let reference = &note.reference;
+                crate::ivap::check_note(&note.voucher, &reference.reason_code)?;
                 require_text("$.note.reason_code", &reference.reason_code)?;
                 require_text("$.note.reason", &reference.reason)?;
                 require_text("$.note.affected_document_type", &reference.affected_document_type)?;
@@ -52,6 +53,7 @@ fn check_voucher(voucher: &Voucher, allowed: &[DocumentType]) -> Result<(), Mode
     require(voucher.totals.payable.is_some(), "$.totals.payable")?;
     require(!voucher.lines.is_empty(), "$.lines")?;
     crate::references::check(voucher.order_reference.as_deref(), &voucher.despatch_references)?;
+    crate::ivap::check(voucher)?;
     if let Some(retention) = &voucher.igv_retention {
         check_retention(voucher, retention)?;
     }
@@ -60,9 +62,6 @@ fn check_voucher(voucher: &Voucher, allowed: &[DocumentType]) -> Result<(), Mode
 
 fn check_line(index: usize, line: &Line) -> Result<(), ModelError> {
     let path = format!("$.lines[{index}].affectation");
-    if line.affectation == "17" {
-        return Err(ModelError::OutOfScope { path, feature: "IVAP (affectation 17)" });
-    }
     if !AFFECTATIONS.contains(&line.affectation.as_str()) {
         return Err(ModelError::invalid(path, "not a catalog 07 code"));
     }

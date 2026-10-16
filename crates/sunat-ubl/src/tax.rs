@@ -13,15 +13,18 @@ pub(crate) const UNAFFECTED: TaxScheme = TaxScheme { id: "9998", name: "INA", ty
 pub(crate) const EXEMPT: TaxScheme = TaxScheme { id: "9997", name: "EXO", type_code: "VAT" };
 pub(crate) const FREE: TaxScheme = TaxScheme { id: "9996", name: "GRA", type_code: "FRE" };
 pub(crate) const EXPORT: TaxScheme = TaxScheme { id: "9995", name: "EXP", type_code: "FRE" };
+pub(crate) const IVAP: TaxScheme = TaxScheme { id: "1016", name: "IVAP", type_code: "VAT" };
 
 /// Scheme of a line by its catalog 07 affectation: onerous taxed, exempt, unaffected and export
-/// operations keep their own scheme; every free transfer (11-16, 21, 31-37) goes under GRA.
+/// operations keep their own scheme, rice under the IVAP (17) goes under IVAP, and every free transfer
+/// (11-16, 21, 31-37) goes under GRA.
 pub(crate) fn scheme_for_affectation(code: &str) -> TaxScheme {
     match code {
         "10" => IGV,
         "20" => EXEMPT,
         "30" => UNAFFECTED,
         "40" => EXPORT,
+        "17" => IVAP,
         _ => FREE,
     }
 }
@@ -39,5 +42,6 @@ mod tests {
         assert_eq!(scheme_for_affectation("20"), EXEMPT);
         assert_eq!(scheme_for_affectation("30"), UNAFFECTED);
         assert_eq!(scheme_for_affectation("40"), EXPORT);
+        assert_eq!(scheme_for_affectation("17"), IVAP);
     }
 }

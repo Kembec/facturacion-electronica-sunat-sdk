@@ -8,6 +8,7 @@ mod despatch;
 mod despatch_rules;
 mod despatch_transport;
 mod error;
+mod ivap;
 mod raw;
 mod references;
 mod scope;

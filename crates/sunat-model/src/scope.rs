@@ -23,8 +23,6 @@ const TOTALS_KEYS: &[(&str, &str)] = &[
     ("isc", "ISC"),
     ("isc_base", "ISC"),
     ("icbper", "ICBPER"),
-    ("ivap", "IVAP"),
-    ("ivap_base", "IVAP"),
     ("other_taxes", "other taxes"),
     ("other_taxes_base", "other taxes"),
     ("discounts", "global discounts"),

@@ -5,7 +5,7 @@ use sunat_model::{Decimal, Detraction, IgvRetention, PaymentTerms, Totals};
 
 use crate::amount::{shortest, two_decimals};
 use crate::lines::{factor_text, tax_scheme};
-use crate::tax::{TaxScheme, EXEMPT, EXPORT, FREE, IGV, UNAFFECTED};
+use crate::tax::{TaxScheme, EXEMPT, EXPORT, FREE, IGV, IVAP, UNAFFECTED};
 use crate::writer::XmlWriter;
 
 const PAYMENT_TERMS_ID: &str = "FormaPago";
@@ -75,12 +75,13 @@ pub(crate) fn igv_retention(w: &mut XmlWriter, retention: &IgvRetention, currenc
 /// descending catalog 05 order (IGV 1000, INA 9998, EXO 9997, GRA 9996, EXP 9995).
 pub(crate) fn tax_total(w: &mut XmlWriter, totals: &Totals, currency: &str) {
     let zero: Decimal = "0".parse().expect("literal decimal");
-    let subtotals: [(TaxScheme, Option<&Decimal>, Option<&Decimal>); 5] = [
+    let subtotals: [(TaxScheme, Option<&Decimal>, Option<&Decimal>); 6] = [
         (IGV, totals.taxed.as_ref(), totals.igv.as_ref()),
         (UNAFFECTED, totals.unaffected.as_ref(), None),
         (EXEMPT, totals.exempt.as_ref(), None),
         (FREE, totals.free.as_ref(), totals.free_igv.as_ref()),
         (EXPORT, totals.export.as_ref(), None),
+        (IVAP, totals.ivap_base.as_ref(), totals.ivap.as_ref()),
     ];
     let money = [("currencyID", currency)];
     w.open("cac:TaxTotal", &[]);

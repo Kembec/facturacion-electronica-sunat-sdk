@@ -5,7 +5,7 @@ PyPI, and the PHP package on Packagist.
 
 1. Set `version` in `[workspace.package]` of `Cargo.toml`. CI fails if `SunatSdk::VERSION` (PHP) or
    `bindings/wasm/npm/package.json` differ from it. The Python package takes it from there as PEP 440
-   (`0.1.0-beta.2` is `0.1.0b2`); `bindings/python/scripts/check_version.py` fails if a wheel, the sdist or the tag
+   (`0.1.0-beta.3` is `0.1.0b3`); `bindings/python/scripts/check_version.py` fails if a wheel, the sdist or the tag
    differ.
 2. Merge to `main` and push the tag `v<version>`. A version with `-` (`0.1.0-beta.3`) is a prerelease and goes to
    npm under the `beta` dist-tag.

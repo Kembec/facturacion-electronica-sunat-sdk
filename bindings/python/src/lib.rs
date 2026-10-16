@@ -57,6 +57,38 @@ fn soap_timeout(exchange: &str, input_json: &str, seconds: u32) -> PyResult<Stri
     api::soap_timeout_json(exchange, input_json, seconds).map_err(raise)
 }
 
+/// Consulta Integrada token request as `{"method", "url", "headers", "body"}`.
+#[pyfunction]
+#[pyo3(signature = (client_id, client_secret, base=None))]
+fn validity_token_request(client_id: &str, client_secret: &str, base: Option<&str>) -> PyResult<String> {
+    api::validity_token_request_json(client_id, client_secret, base).map_err(raise)
+}
+
+/// The token answer -> `token` or `no_verdict`.
+#[pyfunction]
+fn validity_token_response(http_status: u16, body: &[u8]) -> PyResult<String> {
+    api::validity_token_response_json(http_status, body).map_err(raise)
+}
+
+/// The query for the CLI's `validity` input, with the token, as `{"method", "url", "headers", "body"}`.
+#[pyfunction]
+#[pyo3(signature = (input_json, access_token, base=None))]
+fn validity_request(input_json: &str, access_token: &str, base: Option<&str>) -> PyResult<String> {
+    api::validity_request_json(input_json, access_token, base).map_err(raise)
+}
+
+/// The query answer -> the CLI's `validity` output.
+#[pyfunction]
+fn validity_response(http_status: u16, body: &[u8]) -> PyResult<String> {
+    api::validity_response_json(http_status, body).map_err(raise)
+}
+
+/// No answer within `seconds` for `stage` (`token` or `query`) -> `no_verdict`.
+#[pyfunction]
+fn validity_timeout(stage: &str, seconds: u32) -> PyResult<String> {
+    api::validity_timeout_json(stage, seconds).map_err(raise)
+}
+
 #[pymodule]
 fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("SunatSdkError", m.py().get_type::<SunatSdkError>())?;
@@ -67,5 +99,10 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(soap_request, m)?)?;
     m.add_function(wrap_pyfunction!(soap_response, m)?)?;
     m.add_function(wrap_pyfunction!(soap_timeout, m)?)?;
+    m.add_function(wrap_pyfunction!(validity_token_request, m)?)?;
+    m.add_function(wrap_pyfunction!(validity_token_response, m)?)?;
+    m.add_function(wrap_pyfunction!(validity_request, m)?)?;
+    m.add_function(wrap_pyfunction!(validity_response, m)?)?;
+    m.add_function(wrap_pyfunction!(validity_timeout, m)?)?;
     Ok(())
 }

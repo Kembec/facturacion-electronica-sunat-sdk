@@ -5,19 +5,22 @@
 //! `send`, `summary` and `ticket` read `--endpoint` or SUNAT_ENDPOINT, `status` reads `--endpoint` or
 //! SUNAT_STATUS_ENDPOINT; both read `--user`/SUNAT_SOL_USER (RUC + SOL user) and
 //! `--password`/SUNAT_SOL_PASSWORD, and `--timeout`/SUNAT_HTTP_TIMEOUT_SECONDS (whole seconds,
-//! 1 to 300, default 90) for the HTTP wait.
+//! 1 to 300, default 90) for the HTTP wait. `validity` reads `--client-id`/SUNAT_API_CLIENT_ID and
+//! `--client-secret`/SUNAT_API_CLIENT_SECRET (Credenciales de API SUNAT) and the same `--timeout`
+//! for its two calls together.
 
 mod commands;
 mod config;
 mod document;
 mod http;
+mod validity;
 
 use std::io::Read;
 use std::process::ExitCode;
 
 use serde_json::{json, Value};
 
-const USAGE: &str = "usage: sunat-sdk <build|sign|zip|send|summary|ticket|status|cdr> [--cert PEM --key PEM] [--endpoint URL] [--user RUCUSER] [--password PASS] [--timeout SECONDS] < input.json";
+const USAGE: &str = "usage: sunat-sdk <build|sign|zip|send|summary|ticket|status|validity|cdr> [--cert PEM --key PEM] [--endpoint URL] [--user RUCUSER] [--password PASS] [--client-id ID --client-secret SECRET] [--timeout SECONDS] < input.json";
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -74,6 +77,11 @@ fn run(args: &[String]) -> Result<Value, String> {
             let conn = config::connection(rest, config::ENV_STATUS_ENDPOINT, &env)?;
             let post = |endpoint: &str, action: &str, envelope: &str| http::post_soap(endpoint, action, envelope, conn.timeout);
             commands::status(&read_input()?, &conn, &post)
+        }
+        "validity" => {
+            let conn = config::api_connection(rest, &env)?;
+            let post = |request: &Value, timeout: std::time::Duration| http::post_rest(request, timeout);
+            validity::validity(&read_input()?, &conn, &post)
         }
         _ => Err(USAGE.into()),
     }

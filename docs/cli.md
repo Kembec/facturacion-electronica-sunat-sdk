@@ -38,10 +38,39 @@ and the HTTP wait from `--timeout` or `SUNAT_HTTP_TIMEOUT_SECONDS`.
   `send` and `summary` keep those cases as errors, since a send that got no answer may have arrived.
 - A CDR's `class` is `observed` for code 0 with a note of 4000 and above.
 
+## `validity` (Consulta Integrada)
+
+SUNAT's REST «Consulta Integrada» (manual v2.0, 22/11/2018) for 01, 03, 07 and 08: an OAuth token
+(`client_credentials`) and one query. Credentials of «Credenciales de API SUNAT» in SOL (not the SOL
+user, not the GRE ones): `--client-id`/`SUNAT_API_CLIENT_ID`, `--client-secret`/`SUNAT_API_CLIENT_SECRET`.
+`--timeout` bounds both calls together. **There is no test environment**: the defaults are production;
+`--token-endpoint`/`SUNAT_VALIDITY_TOKEN_ENDPOINT` and `--endpoint`/`SUNAT_VALIDITY_ENDPOINT` replace the
+URL bases (https only). Tests replay the manual's answers (`crates/sunat-sdk/tests/data/validity/`).
+
+stdin: `{"ruc", "document_type", "series", "number", "issue_date" (YYYY-MM-DD or ISO 8601), "total"
+(PayableAmount, up to 2 decimals), "requester_ruc"?}`; an input SUNAT would refuse exits 1 before any call.
+
+- `{"outcome": "validity", "state_code", "state", "taxpayer_state_code", "domicile_condition_code",
+  "observations", "message"}`; `state`: `not_reported` (0), `accepted` (1), `voided` (2),
+  `printed_authorized` (3), `printed_not_authorized` (4), null otherwise. `observations` say where the data
+  sent differs (the manual's example is `accepted` with a different issue date).
+- `{"outcome": "query_error", "http_status", "error_code", "message"}`: `success: false` with HTTP 200, 400
+  or 422 (`99` = malformed). About the query, not the voucher.
+- `{"outcome": "no_verdict", "stage": "token" | "query", "reason", "http_status", "message"}`: any other
+  HTTP status (401 included) or the wait ran out. Ask again.
+
+Deciding without issuing again: no outcome is a reason to issue the operation with another number.
+`not_reported` does not prove the voucher never arrived (a summary's ticket may be in process): reconcile
+with `ticket` or `status` first; `voided` is spent; `printed_*` is outside the contract for an electronic
+series. The token and the secret never reach stdout or stderr.
+
 ## Consumers
 
 - `bindings/php`: Composer package; runs the binary with `proc_open`, writes the JSON to stdin, reads
   stdout and stderr, maps a non-zero exit to a typed exception carrying the `error` message.
+- `validity` in the bindings: wasm `validityTokenRequest`/`validityTokenResponse`, `validityRequest`/
+  `validityResponse`, `validityTimeout` (fetch options carry the `url`); Python the same as `validity_*`,
+  plus `sunat_sdk.validity(...)` that makes both calls; PHP `SunatSdk::validity()` with `ApiCredentials`.
 - `bindings/wasm`: exposes `build`, `sign`, `zip` and `cdr` in memory with the same input and output
   shapes. It does no network I/O: `soapRequest(exchange, input, user, password)` returns the `fetch`
   options (`method`, `headers`, `body`) for `send`, `summary`, `ticket` or `status` with this command's

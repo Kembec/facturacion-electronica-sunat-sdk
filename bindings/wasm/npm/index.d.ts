@@ -78,6 +78,63 @@ export type StatusOutcome =
   | FaultOutcome
   | NoVerdictOutcome;
 
+/** A Consulta Integrada call as `fetch(url, options)` takes it; `url` included. */
+export interface RestRequest {
+  method: 'POST';
+  url: string;
+  headers: Record<string, string>;
+  /** Carries the client secret (token) or goes with the token in `Authorization` (query): never log it. */
+  body: string;
+}
+
+/** Input of `validityRequest`, the CLI's `validity` stdin. Types 01, 03, 07 and 08 only. */
+export interface ValidityInput {
+  /** The issuer's RUC. */
+  ruc: string;
+  document_type: '01' | '03' | '07' | '08';
+  series: string;
+  number: number | string;
+  /** `YYYY-MM-DD`, or the document's ISO 8601 `issue_date`. */
+  issue_date: string;
+  /** The voucher's total (PayableAmount), up to 2 decimals, as a string. */
+  total: string;
+  /** The RUC that asks, in the URL; defaults to `ruc`. */
+  requester_ruc?: string;
+}
+
+/** `validityTokenResponse`: the token (a secret; reuse it until `expires_in` seconds run out) or no verdict. */
+export type TokenOutcome =
+  | { outcome: 'token'; access_token: string; token_type: string | null; expires_in: number | null }
+  | ValidityNoVerdict;
+
+/** No answer from the token or the query call (any HTTP status but the documented ones, 401 included, or a timeout). */
+export interface ValidityNoVerdict {
+  outcome: 'no_verdict';
+  stage: 'token' | 'query';
+  reason: 'http_status' | 'timeout';
+  http_status: number | null;
+  message: string;
+}
+
+/**
+ * `validity`: SUNAT's `estadoCp`. `not_reported` (0) does not prove the voucher never arrived; never
+ * issue the operation with another number because of it. `printed_*` (3, 4) apply to printed vouchers.
+ * `null` for a code outside the manual.
+ */
+export type ValidityOutcome =
+  | {
+      outcome: 'validity';
+      state_code: string | null;
+      state: 'not_reported' | 'accepted' | 'voided' | 'printed_authorized' | 'printed_not_authorized' | null;
+      taxpayer_state_code: string | null;
+      domicile_condition_code: string | null;
+      /** Where the data sent differs from SUNAT's, as SUNAT words it. */
+      observations: string[];
+      message: string;
+    }
+  | { outcome: 'query_error'; http_status: number; error_code: string | null; message: string }
+  | ValidityNoVerdict;
+
 export interface Sdk {
   /**
    * Renders the unsigned XML of a document (`docs/input-model.md` of the repository).
@@ -121,6 +178,25 @@ export interface Sdk {
    * @throws Error for `send` and `summary`: the outcome is unknown and the document may have arrived.
    */
   soapTimeout(exchange: Exchange, inputJson: string, seconds: number): string;
+  /**
+   * Consulta Integrada, step 1: the OAuth token request (`client_credentials`, «Credenciales de API SUNAT»).
+   * @param base replaces SUNAT's token base `https://api-seguridad.sunat.gob.pe/v1/clientesextranet`.
+   * @returns JSON text of a {@link RestRequest}.
+   */
+  validityTokenRequest(clientId: string, clientSecret: string, base?: string): string;
+  /** @returns JSON text of a {@link TokenOutcome}. */
+  validityTokenResponse(httpStatus: number, body: Uint8Array): string;
+  /**
+   * Step 2: the query, with the token. Input: {@link ValidityInput} as JSON text.
+   * @param base replaces SUNAT's base `https://api.sunat.gob.pe/v1/contribuyente/contribuyentes`.
+   * @returns JSON text of a {@link RestRequest}.
+   * @throws Error when the input is not one SUNAT would take.
+   */
+  validityRequest(inputJson: string, accessToken: string, base?: string): string;
+  /** @returns JSON text of a {@link ValidityOutcome}, the CLI's `validity` output for the same answer. */
+  validityResponse(httpStatus: number, body: Uint8Array): string;
+  /** No answer within `seconds`. @returns JSON text of a {@link ValidityNoVerdict}. */
+  validityTimeout(stage: 'token' | 'query', seconds: number): string;
 }
 
 /** Where to read the .wasm from when the default location does not apply (e.g. Cloudflare Workers). */

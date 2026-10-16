@@ -5,7 +5,10 @@
 
 mod api;
 
-pub use api::{build_json, cdr_json, sign_json, soap_request_json, soap_response_json, soap_timeout_json, zip_json};
+pub use api::{
+    build_json, cdr_json, sign_json, soap_request_json, soap_response_json, soap_timeout_json, validity_request_json,
+    validity_response_json, validity_timeout_json, validity_token_request_json, validity_token_response_json, zip_json,
+};
 use wasm_bindgen::prelude::*;
 
 /// `document_json` (docs/input-model.md) -> `{"file_name": "...", "xml": "<unsigned XML>"}`.
@@ -49,4 +52,35 @@ pub fn soap_response(exchange: &str, input_json: &str, http_status: u16, body: &
 #[wasm_bindgen(js_name = soapTimeout)]
 pub fn soap_timeout(exchange: &str, input_json: &str, seconds: u32) -> Result<String, JsError> {
     soap_timeout_json(exchange, input_json, seconds).map_err(|message| JsError::new(&message))
+}
+
+/// Consulta Integrada, first step: the token request as `fetch` options with its `url`. `base`
+/// replaces SUNAT's token base (for a proxy or a test server).
+#[wasm_bindgen(js_name = validityTokenRequest)]
+pub fn validity_token_request(client_id: &str, client_secret: &str, base: Option<String>) -> Result<String, JsError> {
+    validity_token_request_json(client_id, client_secret, base.as_deref()).map_err(|message| JsError::new(&message))
+}
+
+/// The token answer -> `{"outcome": "token", "access_token", "token_type", "expires_in"}` or `no_verdict`.
+#[wasm_bindgen(js_name = validityTokenResponse)]
+pub fn validity_token_response(http_status: u16, body: &[u8]) -> Result<String, JsError> {
+    validity_token_response_json(http_status, body).map_err(|message| JsError::new(&message))
+}
+
+/// Second step: the query for the CLI's `validity` input, with the token, as `fetch` options with its `url`.
+#[wasm_bindgen(js_name = validityRequest)]
+pub fn validity_request(input_json: &str, access_token: &str, base: Option<String>) -> Result<String, JsError> {
+    validity_request_json(input_json, access_token, base.as_deref()).map_err(|message| JsError::new(&message))
+}
+
+/// The query answer -> the CLI's `validity` output (`validity`, `query_error` or `no_verdict`).
+#[wasm_bindgen(js_name = validityResponse)]
+pub fn validity_response(http_status: u16, body: &[u8]) -> Result<String, JsError> {
+    validity_response_json(http_status, body).map_err(|message| JsError::new(&message))
+}
+
+/// No answer within `seconds` for `stage` (`token` or `query`) -> `no_verdict`.
+#[wasm_bindgen(js_name = validityTimeout)]
+pub fn validity_timeout(stage: &str, seconds: u32) -> Result<String, JsError> {
+    validity_timeout_json(stage, seconds).map_err(|message| JsError::new(&message))
 }

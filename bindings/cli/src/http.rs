@@ -1,5 +1,5 @@
-//! The only network code of the SDK: one SOAP POST over HTTPS with certificate verification
-//! (ureq's rustls with webpki roots; there is no switch to disable it).
+//! The only network code of the SDK: one POST over HTTPS with certificate verification (ureq's
+//! rustls with webpki roots; there is no switch to disable it), SOAP or REST.
 
 use std::io::Read;
 use std::time::Duration;
@@ -42,6 +42,30 @@ pub fn post_soap(endpoint: &str, soap_action: &str, envelope: &str, timeout: Dur
         .read_to_end(&mut body)
         .map_err(|e| PostError::Other(format!("reading response: {e}")))?;
     Ok(body)
+}
+
+/// Posts a REST call built by `sunat_sdk::validity` (`{"method", "url", "headers", "body"}`) and
+/// returns the HTTP status with its body, whatever the status: the caller decides what each means.
+pub fn post_rest(request: &serde_json::Value, timeout: Duration) -> Result<(u16, Vec<u8>), PostError> {
+    let url = request["url"].as_str().ok_or_else(|| PostError::Other("request without url".into()))?;
+    let agent = ureq::AgentBuilder::new().timeout(timeout).build();
+    let mut call = agent.post(url);
+    for (name, value) in request["headers"].as_object().into_iter().flatten() {
+        call = call.set(name, value.as_str().unwrap_or_default());
+    }
+    let response = match call.send_string(request["body"].as_str().unwrap_or_default()) {
+        Ok(response) | Err(ureq::Error::Status(_, response)) => response,
+        Err(ureq::Error::Transport(err)) if is_timeout(&err) => return Err(PostError::Timeout(timeout.as_secs())),
+        Err(ureq::Error::Transport(err)) => return Err(PostError::Other(format!("transport error: {}", err.kind()))),
+    };
+    let status = response.status();
+    let mut body = Vec::new();
+    response
+        .into_reader()
+        .take(MAX_RESPONSE_BYTES)
+        .read_to_end(&mut body)
+        .map_err(|e| PostError::Other(format!("reading response: {e}")))?;
+    Ok((status, body))
 }
 
 fn is_timeout(err: &ureq::Transport) -> bool {

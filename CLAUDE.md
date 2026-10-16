@@ -2,7 +2,7 @@
 
 SDK for SUNAT (Peru) electronic invoicing: one Rust core, builds for PHP, JS/WASM, Python and Go.
 Covers invoices (01), receipts (03), credit (07) and debit (08) notes, daily summaries (RC), void
-communications (RA) and the sender's despatch advice (09, built and signed; not sent). Contracts:
+communications (RA) and the sender's despatch advice (09, built and signed; sent by REST from the CLI, with no SUNAT test environment). Contracts:
 `docs/architecture.md`, `docs/input-model.md`.
 
 ## Rules of this repository

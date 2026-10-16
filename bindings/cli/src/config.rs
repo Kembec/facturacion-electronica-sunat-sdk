@@ -14,6 +14,8 @@ pub const ENV_API_CLIENT_ID: &str = "SUNAT_API_CLIENT_ID";
 pub const ENV_API_CLIENT_SECRET: &str = "SUNAT_API_CLIENT_SECRET";
 pub const ENV_VALIDITY_ENDPOINT: &str = "SUNAT_VALIDITY_ENDPOINT";
 pub const ENV_VALIDITY_TOKEN_ENDPOINT: &str = "SUNAT_VALIDITY_TOKEN_ENDPOINT";
+pub const ENV_GRE_ENDPOINT: &str = "SUNAT_GRE_ENDPOINT";
+pub const ENV_GRE_TOKEN_ENDPOINT: &str = "SUNAT_GRE_TOKEN_ENDPOINT";
 
 /// The wait before this flag existed; kept as the default so current callers see no change.
 pub const DEFAULT_HTTP_TIMEOUT_SECONDS: u64 = 90;
@@ -23,6 +25,7 @@ pub const MAX_HTTP_TIMEOUT_SECONDS: u64 = 300;
 const CONNECTION_FLAGS: &[&str] = &["endpoint", "user", "password", "timeout"];
 const SIGNING_FLAGS: &[&str] = &["cert", "key"];
 const API_FLAGS: &[&str] = &["client-id", "client-secret", "endpoint", "token-endpoint", "timeout"];
+const GRE_FLAGS: &[&str] = &["client-id", "client-secret", "user", "password", "endpoint", "token-endpoint", "timeout"];
 
 /// Where and as whom to call SUNAT. `user` is the RUC followed by the SOL user; `timeout` bounds
 /// the whole HTTP exchange (connect, send, wait, read).
@@ -108,6 +111,61 @@ pub fn api_connection(args: &[String], env: &dyn Fn(&str) -> Option<String>) -> 
         token_base: base("token-endpoint", ENV_VALIDITY_TOKEN_ENDPOINT, sunat_sdk::validity::TOKEN_BASE)?,
         query_base: base("endpoint", ENV_VALIDITY_ENDPOINT, sunat_sdk::validity::QUERY_BASE)?,
         timeout: http_timeout(flag_value(args, API_FLAGS, "timeout")?.or_else(|| env(ENV_HTTP_TIMEOUT)))?,
+    })
+}
+
+/// Credentials and URL bases of the GRE REST API: the «Credenciales de API SUNAT» pair and the SOL
+/// user (RUC + user) with its password. `timeout` bounds the token and the call together.
+pub struct GreConnection {
+    pub client_id: String,
+    pub client_secret: String,
+    pub user: String,
+    pub password: String,
+    pub token_base: String,
+    pub api_base: String,
+    pub timeout: Duration,
+}
+
+impl fmt::Debug for GreConnection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("GreConnection")
+            .field("client_id", &"<redacted>")
+            .field("client_secret", &"<redacted>")
+            .field("user", &"<redacted>")
+            .field("password", &"<redacted>")
+            .field("token_base", &self.token_base)
+            .field("api_base", &self.api_base)
+            .field("timeout", &self.timeout)
+            .finish()
+    }
+}
+
+/// `--client-id`/SUNAT_API_CLIENT_ID, `--client-secret`/SUNAT_API_CLIENT_SECRET, `--user`/SUNAT_SOL_USER,
+/// `--password`/SUNAT_SOL_PASSWORD, `--token-endpoint`/SUNAT_GRE_TOKEN_ENDPOINT and
+/// `--endpoint`/SUNAT_GRE_ENDPOINT, all required: the bases have no default, since GRE has no test
+/// environment and the only one is production. Only `https://` bases pass.
+pub fn gre_connection(args: &[String], env: &dyn Fn(&str) -> Option<String>) -> Result<GreConnection, String> {
+    let required = |flag: &str, var: &str| -> Result<String, String> {
+        flag_value(args, GRE_FLAGS, flag)?
+            .or_else(|| env(var))
+            .filter(|v| !v.is_empty())
+            .ok_or_else(|| format!("missing --{flag} or {var}"))
+    };
+    let https = |flag: &str, var: &str| -> Result<String, String> {
+        let base = required(flag, var)?;
+        if !base.starts_with("https://") {
+            return Err(format!("--{flag} must use https://"));
+        }
+        Ok(base)
+    };
+    Ok(GreConnection {
+        client_id: required("client-id", ENV_API_CLIENT_ID)?,
+        client_secret: required("client-secret", ENV_API_CLIENT_SECRET)?,
+        user: required("user", ENV_USER)?,
+        password: required("password", ENV_PASSWORD)?,
+        token_base: https("token-endpoint", ENV_GRE_TOKEN_ENDPOINT)?,
+        api_base: https("endpoint", ENV_GRE_ENDPOINT)?,
+        timeout: http_timeout(flag_value(args, GRE_FLAGS, "timeout")?.or_else(|| env(ENV_HTTP_TIMEOUT)))?,
     })
 }
 
@@ -239,6 +297,27 @@ mod tests {
         assert!(api_connection(&args(&["--user", "u"]), &env).is_err());
         let shown = format!("{c:?}");
         assert!(!shown.contains("id-flag") && !shown.contains("secret-env"));
+    }
+
+    #[test]
+    fn gre_connection_needs_everything_and_https() {
+        let none = |_: &str| None;
+        assert_eq!(gre_connection(&[], &none).unwrap_err(), "missing --client-id or SUNAT_API_CLIENT_ID");
+        let env = env_of(&[
+            (ENV_API_CLIENT_ID, "id-env"),
+            (ENV_API_CLIENT_SECRET, "secret-env"),
+            (ENV_USER, "20000000001USERENV"),
+            (ENV_PASSWORD, "pass-env"),
+            (ENV_GRE_TOKEN_ENDPOINT, "https://auth.test/v1/clientessol"),
+        ]);
+        assert_eq!(gre_connection(&[], &env).unwrap_err(), "missing --endpoint or SUNAT_GRE_ENDPOINT");
+        let c = gre_connection(&args(&["--endpoint", "https://cpe.test/v1", "--user=20000000001FLAG"]), &env).unwrap();
+        assert_eq!((c.user.as_str(), c.api_base.as_str(), c.timeout.as_secs()), ("20000000001FLAG", "https://cpe.test/v1", DEFAULT_HTTP_TIMEOUT_SECONDS));
+        let plain = gre_connection(&args(&["--endpoint", "https://cpe.test", "--token-endpoint", "http://x"]), &env);
+        assert_eq!(plain.unwrap_err(), "--token-endpoint must use https://");
+        assert!(gre_connection(&args(&["--cert", "x"]), &env).is_err());
+        let shown = format!("{c:?}");
+        assert!(!shown.contains("secret-env") && !shown.contains("pass-env") && !shown.contains("FLAG") && !shown.contains("id-env"));
     }
 
     #[test]

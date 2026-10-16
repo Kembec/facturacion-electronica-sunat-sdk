@@ -254,8 +254,10 @@ base, cargo 62 del catálogo 53). El cliente debe tener RUC; que sea agente de r
 padrón en producción (la beta no lo hace).
 
 **Guía de remisión remitente (09)**: se arma, se firma y se valida contra sus vectores, el esquema OASIS y las reglas de la
-SUNAT; no se envía, porque la SUNAT no tiene ambiente de pruebas para ella. Quedan fuera los traslados de importación y
-exportación y la guía del transportista (31).
+SUNAT. La CLI la envía por la API REST de la SUNAT (`gre-send`: token con la clave SOL, zip y su `hashZip`) y consulta el
+ticket hasta tener la CDR (`gre-ticket`). **La SUNAT no tiene ambiente de pruebas para la GRE**: el envío se probó solo
+contra respuestas del manual de la SUNAT y de un cliente de terceros, y ninguna guía de este SDK figura como aceptada por
+la SUNAT. Quedan fuera los traslados de importación y exportación y la guía del transportista (31).
 
 El comprobante de retención y el de percepción no forman parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).

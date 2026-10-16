@@ -2,7 +2,7 @@
     "name": "kembec/facturacion-electronica-sunat-sdk",
     "description": "PHP client for the sunat-sdk binary: build, sign, zip, send and query SUNAT (Peru) electronic vouchers.",
     "type": "library",
-    "keywords": ["sunat", "peru", "facturacion electronica", "ubl", "xmldsig", "einvoicing"],
+    "keywords": ["sunat", "peru", "facturacion electronica", "factura electronica", "einvoicing", "ubl", "xmldsig", "php"],
     "homepage": "https://github.com/Kembec/facturacion-electronica-sunat-sdk",
     "license": "MIT",
     "authors": [

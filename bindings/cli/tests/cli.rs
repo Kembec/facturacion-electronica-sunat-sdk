@@ -14,7 +14,8 @@ fn run(args: &[&str], stdin: &str) -> Output {
         .stderr(Stdio::piped())
         .spawn()
         .unwrap();
-    child.stdin.take().unwrap().write_all(stdin.as_bytes()).unwrap();
+    // A command may fail before reading stdin; a broken pipe here is not the test's concern.
+    let _ = child.stdin.take().unwrap().write_all(stdin.as_bytes());
     child.wait_with_output().unwrap()
 }
 

@@ -29,15 +29,41 @@ final class SunatSdk
 
     public const DEFAULT_TIMEOUT_SECONDS = 120.0;
 
+    /** HTTP wait of `send` and `status` when none is given and the process timeout allows it. */
+    public const DEFAULT_HTTP_TIMEOUT_SECONDS = 90;
+
+    /**
+     * Time the binary needs besides the HTTP wait (start, zip, parse the answer). The HTTP wait plus
+     * this margin must fit in the process timeout, so the binary reports SUNAT's silence as its own
+     * error instead of being killed with the outcome lost.
+     */
+    public const HTTP_TIMEOUT_MARGIN_SECONDS = 5;
+
     /** @var BinaryRunner */
     private $runner;
 
+    /** @var int|null null when the process timeout is too short to call SUNAT at all */
+    private $httpTimeoutSeconds;
+
     /**
-     * @param float $timeoutSeconds per call; `send` and `status` wait up to 90 s on SUNAT inside the binary
+     * @param float $timeoutSeconds per call; the process is killed after it
+     * @param int|null $httpTimeoutSeconds wait on SUNAT in `send` and `status`, whole seconds; it must
+     *     leave HTTP_TIMEOUT_MARGIN_SECONDS inside $timeoutSeconds. Null: 90, or less if
+     *     $timeoutSeconds is shorter (floor($timeoutSeconds) - 5)
      */
-    public function __construct(string $binaryPath, float $timeoutSeconds = self::DEFAULT_TIMEOUT_SECONDS)
-    {
+    public function __construct(
+        string $binaryPath,
+        float $timeoutSeconds = self::DEFAULT_TIMEOUT_SECONDS,
+        ?int $httpTimeoutSeconds = null
+    ) {
         $this->runner = new BinaryRunner($binaryPath, $timeoutSeconds);
+        $this->httpTimeoutSeconds = self::httpTimeout($timeoutSeconds, $httpTimeoutSeconds);
+    }
+
+    /** The HTTP wait `send` and `status` pass to the binary, or null if they cannot run. */
+    public function httpTimeoutSeconds(): ?int
+    {
+        return $this->httpTimeoutSeconds;
     }
 
     /**
@@ -87,7 +113,7 @@ final class SunatSdk
      */
     public function send(string $name, string $signedXml, SolCredentials $credentials, string $endpoint): SendResult
     {
-        $env = ['SUNAT_ENDPOINT' => $endpoint] + $credentials->toEnvironment();
+        $env = ['SUNAT_ENDPOINT' => $endpoint] + $this->httpEnvironment() + $credentials->toEnvironment();
         $output = $this->runner->run('send', $this->encode(['name' => $name, 'xml' => $signedXml]), $env);
 
         return SendResult::fromArray($output);
@@ -108,7 +134,7 @@ final class SunatSdk
         string $endpoint
     ): StatusResult {
         $input = ['ruc' => $ruc, 'document_type' => $documentType, 'series' => $series, 'number' => $number];
-        $env = ['SUNAT_STATUS_ENDPOINT' => $endpoint] + $credentials->toEnvironment();
+        $env = ['SUNAT_STATUS_ENDPOINT' => $endpoint] + $this->httpEnvironment() + $credentials->toEnvironment();
 
         return StatusResult::fromArray($this->runner->run('status', $this->encode($input), $env));
     }
@@ -122,6 +148,40 @@ final class SunatSdk
     public function cdr(string $cdr): Cdr
     {
         return Cdr::fromArray($this->runner->run('cdr', $this->encode(['cdr_base64' => base64_encode($cdr)])));
+    }
+
+    private static function httpTimeout(float $timeoutSeconds, ?int $httpTimeoutSeconds): ?int
+    {
+        $fits = (int) floor($timeoutSeconds) - self::HTTP_TIMEOUT_MARGIN_SECONDS;
+        if ($httpTimeoutSeconds === null) {
+            $derived = min(self::DEFAULT_HTTP_TIMEOUT_SECONDS, $fits);
+            return $derived >= 1 ? $derived : null;
+        }
+        if ($httpTimeoutSeconds < 1 || $httpTimeoutSeconds > 300 || $httpTimeoutSeconds > $fits) {
+            throw new \InvalidArgumentException(sprintf(
+                'httpTimeoutSeconds must be 1 to 300 and at most the process timeout minus %d s (%.1f s given, so at most %d)',
+                self::HTTP_TIMEOUT_MARGIN_SECONDS,
+                $timeoutSeconds,
+                max(0, min(300, $fits))
+            ));
+        }
+
+        return $httpTimeoutSeconds;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function httpEnvironment(): array
+    {
+        if ($this->httpTimeoutSeconds === null) {
+            throw new \InvalidArgumentException(sprintf(
+                'the process timeout is too short for send and status: it needs at least %d s',
+                self::HTTP_TIMEOUT_MARGIN_SECONDS + 1
+            ));
+        }
+
+        return ['SUNAT_HTTP_TIMEOUT_SECONDS' => (string) $this->httpTimeoutSeconds];
     }
 
     /**

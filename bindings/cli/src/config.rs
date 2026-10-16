@@ -1,6 +1,7 @@
 //! Endpoint and SOL credentials, from flags or environment. Nothing here is ever printed.
 
 use std::fmt;
+use std::time::Duration;
 
 pub const ENV_ENDPOINT: &str = "SUNAT_ENDPOINT";
 pub const ENV_STATUS_ENDPOINT: &str = "SUNAT_STATUS_ENDPOINT";
@@ -8,15 +9,23 @@ pub const ENV_USER: &str = "SUNAT_SOL_USER";
 pub const ENV_PASSWORD: &str = "SUNAT_SOL_PASSWORD";
 pub const ENV_CERT_PATH: &str = "SUNAT_CERT_PATH";
 pub const ENV_KEY_PATH: &str = "SUNAT_KEY_PATH";
+pub const ENV_HTTP_TIMEOUT: &str = "SUNAT_HTTP_TIMEOUT_SECONDS";
 
-const CONNECTION_FLAGS: &[&str] = &["endpoint", "user", "password"];
+/// The wait before this flag existed; kept as the default so current callers see no change.
+pub const DEFAULT_HTTP_TIMEOUT_SECONDS: u64 = 90;
+/// A queue worker that waits longer than this on SUNAT is already broken; above it is a typo.
+pub const MAX_HTTP_TIMEOUT_SECONDS: u64 = 300;
+
+const CONNECTION_FLAGS: &[&str] = &["endpoint", "user", "password", "timeout"];
 const SIGNING_FLAGS: &[&str] = &["cert", "key"];
 
-/// Where and as whom to call SUNAT. `user` is the RUC followed by the SOL user.
+/// Where and as whom to call SUNAT. `user` is the RUC followed by the SOL user; `timeout` bounds
+/// the whole HTTP exchange (connect, send, wait, read).
 pub struct Connection {
     pub endpoint: String,
     pub user: String,
     pub password: String,
+    pub timeout: Duration,
 }
 
 impl fmt::Debug for Connection {
@@ -25,6 +34,7 @@ impl fmt::Debug for Connection {
             .field("endpoint", &self.endpoint)
             .field("user", &"<redacted>")
             .field("password", &"<redacted>")
+            .field("timeout", &self.timeout)
             .finish()
     }
 }
@@ -46,7 +56,22 @@ pub fn connection(
     if !endpoint.starts_with("https://") {
         return Err("endpoint must use https://".into());
     }
-    Ok(Connection { endpoint, user: pick("user", ENV_USER)?, password: pick("password", ENV_PASSWORD)? })
+    let timeout = http_timeout(flag_value(args, CONNECTION_FLAGS, "timeout")?.or_else(|| env(ENV_HTTP_TIMEOUT)))?;
+    Ok(Connection { endpoint, user: pick("user", ENV_USER)?, password: pick("password", ENV_PASSWORD)?, timeout })
+}
+
+/// `--timeout`/SUNAT_HTTP_TIMEOUT_SECONDS: whole seconds from 1 to [`MAX_HTTP_TIMEOUT_SECONDS`];
+/// absent or empty means [`DEFAULT_HTTP_TIMEOUT_SECONDS`].
+fn http_timeout(value: Option<String>) -> Result<Duration, String> {
+    let Some(value) = value.filter(|v| !v.is_empty()) else {
+        return Ok(Duration::from_secs(DEFAULT_HTTP_TIMEOUT_SECONDS));
+    };
+    value
+        .parse::<u64>()
+        .ok()
+        .filter(|s| (1..=MAX_HTTP_TIMEOUT_SECONDS).contains(s))
+        .map(Duration::from_secs)
+        .ok_or_else(|| format!("--timeout must be whole seconds from 1 to {MAX_HTTP_TIMEOUT_SECONDS}"))
 }
 
 /// Paths of the PEM certificate and the PEM private key used by `sign`. The files are read by the
@@ -123,6 +148,25 @@ mod tests {
     }
 
     #[test]
+    fn http_timeout_comes_from_flag_or_environment_with_bounds() {
+        let base = ["--endpoint", "https://e", "--user", "u", "--password", "p"];
+        let with = |extra: &[&str], env: &dyn Fn(&str) -> Option<String>| {
+            let mut list = base.to_vec();
+            list.extend_from_slice(extra);
+            connection(&args(&list), ENV_ENDPOINT, env).map(|c| c.timeout.as_secs())
+        };
+        let none = |_: &str| None;
+        assert_eq!(with(&[], &none), Ok(DEFAULT_HTTP_TIMEOUT_SECONDS));
+        assert_eq!(with(&["--timeout", "45"], &none), Ok(45));
+        let env = env_of(&[(ENV_HTTP_TIMEOUT, "30")]);
+        assert_eq!(with(&[], &env), Ok(30));
+        assert_eq!(with(&["--timeout=20"], &env), Ok(20), "the flag wins");
+        for bad in ["0", "301", "1.5", "-3", "abc"] {
+            assert!(with(&["--timeout", bad], &none).is_err(), "{bad}");
+        }
+    }
+
+    #[test]
     fn key_files_come_from_flags_or_environment() {
         let env = env_of(&[(ENV_CERT_PATH, "/env/cert.pem"), (ENV_KEY_PATH, "/env/key.pem")]);
         let files = key_files(&args(&["--key=/flag/key.pem"]), &env).unwrap();
@@ -134,7 +178,12 @@ mod tests {
 
     #[test]
     fn debug_never_shows_credentials() {
-        let c = Connection { endpoint: "https://e".into(), user: "20100066603SECRETU".into(), password: "s3cr3t".into() };
+        let c = Connection {
+            endpoint: "https://e".into(),
+            user: "20100066603SECRETU".into(),
+            password: "s3cr3t".into(),
+            timeout: Duration::from_secs(90),
+        };
         let shown = format!("{c:?}");
         assert!(!shown.contains("s3cr3t") && !shown.contains("SECRETU"));
     }

@@ -5,7 +5,12 @@ use super::*;
 const CDR_REJECTED_ZIP: &[u8] = include_bytes!("../../../crates/sunat-transport/tests/data/R-20150147718-01-FT01-982.zip");
 
 fn conn() -> Connection {
-    Connection { endpoint: "https://sunat.test/billService".into(), user: "20100066603MODDATOS".into(), password: "pw-secret".into() }
+    Connection {
+        endpoint: "https://sunat.test/billService".into(),
+        user: "20100066603MODDATOS".into(),
+        password: "pw-secret".into(),
+        timeout: std::time::Duration::from_secs(90),
+    }
 }
 
 #[test]
@@ -73,4 +78,35 @@ fn cdr_reads_fields_and_class() {
         out,
         json!({ "reference_id": "FT01-982", "response_code": "2047", "description": "Es obligatorio al menos un AdditionalMonetaryTotal con codigo 1001, 1002 o 1003", "notes": [], "class": "rejected" })
     );
+}
+
+/// The `contentFile` of a sendBill envelope, unzipped.
+fn sent_xml(envelope: &str) -> Vec<u8> {
+    let start = envelope.find("<contentFile>").unwrap() + "<contentFile>".len();
+    let end = envelope.find("</contentFile>").unwrap();
+    sunat_sdk::unzip_xml(&STANDARD.decode(&envelope[start..end]).unwrap()).unwrap()
+}
+
+#[test]
+fn send_resends_a_stored_signed_xml_byte_for_byte() {
+    // A stored signed vector with its declaration, line breaks and signature as they were kept;
+    // CRLF added so any normalization by the SDK would show.
+    let stored = include_str!("../../../tests/vectors/03-receipt-consumer-dni.signed.xml").replace('\n', "\r\n");
+    let envelopes = RefCell::new(Vec::new());
+    let post = |_: &str, _: &str, envelope: &str| -> Result<Vec<u8>, String> {
+        envelopes.borrow_mut().push(envelope.to_string());
+        Err("timed out after 1 s waiting for SUNAT; the outcome is unknown".into())
+    };
+    let name = "20000000001-03-B001-1";
+    let inputs = [json!({ "name": name, "xml": stored }), json!({ "name": name, "xml_base64": STANDARD.encode(stored.as_bytes()) })];
+    for input in &inputs {
+        assert!(send(input, &conn(), &post).unwrap_err().contains("timed out"));
+        assert!(send(input, &conn(), &post).unwrap_err().contains("timed out"), "the retry");
+    }
+    let envelopes = envelopes.borrow();
+    assert_eq!(envelopes.len(), 4);
+    for envelope in envelopes.iter() {
+        assert_eq!(sent_xml(envelope), stored.as_bytes(), "the XML is sent as stored, never rebuilt or re-signed");
+        assert!(envelope.contains(&format!("<fileName>{name}.zip</fileName>")), "same series and number");
+    }
 }

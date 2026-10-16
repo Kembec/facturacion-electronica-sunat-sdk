@@ -31,6 +31,11 @@ and the HTTP wait from `--timeout` or `SUNAT_HTTP_TIMEOUT_SECONDS`.
 - `ticket`: stdin `{"ticket"}` → `{"outcome": "ticket_status", "status_code", "state", "cdr"?,
   "cdr_zip_base64"?}`; `state` is `processed` (0), `in_process` (98: ask again with the same ticket,
   never send again) or `processed_with_errors` (99).
+- `ticket` and `status` are queries: when SUNAT answers an HTTP status other than 200/500 (it has
+  answered 401 to a valid getStatus that succeeded when repeated) or the wait runs out, they print
+  `{"outcome": "no_verdict", "reason": "http_status" | "timeout", "http_status": 401 | null, "message"}` (`ticket`
+  adds the same `ticket`) with exit 0. It says nothing about the document: ask again, never send again.
+  `send` and `summary` keep those cases as errors, since a send that got no answer may have arrived.
 - A CDR's `class` is `observed` for code 0 with a note of 4000 and above.
 
 ## Consumers

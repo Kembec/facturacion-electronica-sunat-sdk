@@ -6,10 +6,31 @@ use std::time::Duration;
 
 const MAX_RESPONSE_BYTES: u64 = 16 * 1024 * 1024;
 
+/// Why a POST gave no body to parse. None of them carries request data.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PostError {
+    /// SUNAT answered with an HTTP status other than 200 or 500 (500 carries SOAP faults).
+    Status(u16),
+    /// The whole exchange ran out of time (seconds); whether SUNAT got the request is unknown.
+    Timeout(u64),
+    /// Any other transport or read failure.
+    Other(String),
+}
+
+impl std::fmt::Display for PostError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Status(code) => write!(f, "SUNAT answered HTTP {code}"),
+            Self::Timeout(seconds) => write!(f, "timed out after {seconds} s waiting for SUNAT; the outcome is unknown"),
+            Self::Other(message) => f.write_str(message),
+        }
+    }
+}
+
 /// Posts `envelope` and returns the body. SOAP faults arrive as HTTP 500 and are returned too,
-/// so the caller can parse them; other errors carry no request data. `timeout` bounds the whole
-/// exchange; when it runs out the voucher may or may not have reached SUNAT, and the error says so.
-pub fn post_soap(endpoint: &str, soap_action: &str, envelope: &str, timeout: Duration) -> Result<Vec<u8>, String> {
+/// so the caller can parse them. `timeout` bounds the whole exchange; when it runs out the
+/// voucher may or may not have reached SUNAT.
+pub fn post_soap(endpoint: &str, soap_action: &str, envelope: &str, timeout: Duration) -> Result<Vec<u8>, PostError> {
     let agent = ureq::AgentBuilder::new().timeout(timeout).build();
     let response = agent
         .post(endpoint)
@@ -19,18 +40,16 @@ pub fn post_soap(endpoint: &str, soap_action: &str, envelope: &str, timeout: Dur
     let response = match response {
         Ok(response) => response,
         Err(ureq::Error::Status(500, response)) => response,
-        Err(ureq::Error::Status(code, _)) => return Err(format!("SUNAT answered HTTP {code}")),
-        Err(ureq::Error::Transport(err)) if is_timeout(&err) => {
-            return Err(format!("timed out after {} s waiting for SUNAT; the outcome is unknown", timeout.as_secs()))
-        }
-        Err(ureq::Error::Transport(err)) => return Err(format!("transport error: {}", err.kind())),
+        Err(ureq::Error::Status(code, _)) => return Err(PostError::Status(code)),
+        Err(ureq::Error::Transport(err)) if is_timeout(&err) => return Err(PostError::Timeout(timeout.as_secs())),
+        Err(ureq::Error::Transport(err)) => return Err(PostError::Other(format!("transport error: {}", err.kind()))),
     };
     let mut body = Vec::new();
     response
         .into_reader()
         .take(MAX_RESPONSE_BYTES)
         .read_to_end(&mut body)
-        .map_err(|e| format!("reading response: {e}"))?;
+        .map_err(|e| PostError::Other(format!("reading response: {e}")))?;
     Ok(body)
 }
 

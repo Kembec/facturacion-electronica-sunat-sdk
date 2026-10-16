@@ -25,7 +25,7 @@ fn zip_returns_file_name_and_content() {
 #[test]
 fn send_posts_the_envelope_and_reads_the_cdr() {
     let seen = RefCell::new(String::new());
-    let post = |endpoint: &str, action: &str, envelope: &str| -> Result<Vec<u8>, String> {
+    let post = |endpoint: &str, action: &str, envelope: &str| -> Result<Vec<u8>, PostError> {
         assert_eq!((endpoint, action), ("https://sunat.test/billService", "urn:sendBill"));
         *seen.borrow_mut() = envelope.to_string();
         Ok(format!(
@@ -46,7 +46,7 @@ fn send_posts_the_envelope_and_reads_the_cdr() {
 
 #[test]
 fn send_reports_a_fault_with_its_class() {
-    let post = |_: &str, _: &str, _: &str| -> Result<Vec<u8>, String> {
+    let post = |_: &str, _: &str, _: &str| -> Result<Vec<u8>, PostError> {
         Ok(b"<e:Envelope xmlns:e=\"s\"><e:Body><e:Fault><faultcode>e:Client.1033</faultcode><faultstring>Registrado previamente</faultstring></e:Fault></e:Body></e:Envelope>".to_vec())
     };
     let out = send(&json!({ "name": "20100066603-01-F001-1", "xml": "<a/>" }), &conn(), &post).unwrap();
@@ -55,7 +55,7 @@ fn send_reports_a_fault_with_its_class() {
 
 #[test]
 fn status_builds_get_status_cdr_and_attaches_the_cdr() {
-    let post = |_: &str, action: &str, envelope: &str| -> Result<Vec<u8>, String> {
+    let post = |_: &str, action: &str, envelope: &str| -> Result<Vec<u8>, PostError> {
         assert_eq!(action, "urn:getStatusCdr");
         assert!(envelope.contains("<numeroComprobante>7782</numeroComprobante>"));
         Ok(format!(
@@ -111,9 +111,9 @@ fn send_resends_a_stored_signed_xml_byte_for_byte() {
     // CRLF added so any normalization by the SDK would show.
     let stored = include_str!("../../../tests/vectors/03-receipt-consumer-dni.signed.xml").replace('\n', "\r\n");
     let envelopes = RefCell::new(Vec::new());
-    let post = |_: &str, _: &str, envelope: &str| -> Result<Vec<u8>, String> {
+    let post = |_: &str, _: &str, envelope: &str| -> Result<Vec<u8>, PostError> {
         envelopes.borrow_mut().push(envelope.to_string());
-        Err("timed out after 1 s waiting for SUNAT; the outcome is unknown".into())
+        Err(PostError::Timeout(1))
     };
     let name = "20000000001-03-B001-1";
     let inputs = [json!({ "name": name, "xml": stored }), json!({ "name": name, "xml_base64": STANDARD.encode(stored.as_bytes()) })];
@@ -132,7 +132,7 @@ fn send_resends_a_stored_signed_xml_byte_for_byte() {
 #[test]
 fn summary_sends_with_send_summary_and_returns_the_ticket() {
     let calls = RefCell::new(Vec::new());
-    let post = |endpoint: &str, action: &str, envelope: &str| -> Result<Vec<u8>, String> {
+    let post = |endpoint: &str, action: &str, envelope: &str| -> Result<Vec<u8>, PostError> {
         calls.borrow_mut().push((endpoint.to_string(), action.to_string(), envelope.to_string()));
         Ok(br#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:sendSummaryResponse xmlns:ns2="http://service.sunat.gob.pe"><ticket>1760620000123</ticket></ns2:sendSummaryResponse></S:Body></S:Envelope>"#.to_vec())
     };
@@ -149,7 +149,7 @@ fn ticket_reports_in_process_and_the_cdr_once_processed() {
         format!(r#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:getStatusResponse xmlns:ns2="http://service.sunat.gob.pe"><status><content>{}</content><statusCode>99</statusCode></status></ns2:getStatusResponse></S:Body></S:Envelope>"#, STANDARD.encode(CDR_REJECTED_ZIP)),
         r#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:getStatusResponse xmlns:ns2="http://service.sunat.gob.pe"><status><statusCode>98</statusCode></status></ns2:getStatusResponse></S:Body></S:Envelope>"#.to_string(),
     ]);
-    let post = |_: &str, action: &str, envelope: &str| -> Result<Vec<u8>, String> {
+    let post = |_: &str, action: &str, envelope: &str| -> Result<Vec<u8>, PostError> {
         assert_eq!(action, "urn:getStatus");
         assert!(envelope.contains("<ticket>1760620000123</ticket>"));
         Ok(answers.borrow_mut().pop().unwrap().into_bytes())
@@ -161,4 +161,26 @@ fn ticket_reports_in_process_and_the_cdr_once_processed() {
     assert_eq!(done["cdr"]["response_code"], "2047");
     assert_eq!(done["cdr"]["class"], "rejected");
     assert!(ticket(&json!({ "ticket": "17-6" }), &conn(), &post).is_err());
+}
+
+#[test]
+fn queries_without_an_answer_are_no_verdict_and_sends_stay_errors() {
+    let unauthorized = |_: &str, _: &str, _: &str| -> Result<Vec<u8>, PostError> { Err(PostError::Status(401)) };
+    let timed_out = |_: &str, _: &str, _: &str| -> Result<Vec<u8>, PostError> { Err(PostError::Timeout(45)) };
+    let broken = |_: &str, _: &str, _: &str| -> Result<Vec<u8>, PostError> { Err(PostError::Other("transport error: Dns".into())) };
+    let by_ticket = json!({ "ticket": "1760620000123" });
+    let by_number = json!({ "ruc": "20100066603", "document_type": "03", "series": "B001", "number": 7 });
+
+    let out = ticket(&by_ticket, &conn(), &unauthorized).unwrap();
+    assert_eq!(out["outcome"], "no_verdict");
+    assert_eq!((out["reason"].as_str(), out["http_status"].as_u64(), out["ticket"].as_str()), (Some("http_status"), Some(401), Some("1760620000123")));
+    let out = status(&by_number, &conn(), &timed_out).unwrap();
+    assert_eq!((out["outcome"].as_str(), out["reason"].as_str()), (Some("no_verdict"), Some("timeout")));
+    assert!(out["http_status"].is_null() && out.get("ticket").is_none());
+
+    assert!(ticket(&by_ticket, &conn(), &broken).is_err());
+    assert!(status(&by_number, &conn(), &broken).is_err());
+    let doc = json!({ "name": "20100066603-01-F001-1", "xml": "<a/>" });
+    assert_eq!(send(&doc, &conn(), &unauthorized).unwrap_err(), "SUNAT answered HTTP 401");
+    assert!(summary(&json!({ "name": "20123456789-RC-20261016-1", "xml": "<a/>" }), &conn(), &timed_out).unwrap_err().contains("outcome is unknown"));
 }

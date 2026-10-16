@@ -155,3 +155,61 @@ fn read_cdr_decodes_latin1() {
     assert_eq!(cdr.notes, vec!["4000 - Direcci\u{f3}n"]);
     assert_eq!(read_cdr(b"<a><b/></a>"), Err(TransportError::MissingElement("ResponseCode")));
 }
+
+#[test]
+fn summaries_and_void_communications_zip_under_their_own_names() {
+    for name in ["20123456789-RC-20261016-1", "20123456789-RA-20261016-12345"] {
+        let zip = zip_document(name, b"<SummaryDocuments/>").unwrap();
+        assert_eq!(unzip_xml(&zip).unwrap(), b"<SummaryDocuments/>", "{name}");
+    }
+    for name in ["20123456789-RC-2026101-1", "20123456789-RA-20261016-123456", "20123456789-RC-2026101A-1"] {
+        assert_eq!(zip_document(name, b"x"), Err(TransportError::InvalidName(name.into())), "{name}");
+    }
+}
+
+#[test]
+fn send_summary_and_get_status_envelopes() {
+    let envelope = send_summary_envelope("20123456789MODDATOS", "moddatos", "20123456789-RC-20261016-1.zip", b"PK-test");
+    let expected_body = format!(
+        "<soapenv:Body><ser:sendSummary><fileName>20123456789-RC-20261016-1.zip</fileName><contentFile>{}</contentFile></ser:sendSummary></soapenv:Body>",
+        b64(b"PK-test")
+    );
+    assert!(envelope.contains(&expected_body), "{envelope}");
+    assert!(envelope.contains("<wsse:Username>20123456789MODDATOS</wsse:Username>"));
+
+    let envelope = get_status_envelope("20123456789MODDATOS", "moddatos", "1760620000123").unwrap();
+    assert!(envelope.contains("<soapenv:Body><ser:getStatus><ticket>1760620000123</ticket></ser:getStatus></soapenv:Body>"));
+    for bad in ["", "17606-20000", "<x>"] {
+        assert!(get_status_envelope("u", "p", bad).is_err(), "{bad}");
+    }
+}
+
+#[test]
+fn send_summary_response_gives_the_ticket_or_the_fault() {
+    let body = br#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:sendSummaryResponse xmlns:ns2="http://service.sunat.gob.pe"><ticket>1760620000123</ticket></ns2:sendSummaryResponse></S:Body></S:Envelope>"#;
+    assert_eq!(parse_send_summary_response(body).unwrap(), SendSummaryOutcome::Ticket("1760620000123".into()));
+
+    let fault = br#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><S:Fault><faultcode>S:Client.2324</faultcode><faultstring>El identificador de la comunicacion ya fue presentado</faultstring></S:Fault></S:Body></S:Envelope>"#;
+    let SendSummaryOutcome::Fault { code, .. } = parse_send_summary_response(fault).unwrap() else { panic!() };
+    assert_eq!(code, "2324");
+
+    let empty = br#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:sendSummaryResponse xmlns:ns2="http://service.sunat.gob.pe"/></S:Body></S:Envelope>"#;
+    assert_eq!(parse_send_summary_response(empty), Err(TransportError::MissingElement("ticket")));
+}
+
+#[test]
+fn get_status_response_in_process_and_processed() {
+    let in_process = br#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:getStatusResponse xmlns:ns2="http://service.sunat.gob.pe"><status><statusCode>98</statusCode></status></ns2:getStatusResponse></S:Body></S:Envelope>"#;
+    assert_eq!(
+        parse_get_status_response(in_process).unwrap(),
+        TicketStatusOutcome::Status(TicketStatus { status_code: "98".into(), cdr: None })
+    );
+
+    let processed = format!(
+        r#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:getStatusResponse xmlns:ns2="http://service.sunat.gob.pe"><status><content>{}</content><statusCode>99</statusCode></status></ns2:getStatusResponse></S:Body></S:Envelope>"#,
+        b64(CDR_REJECTED_ZIP)
+    );
+    let TicketStatusOutcome::Status(status) = parse_get_status_response(processed.as_bytes()).unwrap() else { panic!() };
+    assert_eq!(status.status_code, "99");
+    assert_eq!(read_cdr(&status.cdr.unwrap()).unwrap().response_code, "2047");
+}

@@ -1,4 +1,4 @@
-//! Parsing of sendBill and getStatusCdr responses, including SOAP faults.
+//! Parsing of sendBill, sendSummary, getStatus and getStatusCdr responses, including SOAP faults.
 
 use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
@@ -27,6 +27,53 @@ pub struct StatusCdr {
 pub enum StatusCdrOutcome {
     Status(StatusCdr),
     Fault { code: String, message: String },
+}
+
+/// Result of sendSummary: the ticket to ask getStatus with, or the exception SUNAT raised.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum SendSummaryOutcome {
+    Ticket(String),
+    Fault { code: String, message: String },
+}
+
+/// Body of a getStatus answer. `status_code` is `0` (processed; the CDR says how), `98` (still
+/// in process: ask again with the same ticket) or `99` (processed with errors; the CDR says
+/// which). `cdr` is the CDR zip when SUNAT attaches one.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct TicketStatus {
+    pub status_code: String,
+    pub cdr: Option<Vec<u8>>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TicketStatusOutcome {
+    Status(TicketStatus),
+    Fault { code: String, message: String },
+}
+
+/// Parses the HTTP body of a sendSummary call.
+pub fn parse_send_summary_response(body: &[u8]) -> Result<SendSummaryOutcome, TransportError> {
+    let nodes = nodes(&decode(body)?)?;
+    if let Some((code, message)) = fault(&nodes) {
+        return Ok(SendSummaryOutcome::Fault { code, message });
+    }
+    let ticket = text_by_suffix(&nodes, &["sendSummaryResponse", "ticket"])
+        .ok_or(TransportError::MissingElement("ticket"))?;
+    Ok(SendSummaryOutcome::Ticket(ticket))
+}
+
+/// Parses the HTTP body of a getStatus call.
+pub fn parse_get_status_response(body: &[u8]) -> Result<TicketStatusOutcome, TransportError> {
+    let nodes = nodes(&decode(body)?)?;
+    if let Some((code, message)) = fault(&nodes) {
+        return Ok(TicketStatusOutcome::Fault { code, message });
+    }
+    let status_code = text_by_suffix(&nodes, &["getStatusResponse", "status", "statusCode"])
+        .ok_or(TransportError::MissingElement("statusCode"))?;
+    let cdr = text_by_suffix(&nodes, &["getStatusResponse", "status", "content"])
+        .map(|c| decode_base64(&c))
+        .transpose()?;
+    Ok(TicketStatusOutcome::Status(TicketStatus { status_code, cdr }))
 }
 
 /// Parses the HTTP body of a sendBill call (a 200 answer or a 500 SOAP fault).

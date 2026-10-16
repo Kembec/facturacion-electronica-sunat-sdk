@@ -1,4 +1,5 @@
-//! SOAP 1.1 envelopes for billService.sendBill and billConsultService.getStatusCdr, with the
+//! SOAP 1.1 envelopes for billService.sendBill, sendSummary and getStatus, and for
+//! billConsultService.getStatusCdr, with the
 //! WS-Security UsernameToken header (PasswordText) of the SUNAT programmer's manual (SEE v2.1).
 
 use base64::engine::general_purpose::STANDARD;
@@ -9,6 +10,8 @@ use crate::TransportError;
 
 pub const SOAP_ACTION_SEND_BILL: &str = "urn:sendBill";
 pub const SOAP_ACTION_GET_STATUS_CDR: &str = "urn:getStatusCdr";
+pub const SOAP_ACTION_SEND_SUMMARY: &str = "urn:sendSummary";
+pub const SOAP_ACTION_GET_STATUS: &str = "urn:getStatus";
 
 const ENVELOPE_OPEN: &str = concat!(
     r#"<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/""#,
@@ -27,6 +30,26 @@ pub fn send_bill_envelope(sol_user_full: &str, sol_password: &str, zip_name: &st
         STANDARD.encode(zip),
     );
     envelope(sol_user_full, sol_password, &body)
+}
+
+/// sendSummary envelope for a daily summary (RC) or a void communication (RA); `zip_name` is
+/// `RUC-RC-YYYYMMDD-N.zip` or `RUC-RA-YYYYMMDD-N.zip`. SUNAT answers with a ticket.
+pub fn send_summary_envelope(sol_user_full: &str, sol_password: &str, zip_name: &str, zip: &[u8]) -> String {
+    let body = format!(
+        "<ser:sendSummary><fileName>{}</fileName><contentFile>{}</contentFile></ser:sendSummary>",
+        escape(zip_name),
+        STANDARD.encode(zip),
+    );
+    envelope(sol_user_full, sol_password, &body)
+}
+
+/// getStatus envelope: the state of the summary or void communication behind `ticket`.
+pub fn get_status_envelope(sol_user_full: &str, sol_password: &str, ticket: &str) -> Result<String, TransportError> {
+    if !is_digits(ticket, 1, 40) {
+        return Err(TransportError::InvalidArgument("ticket must be 1 to 40 digits"));
+    }
+    let body = format!("<ser:getStatus><ticket>{ticket}</ticket></ser:getStatus>");
+    Ok(envelope(sol_user_full, sol_password, &body))
 }
 
 /// getStatusCdr envelope for the document `ruc`-`document_type`-`series`-`number`.

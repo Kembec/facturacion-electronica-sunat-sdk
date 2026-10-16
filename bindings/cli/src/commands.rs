@@ -5,12 +5,13 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine;
 use serde_json::{json, Value};
 use sunat_sdk::transport::{
-    SOAP_ACTION_GET_STATUS_CDR, SOAP_ACTION_SEND_BILL,
+    SOAP_ACTION_GET_STATUS, SOAP_ACTION_GET_STATUS_CDR, SOAP_ACTION_SEND_BILL, SOAP_ACTION_SEND_SUMMARY,
 };
 use sunat_sdk::{
-    classify_cdr, classify_code, get_status_cdr_envelope, parse_get_status_cdr_response,
-    parse_send_bill_response, read_cdr, send_bill_envelope, zip_document, zip_file_name, Cdr,
-    SendBillOutcome, StatusCdrOutcome,
+    classify_cdr, classify_code, get_status_cdr_envelope, get_status_envelope,
+    parse_get_status_cdr_response, parse_get_status_response, parse_send_bill_response,
+    parse_send_summary_response, read_cdr, send_bill_envelope, send_summary_envelope, zip_document,
+    zip_file_name, Cdr, SendBillOutcome, SendSummaryOutcome, StatusCdrOutcome, TicketStatusOutcome,
 };
 
 use crate::config::Connection;
@@ -36,6 +37,43 @@ pub fn send(input: &Value, conn: &Connection, post: Post) -> Result<Value, Strin
             "cdr_zip_base64": STANDARD.encode(cdr_zip),
         })),
         SendBillOutcome::Fault { code, message } => Ok(fault_json(&code, &message)),
+    }
+}
+
+/// Zips a signed daily summary (RC) or void communication (RA) and sends it with sendSummary.
+/// Same input as `zip`, named `RUC-RC|RA-YYYYMMDD-N`. The ticket is the only handle on the
+/// outcome: the caller stores it before anything else and asks `ticket` with it.
+pub fn summary(input: &Value, conn: &Connection, post: Post) -> Result<Value, String> {
+    let (name, zip) = zipped(input)?;
+    let envelope = send_summary_envelope(&conn.user, &conn.password, &zip_file_name(&name), &zip);
+    let body = post(&conn.endpoint, SOAP_ACTION_SEND_SUMMARY, &envelope)?;
+    match parse_send_summary_response(&body).map_err(|e| e.to_string())? {
+        SendSummaryOutcome::Ticket(ticket) => Ok(json!({ "outcome": "ticket", "ticket": ticket })),
+        SendSummaryOutcome::Fault { code, message } => Ok(fault_json(&code, &message)),
+    }
+}
+
+/// `{"ticket"}` → getStatus answer: `state` is `processed` (0), `in_process` (98: ask again with
+/// the same ticket, never send again) or `processed_with_errors` (99), with the CDR if attached.
+pub fn ticket(input: &Value, conn: &Connection, post: Post) -> Result<Value, String> {
+    let envelope = get_status_envelope(&conn.user, &conn.password, text(input, "ticket")?).map_err(|e| e.to_string())?;
+    let body = post(&conn.endpoint, SOAP_ACTION_GET_STATUS, &envelope)?;
+    match parse_get_status_response(&body).map_err(|e| e.to_string())? {
+        TicketStatusOutcome::Fault { code, message } => Ok(fault_json(&code, &message)),
+        TicketStatusOutcome::Status(status) => {
+            let state = match status.status_code.trim() {
+                "0" => Value::from("processed"),
+                "98" => Value::from("in_process"),
+                "99" => Value::from("processed_with_errors"),
+                _ => Value::Null,
+            };
+            let mut out = json!({ "outcome": "ticket_status", "status_code": status.status_code, "state": state });
+            if let Some(cdr_zip) = status.cdr {
+                out["cdr"] = cdr_json(&read_cdr(&cdr_zip).map_err(|e| e.to_string())?);
+                out["cdr_zip_base64"] = json!(STANDARD.encode(cdr_zip));
+            }
+            Ok(out)
+        }
     }
 }
 

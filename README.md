@@ -1,16 +1,17 @@
-# facturacion-electronica-sunat-sdk
+# SDK de facturación electrónica SUNAT (Perú)
 
-Facturación electrónica de la SUNAT (Perú) para **Rust, JavaScript y TypeScript, Python y PHP**, y desde la línea de
-comandos. Tu sistema calcula los importes y decide qué emitir; el SDK arma el XML de la factura, la boleta, la nota de
-crédito o de débito, el resumen diario o la comunicación de baja, lo firma con tu certificado, lo envía al web service
-de la SUNAT y lee lo que responde. Es para quien programa el sistema de facturación de un emisor electrónico.
+Un SDK (una biblioteca que agregas a tu programa) para emitir comprobantes electrónicos ante la SUNAT desde **Rust,
+JavaScript y TypeScript, Python y PHP**, o desde la línea de comandos. Tu sistema decide qué emitir y calcula los
+importes; el SDK convierte esos datos en el archivo XML que pide la SUNAT, lo firma con tu certificado digital, lo
+envía y te dice si la SUNAT lo aceptó. Sirve para facturas, boletas, notas de crédito y de débito, resúmenes diarios
+de boletas y comunicaciones de baja (las que anulan comprobantes ya enviados). Es para quien programa el sistema de
+facturación de una empresa.
 
-SUNAT (Peru) e-invoicing SDK for Rust, JavaScript/TypeScript (Node, browser, WebAssembly), Python and PHP: UBL XML,
-XML-DSig signature, SOAP web service and CDR.
+SUNAT (Peru) electronic invoicing SDK for Rust, JavaScript/TypeScript, Python and PHP.
 
-Detrás de todos los lenguajes está el mismo núcleo en Rust, así que un mismo documento da el mismo XML y la misma firma
-en cualquiera de ellos. El CI lo exige en cada cambio con 22 vectores de prueba, y la beta de la SUNAT aceptó esos
-documentos el 16/10/2026.
+Todos los lenguajes usan el mismo motor por dentro, así que los mismos datos dan el mismo comprobante firmado en
+cualquiera de ellos. Las pruebas automáticas lo comprueban en cada cambio con 22 documentos de ejemplo, y el entorno de
+pruebas de la SUNAT aceptó esos documentos el 16/10/2026.
 
 Guías y ejemplos: **https://fe.kembec.com**
 
@@ -18,24 +19,25 @@ Guías y ejemplos: **https://fe.kembec.com**
 
 | Lenguaje | Paquete | Instalación |
 |---|---|---|
-| JavaScript y TypeScript (Node 18 o posterior, navegador) | [`@kembec/facturacion-electronica-sunat-sdk`](https://www.npmjs.com/package/@kembec/facturacion-electronica-sunat-sdk), WebAssembly | `npm install @kembec/facturacion-electronica-sunat-sdk` |
-| PHP 7.4 o posterior | [`kembec/facturacion-electronica-sunat-sdk`](https://packagist.org/packages/kembec/facturacion-electronica-sunat-sdk), cliente del binario | `composer require kembec/facturacion-electronica-sunat-sdk:^0.1@beta` |
-| Python 3.10 o posterior | `facturacion-electronica-sunat-sdk`, wheels con el núcleo compilado | en PyPI desde la versión siguiente a 0.1.0-beta.2; hasta entonces, [desde este repositorio](bindings/python/README.md#instalación) |
-| Rust | los crates de [`crates/`](crates) | dependencia git del tag, [abajo](#rust) |
-| Línea de comandos | binario `sunat-sdk` | [release de GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64) o `cargo build` |
+| JavaScript y TypeScript (Node 18 o posterior, navegador) | [`@kembec/facturacion-electronica-sunat-sdk`](https://www.npmjs.com/package/@kembec/facturacion-electronica-sunat-sdk) | `npm install @kembec/facturacion-electronica-sunat-sdk@beta` |
+| PHP 7.4 o posterior | [`kembec/facturacion-electronica-sunat-sdk`](https://packagist.org/packages/kembec/facturacion-electronica-sunat-sdk) | `composer require kembec/facturacion-electronica-sunat-sdk:^0.1@beta` |
+| Python 3.10 o posterior | [`facturacion-electronica-sunat-sdk`](https://pypi.org/project/facturacion-electronica-sunat-sdk/) | `pip install --pre facturacion-electronica-sunat-sdk` |
+| Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) |
+| Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` |
 
-La versión publicada es la 0.1.0-beta.2. Este README describe `main`: lo que la 0.1.0-beta.2 todavía no trae está en
-[Versiones](#versiones).
+Este README describe la 0.1.0-beta.3, publicada en npm, PyPI, Packagist y GitHub. Es una versión beta: por eso las
+instalaciones de arriba la piden de forma explícita (`@beta` en npm y Composer, `--pre` en pip). Lo que cambió desde la
+anterior está en [Versiones](#versiones).
 
 ## Tu primer comprobante, en cualquier lenguaje
 
-La misma factura de prueba, firmada con el certificado de prueba del repositorio, da en todos los lenguajes el
-`DigestValue` `+te61a2ub5MlTFf8tKTPNGWEXKI=`, el de su vector
+La misma factura de prueba, firmada con el certificado de prueba del repositorio, da en todos los lenguajes la misma
+huella de la firma (su `DigestValue`), `+te61a2ub5MlTFf8tKTPNGWEXKI=`: la del archivo de referencia
 [`tests/vectors/01-invoice-taxed-cash.signed.xml`](tests/vectors/01-invoice-taxed-cash.signed.xml). Baja los tres
 archivos a una carpeta vacía:
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.2
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.3
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -47,7 +49,7 @@ Ese certificado es autogenerado y no sirve para emitir. El documento de entrada 
 ### JavaScript y TypeScript
 
 ```js
-// primer-comprobante.mjs, después de npm install @kembec/facturacion-electronica-sunat-sdk
+// primer-comprobante.mjs, después de npm install @kembec/facturacion-electronica-sunat-sdk@beta
 import { readFileSync } from 'node:fs';
 import { load } from '@kembec/facturacion-electronica-sunat-sdk';
 
@@ -111,9 +113,9 @@ Los crates no están en crates.io: se usan como dependencia git del tag. `sunat-
 
 ```toml
 [dependencies]
-sunat-model = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.2" }
-sunat-ubl = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.2" }
-sunat-xmldsig = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.2" }
+sunat-model = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.3" }
+sunat-ubl = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.3" }
+sunat-xmldsig = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.3" }
 ```
 
 ```rust
@@ -141,7 +143,7 @@ haces tú. Lo que expone cada crate está en la [arquitectura](docs/architecture
 En Linux x86_64, el binario estático del release:
 
 ```bash
-url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.2
+url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.3
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl"
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl.sha256"
 sha256sum -c sunat-sdk-x86_64-unknown-linux-musl.sha256
@@ -194,6 +196,18 @@ Todos los lenguajes reciben el mismo documento de entrada; lo que cambia es cóm
 | Python | `build`, `sign`, `zip`, `cdr`, en memoria | `exchange` hace el POST con TLS verificado; `soap_request` y `soap_response` para tu propio cliente HTTP |
 | Rust | `sunat-model`, `sunat-ubl`, `sunat-xmldsig`, `sunat-transport` | `sunat_sdk::exchange` arma la petición y lee la respuesta; el HTTP es tuyo |
 
+## Cómo funciona por dentro
+
+El SDK arma XML UBL (2.1 en comprobantes, 2.0 en resúmenes y bajas), lo firma con XML-DSig, habla con el web service
+SOAP de la SUNAT y lee la CDR, la constancia con la que la SUNAT responde. Todo eso lo hace un mismo núcleo en Rust, que
+cada lenguaje recibe así:
+
+- **JavaScript y TypeScript**: el núcleo compilado a WebAssembly, sin binarios ni procesos aparte.
+- **PHP**: un cliente del binario `sunat-sdk`, que lo ejecuta una vez por llamada.
+- **Python**: wheels con el núcleo compilado adentro; no llaman a ningún binario externo.
+- **Rust**: los crates de [`crates/`](crates), como dependencia git del tag (no están en crates.io).
+- **Línea de comandos**: el binario `sunat-sdk`.
+
 ## Cómo se comprueba
 
 Un tipo de documento entra al SDK cuando cumple tres condiciones: su XML coincide con los vectores de
@@ -231,14 +245,15 @@ está en el [modelo de entrada](docs/input-model.md).
 ## Versiones
 
 Un tag publica a la vez el binario, el paquete npm, el de PHP y el de Python ([`docs/releasing.md`](docs/releasing.md)).
-La 0.1.0-beta.2, publicada en npm, Packagist y como binario, arma, firma, comprime, envía y consulta facturas, boletas y
-notas desde la CLI y PHP, y las arma y firma desde JavaScript. Desde la versión siguiente, como ya está en `main`:
+La 0.1.0-beta.3 es la primera que llega a PyPI. Frente a la 0.1.0-beta.2, que armaba, firmaba, comprimía, enviaba y
+consultaba facturas, boletas y notas desde la CLI y PHP, y solo las armaba y firmaba desde JavaScript, trae:
 
 - resúmenes diarios y comunicaciones de baja (`build`, y `summary` y `ticket` en la CLI);
+- en las líneas del resumen diario, la tasa de IGV y el nombre del cliente, que la SUNAT pide desde el 01/08/2026;
 - descuento por línea;
 - `zip`, `cdr` y el envío y las consultas desde JavaScript;
 - `no_verdict` en `ticket` y `status`, y la CDR observada (código 0 con una nota de 4000 o más);
-- el paquete de Python en PyPI.
+- el paquete de Python.
 
 ## Documentación y soporte
 

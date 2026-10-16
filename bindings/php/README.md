@@ -1,17 +1,17 @@
-# kembec/facturacion-electronica-sunat-sdk (PHP)
+# SDK de facturación electrónica SUNAT (Perú) para PHP
 
-Facturación electrónica de la SUNAT (Perú) desde **PHP**: arma, firma, comprime y envía facturas (01), boletas (03),
-notas de crédito (07) y notas de débito (08), consulta su CDR y la lee; arma y firma además resúmenes diarios (RC) y
-comunicaciones de baja (RA). Es el cliente PHP del binario `sunat-sdk`, el núcleo en Rust del
-[SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk) que usan también sus versiones para JavaScript y
-TypeScript, Python y Rust, así que el mismo documento da la misma firma en todas. Cada llamada ejecuta el binario una
-vez con `proc_open`; el contrato de cada comando está en el
-[contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md).
+Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **PHP**. Con los datos de una factura (01), una boleta
+(03), una nota de crédito (07) o una de débito (08), arma el archivo XML que pide la SUNAT, lo firma con tu certificado
+digital, lo comprime, lo envía y lee la respuesta de la SUNAT: la CDR, la constancia que dice si lo aceptó. Después
+puede consultar el estado de un comprobante ya enviado. También arma y firma resúmenes diarios de boletas (RC) y
+comunicaciones de baja (RA); esos dos se envían con el programa de línea de comandos `sunat-sdk`. Es la versión para PHP
+del [SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y
+TypeScript, Python y Rust: los mismos datos dan el mismo comprobante firmado en todos.
 
-SUNAT (Peru) e-invoicing for PHP: UBL XML, XML-DSig signature, SOAP web service and CDR.
+SUNAT (Peru) electronic invoicing SDK for PHP.
 
-Requiere PHP 7.4 o posterior con la extensión `json`; el instalador del binario usa además `openssl`. Tu sistema
-calcula los importes; el SDK los valida y los escribe, no calcula impuestos. Guías y ejemplos: https://fe.kembec.com
+Requiere PHP 7.4 o posterior con la extensión `json`; el instalador usa además `openssl`. Tu sistema calcula los
+importes; el SDK los valida y los pone en el XML, pero no calcula impuestos. Guías y ejemplos: https://fe.kembec.com
 
 ## Instalación
 
@@ -20,7 +20,12 @@ composer require kembec/facturacion-electronica-sunat-sdk:^0.1@beta
 export "$(vendor/bin/sunat-sdk-install)"     # opcional: --dir=<directorio>
 ```
 
-Las versiones publicadas son beta, por eso la restricción `^0.1@beta`. `sunat-sdk-install` descarga, del release de
+Las versiones publicadas son beta, por eso la restricción `^0.1@beta`.
+
+El trabajo lo hace el binario `sunat-sdk`, el núcleo en Rust del SDK: este paquete es su cliente y lo ejecuta una vez
+por llamada con `proc_open`. El contrato de cada comando está en el
+[contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md).
+`sunat-sdk-install` descarga, del release de
 GitHub `v<SunatSdk::VERSION>`, el binario estático para Linux x86_64 y su `.sha256`, con TLS verificado. Deja el binario
 ejecutable solo si el SHA-256 coincide e imprime `SUNAT_SDK_BIN=<ruta absoluta>`: esa ruta es el primer argumento de
 `SunatSdk`. Por defecto lo deja en `vendor/kembec/facturacion-electronica-sunat-sdk/bindings/php/bin/`; usa `--dir` si
@@ -39,7 +44,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.2
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.3
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -88,13 +93,11 @@ $sdk->cdr($cdrZipOrXmlBytes);                                 // Cdr
 ```
 
 - `isAccepted()` es verdadero solo con código 0 y sin observaciones. Con código 0 y una nota de 4000 o más, la CDR
-  queda `observed`; `isValidDocument()` es verdadero en los dos casos. La clase `observed` e `isValidDocument()` llegan
-  en la versión siguiente a 0.1.0-beta.2.
+  queda `observed`; `isValidDocument()` es verdadero en los dos casos.
 - `send` y `status` esperan a la SUNAT hasta 90 segundos, o menos si el tiempo máximo por llamada no deja 5 segundos
   de margen. El tercer argumento opcional del constructor fija esa espera, en segundos enteros.
-- `build` y `sign` también arman y firman resúmenes diarios (RC) y comunicaciones de baja (RA), con el binario de la
-  versión siguiente a 0.1.0-beta.2. Este cliente no los envía ni consulta su ticket: para eso están los comandos
-  `summary` y `ticket` de la CLI.
+- `build` y `sign` también arman y firman resúmenes diarios (RC) y comunicaciones de baja (RA). Este cliente no los
+  envía ni consulta su ticket: para eso están los comandos `summary` y `ticket` de la CLI.
 
 Secretos: las credenciales SOL, los endpoints y las rutas de las llaves llegan al binario solo por su entorno, nunca
 por sus argumentos. El proceso hijo no hereda el entorno del padre, y cualquier valor que se le pasa se reemplaza por

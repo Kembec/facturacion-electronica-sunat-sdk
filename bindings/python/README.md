@@ -1,30 +1,30 @@
-# facturacion-electronica-sunat-sdk (Python)
+# SDK de facturación electrónica SUNAT (Perú) para Python
 
-Facturación electrónica de la SUNAT (Perú) desde **Python**: arma, firma, comprime y envía a la SUNAT facturas (01),
-boletas (03), notas de crédito (07) y notas de débito (08) en UBL 2.1, y resúmenes diarios (RC) y comunicaciones de baja
-(RA) en UBL 2.0, y lee su respuesta. Usa el mismo núcleo en Rust que las versiones del
-[SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk) para JavaScript y TypeScript, PHP, Rust y la línea
-de comandos, compilado dentro de la wheel: no llama a ningún binario externo, y el mismo documento da la misma firma en
-todas.
+Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **Python**. Con los datos de una factura (01), una
+boleta (03), una nota de crédito (07) o de débito (08), un resumen diario de boletas (RC) o una comunicación de baja
+(RA), arma el archivo XML que pide la SUNAT, lo firma con tu certificado digital, lo comprime, lo envía y lee la
+respuesta de la SUNAT, que dice si lo aceptó. Es la versión para Python del
+[SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y TypeScript,
+PHP, Rust y la línea de comandos: los mismos datos dan el mismo comprobante firmado en todos.
 
-SUNAT (Peru) e-invoicing for Python: UBL XML, XML-DSig signature, SOAP web service and CDR.
+SUNAT (Peru) electronic invoicing SDK for Python.
 
-Tu sistema calcula los importes; el paquete los valida y los escribe, no calcula impuestos. Guías y ejemplos:
-https://fe.kembec.com
+Tu sistema calcula los importes; el paquete los valida y los pone en el XML, pero no calcula impuestos. Guías y
+ejemplos: https://fe.kembec.com
 
 ## Instalación
 
-El paquete se publica en PyPI desde la versión siguiente a 0.1.0-beta.2, la primera que lo incluye. Como esa versión es
-beta, `pip` la instala solo si se le pide:
+El paquete está en PyPI desde la 0.1.0-beta.3. Como es una beta, `pip` la instala solo si se le pide:
 
 ```bash
 pip install --pre facturacion-electronica-sunat-sdk
 ```
 
-Wheels abi3 para CPython 3.10 o posterior en Linux (x86_64 y aarch64, glibc), macOS (arm64 y x86_64) y Windows
-(x86_64). En otra plataforma, pip compila el sdist y necesita Rust.
+El paquete trae el núcleo en Rust del SDK ya compilado (wheels abi3), así que no llama a ningún binario externo. Hay
+wheels para CPython 3.10 o posterior en Linux (x86_64 y aarch64, glibc), macOS (arm64 y x86_64) y Windows (x86_64). En
+otra plataforma, pip lo compila desde el código fuente (el sdist) y necesita Rust.
 
-Hasta que esté en PyPI, se instala desde el repositorio, con Rust:
+Para instalar la versión en desarrollo (la rama `main`) desde el repositorio hace falta Rust:
 
 ```bash
 git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git
@@ -39,7 +39,7 @@ Baja a una carpeta vacía la factura de prueba y el certificado de prueba del re
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.2
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.3
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -75,6 +75,8 @@ sent = sunat_sdk.exchange(
 ```
 
 ## API
+
+`build` arma XML UBL 2.1 (comprobantes) o UBL 2.0 (resúmenes y bajas), y `sign` lo firma con XML-DSig.
 
 - `build(document)`, `sign(xml, cert_pem, key_pem, signature_id=None)`, `zip({name, xml})` y `cdr({cdr_base64})`
   devuelven el mismo JSON que la CLI y el paquete npm, ya convertido en `dict`. La llave PEM tiene que ser RSA sin

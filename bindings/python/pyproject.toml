@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "facturacion-electronica-sunat-sdk"
-# From the Cargo workspace version (0.1.0-beta.2 -> 0.1.0b2); scripts/check_version.py fails if they differ.
+# From the Cargo workspace version (0.1.0-beta.3 -> 0.1.0b3); scripts/check_version.py fails if they differ.
 dynamic = ["version"]
 description = "SUNAT (Peru) electronic invoicing: builds the UBL XML of invoices, receipts, credit and debit notes, daily summaries and void communications, signs it, zips it and reads SUNAT's answers."
 readme = "README.md"
@@ -12,7 +12,7 @@ requires-python = ">=3.10"
 license = "MIT"
 # Copied from the repository root before each build, as the npm package does (gitignored here).
 license-files = ["LICENSE", "NOTICE"]
-keywords = ["sunat", "peru", "facturacion-electronica", "ubl", "xmldsig"]
+keywords = ["sunat", "peru", "facturacion-electronica", "factura-electronica", "e-invoicing", "ubl", "xmldsig", "python"]
 classifiers = [
   "Development Status :: 4 - Beta",
   "Intended Audience :: Developers",

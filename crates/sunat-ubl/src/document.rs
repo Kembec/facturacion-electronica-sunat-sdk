@@ -45,7 +45,13 @@ fn invoice_body(w: &mut XmlWriter, invoice: &Invoice, options: &Options) {
     legends_and_currency(w, v);
     references::order(w, v);
     references::despatches(w, v);
-    parties_and_payment(w, v, options, true);
+    signature_and_parties(w, v, options);
+    if let Some(detraction) = &invoice.detraction {
+        totals::detraction(w, detraction);
+    }
+    if let Some(terms) = &v.payment_terms {
+        totals::payment_terms(w, terms, &v.currency);
+    }
     if let Some(retention) = &v.igv_retention {
         totals::igv_retention(w, retention, &v.currency);
     }
@@ -69,8 +75,11 @@ fn note_body(w: &mut XmlWriter, note: &Note, options: &Options) {
     references::order(w, v);
     billing_reference(w, note);
     references::despatches(w, v);
+    signature_and_parties(w, v, options);
     // Payment terms apply to credit notes (reason 13 adjusts them); debit notes carry none.
-    parties_and_payment(w, v, options, credit);
+    if let (true, Some(terms)) = (credit, &v.payment_terms) {
+        totals::payment_terms(w, terms, &v.currency);
+    }
     if let Some(retention) = &v.igv_retention {
         totals::igv_retention(w, retention, &v.currency);
     }
@@ -137,11 +146,8 @@ fn billing_reference(w: &mut XmlWriter, note: &Note) {
     w.close();
 }
 
-fn parties_and_payment(w: &mut XmlWriter, v: &Voucher, options: &Options, with_payment_terms: bool) {
+fn signature_and_parties(w: &mut XmlWriter, v: &Voucher, options: &Options) {
     parties::signature_reference(w, &v.issuer, options);
     parties::supplier(w, &v.issuer);
     parties::customer(w, &v.customer);
-    if let (true, Some(terms)) = (with_payment_terms, &v.payment_terms) {
-        totals::payment_terms(w, terms, &v.currency);
-    }
 }

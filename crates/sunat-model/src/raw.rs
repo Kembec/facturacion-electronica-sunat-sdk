@@ -5,7 +5,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::{
-    Client, Company, DateTime, DespatchReference, Document, DocumentType, IgvRetention, Invoice, Legend, Line, ModelError, Note, NoteReference,
+    Client, Company, DateTime, DespatchReference, Detraction, Document, DocumentType, IgvRetention, Invoice, Legend, Line, ModelError, Note, NoteReference,
     PaymentTerms, Totals, Voucher,
 };
 
@@ -33,6 +33,7 @@ struct RawDocument {
     #[serde(default)]
     despatch_references: Vec<DespatchReference>,
     igv_retention: Option<IgvRetention>,
+    detraction: Option<Detraction>,
 }
 
 pub(crate) fn parse(json: &str) -> Result<Document, ModelError> {
@@ -74,11 +75,12 @@ impl RawDocument {
             "invoice" => {
                 reject(self.note.is_some(), "$.note", "applies to notes (07, 08) only")?;
                 let operation_type = self.operation_type.ok_or_else(|| ModelError::missing("$.operation_type"))?;
-                Ok(Document::Invoice(Invoice { voucher, operation_type, due_date: self.due_date }))
+                Ok(Document::Invoice(Invoice { voucher, operation_type, due_date: self.due_date, detraction: self.detraction }))
             }
             "note" => {
                 reject(self.operation_type.is_some(), "$.operation_type", "applies to invoices only")?;
                 reject(self.due_date.is_some(), "$.due_date", "applies to invoices only")?;
+                reject(self.detraction.is_some(), "$.detraction", "applies to invoices and receipts only")?;
                 let reference = self.note.ok_or_else(|| ModelError::missing("$.note"))?;
                 Ok(Document::Note(Note { voucher, reference }))
             }

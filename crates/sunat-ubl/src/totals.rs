@@ -1,14 +1,34 @@
 //! Document-level sections: payment terms («Forma de pago»), the tax total with one subtotal per
 //! scheme («Total de tributos») and the monetary totals («Totales del comprobante»).
 
-use sunat_model::{Decimal, IgvRetention, PaymentTerms, Totals};
+use sunat_model::{Decimal, Detraction, IgvRetention, PaymentTerms, Totals};
 
-use crate::amount::two_decimals;
+use crate::amount::{shortest, two_decimals};
 use crate::lines::{factor_text, tax_scheme};
 use crate::tax::{TaxScheme, EXEMPT, EXPORT, FREE, IGV, UNAFFECTED};
 use crate::writer::XmlWriter;
 
 const PAYMENT_TERMS_ID: &str = "FormaPago";
+const DETRACTION_ID: &str = "Detraccion";
+
+/// The detraction account (`cac:PaymentMeans`) and the goods code, rate and amount
+/// (`cac:PaymentTerms`), before the form of payment: UBL puts every `PaymentMeans` before the
+/// `PaymentTerms`. The amount is always in soles (SUNAT 3208).
+pub(crate) fn detraction(w: &mut XmlWriter, detraction: &Detraction) {
+    w.open("cac:PaymentMeans", &[]);
+    w.text("cbc:ID", DETRACTION_ID);
+    w.text("cbc:PaymentMeansCode", &detraction.payment_means_code);
+    w.open("cac:PayeeFinancialAccount", &[]);
+    w.text("cbc:ID", &detraction.account);
+    w.close();
+    w.close();
+    w.open("cac:PaymentTerms", &[]);
+    w.text("cbc:ID", DETRACTION_ID);
+    w.text("cbc:PaymentMeansID", &detraction.code);
+    w.text("cbc:PaymentPercent", &shortest(&detraction.percent));
+    w.leaf("cbc:Amount", &[("currencyID", "PEN")], &two_decimals(&detraction.amount));
+    w.close();
+}
 
 pub(crate) fn payment_terms(w: &mut XmlWriter, terms: &PaymentTerms, currency: &str) {
     match terms {

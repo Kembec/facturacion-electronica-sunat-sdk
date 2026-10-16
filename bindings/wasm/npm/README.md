@@ -121,7 +121,7 @@ En Node 18, donde `globalThis.crypto` no existe sin una opción de arranque, `lo
 ## Cómo se comprueba
 
 En cada cambio, el CI instala el paquete empaquetado en un proyecto limpio y exige, en Node 18, Node 22 y Chrome, el
-`DigestValue` y el `SignatureValue` exactos de los 26 vectores de prueba del repositorio: las mismas firmas que la beta de la SUNAT aceptó el
+`DigestValue` y el `SignatureValue` exactos de los 34 vectores de prueba del repositorio: las mismas firmas que la beta de la SUNAT aceptó el
 16/10/2026, enviadas con la CLI. La carga con el módulo ya compilado se prueba en Node; en Cloudflare Workers y con
 bundlers no se ha probado. El envío desde JavaScript se prueba sin red, con respuestas escritas a mano, y desde el
 navegador depende de que la SUNAT acepte peticiones de otro origen (CORS), que no se ha probado.

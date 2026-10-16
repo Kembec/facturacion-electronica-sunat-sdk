@@ -85,12 +85,28 @@ reversal summaries (RR); despatch (GRE).
 
 Summary line: `document_type` (`"03"`, `"07"`, `"08"`), `document_number` (`"B001-1"`), `status`
 (catalog 19: `"1"` add, `"2"` modify, `"3"` void), `customer_document_type` (catalog 06),
-`customer_document_number`, optional `reference_document` (`{ "document_type": "03", "document_number":
+`customer_document_number`, optional `customer_name` (field 10.3, 3 to 250 characters without line breaks
+or tabs), optional `igv_rate` (`"18.00"` or `"10.50"` for a receipt; a note also takes `"10.00"`),
+optional `reference_document` (`{ "document_type": "03", "document_number":
 "B001-1" }`, required for notes and rejected on receipts), and the amounts `total` (required), `taxed`,
 `exempt`, `unaffected`, `export`, `free`, `other_charges`, `igv`. `igv` is always rendered (`0.00` when
 absent); `taxed` is rendered whenever given, even `"0.00"`; `exempt`, `unaffected`, `export`, `free` and
 `other_charges` only when non-zero, so `"0.00"` there is the same as absent (the vectors' rule). Summary
-lines carry no tax percentage. `reference_date` must not be after `generation_date`.
+lines render `igv_rate` as the `cbc:Percent` of tax 1000 only when given, and `customer_name` as
+`cac:Party/cac:PartyLegalEntity/cbc:RegistrationName` of the customer. `reference_date` must not be after
+`generation_date`.
+
+### SUNAT's rule changes dated 01/08/2026
+
+SUNAT's validation rules (version of 24/04/2026, «Control de Cambios» rows 508-545) date these changes
+01/08/2026; SUNAT beta did not apply them on 16/10/2026, so the SDK keeps the rules beta applies:
+
+| Change | What SUNAT beta did on 16/10/2026 | In the SDK |
+|---|---|---|
+| Summary: `Percent` of the IGV (errors 2992, 3504, 3102) and the customer's name (10.3, error 2022) | accepted `RC-20261016-911` with both, code 0 | `igv_rate` and `customer_name`, optional; vector `rc-igv-rate-and-customer-name` |
+| Summary: free sales split into catalog 11 codes 06-09 with the IGV of free sales (tax 9996), code 05 deactivated | rejected code 06 with error 2256 («no se encuentra en el catálogo 11») | `free` keeps code 05 |
+| Invoice, receipt and notes: an invalid SUNAT product code becomes error 3496 | accepted with observation 3496 | `sunat_product_code` stays optional and unchecked |
+| IGV rate 10.5 % for MYPE restaurants and lodging | accepted `F001-911` with `igv_rate` `10.50`, code 0, no observations | `igv_rate` as given; vector `01-invoice-igv-10-5`. Being on SUNAT's list of taxpayers allowed to apply it is not checked: beta does not check it either |
 
 ## Void communication (`kind: "voided"`, RA)
 

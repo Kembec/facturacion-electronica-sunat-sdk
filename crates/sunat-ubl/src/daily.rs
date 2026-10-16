@@ -67,6 +67,13 @@ fn summary_line(w: &mut XmlWriter, line_id: usize, line: &SummaryLine, currency:
     w.open("cac:AccountingCustomerParty", &[]);
     w.text("cbc:CustomerAssignedAccountID", &line.customer_document_number);
     w.text("cbc:AdditionalAccountID", &line.customer_document_type);
+    if let Some(name) = &line.customer_name {
+        w.open("cac:Party", &[]);
+        w.open("cac:PartyLegalEntity", &[]);
+        w.text("cbc:RegistrationName", name);
+        w.close();
+        w.close();
+    }
     w.close();
     if let Some(reference) = &line.reference_document {
         w.open("cac:BillingReference", &[]);
@@ -87,7 +94,7 @@ fn summary_line(w: &mut XmlWriter, line_id: usize, line: &SummaryLine, currency:
         w.leaf("cbc:Amount", &money, &two_decimals(charges));
         w.close();
     }
-    igv_total(w, line.igv.as_ref(), &money);
+    igv_total(w, line.igv.as_ref(), line.igv_rate.as_ref(), &money);
     w.close();
 }
 
@@ -111,14 +118,18 @@ fn billing_payments(w: &mut XmlWriter, line: &SummaryLine, money: &[(&str, &str)
     }
 }
 
-/// The IGV total is always present: `0.00` when the line gives none. Summary lines carry no rate.
-fn igv_total(w: &mut XmlWriter, igv: Option<&Decimal>, money: &[(&str, &str)]) {
+/// The IGV total is always present: `0.00` when the line gives none. Its rate (`cbc:Percent`, field 21,
+/// SUNAT errors 2992, 3504 and 3102) only when the line gives one.
+fn igv_total(w: &mut XmlWriter, igv: Option<&Decimal>, rate: Option<&Decimal>, money: &[(&str, &str)]) {
     let amount = igv.map_or_else(|| "0.00".to_owned(), two_decimals);
     w.open("cac:TaxTotal", &[]);
     w.leaf("cbc:TaxAmount", money, &amount);
     w.open("cac:TaxSubtotal", &[]);
     w.leaf("cbc:TaxAmount", money, &amount);
     w.open("cac:TaxCategory", &[]);
+    if let Some(rate) = rate {
+        w.text("cbc:Percent", &two_decimals(rate));
+    }
     tax_scheme(w, IGV);
     w.close();
     w.close();

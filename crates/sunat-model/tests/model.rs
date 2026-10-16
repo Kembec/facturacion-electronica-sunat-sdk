@@ -138,3 +138,29 @@ fn void_communication_is_checked() {
         }
     }
 }
+
+const SUMMARY_RECEIPTS: &str = include_str!("../../../fixtures/rc-receipts-added.json");
+
+/// The IGV rate (errors 3102, 3504) and the customer's name (2022) SUNAT checks on a summary line.
+#[test]
+fn summary_line_rate_and_customer_name_are_checked() {
+    let set = |base: &str, key: &str, value: &str| edited(base, |v| v["lines"][0][key] = serde_json::json!(value));
+    for rate in ["18.00", "10.50", "10.5", "18"] {
+        assert!(set(SUMMARY_RECEIPTS, "igv_rate", rate).is_ok(), "{rate}");
+    }
+    assert!(set(SUMMARY, "igv_rate", "10.00").is_ok(), "a note may modify a receipt taxed at 10 %");
+    for (base, rate) in [(SUMMARY_RECEIPTS, "10.00"), (SUMMARY_RECEIPTS, "8"), (SUMMARY_RECEIPTS, "-18"), (SUMMARY, "1234.5")] {
+        match set(base, "igv_rate", rate) {
+            Err(ModelError::Invalid { path, .. }) => assert_eq!(path, "$.lines[0].igv_rate", "{rate}"),
+            other => panic!("{rate}: {other:?}"),
+        }
+    }
+    assert!(set(SUMMARY_RECEIPTS, "customer_name", "JUAN PEREZ").is_ok());
+    let long = "A".repeat(251);
+    for name in ["AB", "   ", "JUAN\nPEREZ", long.as_str()] {
+        match set(SUMMARY_RECEIPTS, "customer_name", name) {
+            Err(ModelError::Invalid { path, .. }) => assert_eq!(path, "$.lines[0].customer_name", "{name:?}"),
+            other => panic!("{name:?}: {other:?}"),
+        }
+    }
+}

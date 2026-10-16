@@ -44,6 +44,10 @@ pub struct SummaryLine {
     /// Catalog 06.
     pub customer_document_type: String,
     pub customer_document_number: String,
+    /// Field 10.3: the customer's name or legal name, 3 to 250 characters (SUNAT error 2022).
+    pub customer_name: Option<String>,
+    /// Rate of the IGV (`"18.00"`, `"10.50"`), rendered as `cbc:Percent` of tax 1000 (field 21).
+    pub igv_rate: Option<Decimal>,
     /// The receipt a note modifies; notes only.
     pub reference_document: Option<DocumentReference>,
     pub total: Decimal,

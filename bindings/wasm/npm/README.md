@@ -4,6 +4,10 @@ Arma el XML UBL 2.1 de facturas (01), boletas (03), notas de crédito (07) y not
 la SUNAT (Perú) y lo firma, en memoria, con el mismo núcleo en Rust que el CLI. Corre en Node 18 o
 posterior y en el navegador con la misma API.
 
+**Estado:** en cada cambio, el CI exige la firma exacta de 12 vectores de prueba a través de este paquete, en Node 18,
+Node 22 y Chrome. La aceptación en la beta de la SUNAT todavía no está comprobada. Guías y ejemplos:
+https://fe.kembec.com
+
 ```js
 import { load } from '@kembec/facturacion-electronica-sunat-sdk';
 

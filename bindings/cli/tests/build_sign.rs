@@ -11,7 +11,7 @@ use std::process::{Command, Output, Stdio};
 
 use serde_json::{json, Value};
 
-const EXPECTED_CASES: usize = 26;
+const EXPECTED_CASES: usize = 28;
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")

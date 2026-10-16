@@ -2,7 +2,7 @@
 // 07, 08), daily summaries (rc-) and void communications (ra-). Each fixture is built and signed and
 // must carry the DigestValue and SignatureValue of its vector. No Node imports: it runs in a page.
 
-export const EXPECTED_CASES = 26;
+export const EXPECTED_CASES = 28;
 
 /** Fixture names (without `.json`), sorted. */
 export function selectCases(fileNames) {

@@ -197,6 +197,24 @@ pub struct Voucher {
     pub despatch_references: Vec<DespatchReference>,
 }
 
+/// Payment to the supplier's Banco de la Nación account that the customer withholds («detracción»,
+/// operation types 1001 and 1003). The caller decides whether it applies and computes it; SUNAT checks
+/// the codes and that `amount` is in soles.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Detraction {
+    /// Catalog 54: goods or service subject to detraction (`"037"`).
+    pub code: String,
+    /// Catalog 54 rate, as a percentage (`"12.00"`).
+    pub percent: Decimal,
+    /// In PEN whatever the document currency: SUNAT rejects any other (3208).
+    pub amount: Decimal,
+    /// The supplier's detraction account at Banco de la Nación.
+    pub account: String,
+    /// Catalog 59: means of payment (`"001"` deposit in account).
+    pub payment_means_code: String,
+}
+
 /// Invoice (01) or receipt (03).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Invoice {
@@ -204,6 +222,7 @@ pub struct Invoice {
     /// Catalog 51.
     pub operation_type: String,
     pub due_date: Option<DateTime>,
+    pub detraction: Option<Detraction>,
 }
 
 /// Credit (07) or debit (08) note.

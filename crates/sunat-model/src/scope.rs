@@ -16,7 +16,6 @@ const DOCUMENT_KEYS: &[(&str, &str)] = &[
     ("global_charges", "global charges"),
     ("advances", "advances"),
     ("prepayments", "advances"),
-    ("detraction", "detraction"),
     ("perception", "perception"),
 ];
 

@@ -16,7 +16,7 @@ fn file_name_is_ruc_type_series_number() {
 #[test]
 fn out_of_scope_features_get_named_errors() {
     let cases: [(&str, fn(&mut serde_json::Value)); 5] = [
-        ("detraction", |v| v["detraction"] = serde_json::json!({})),
+        ("advances", |v| v["advances"] = serde_json::json!([])),
         ("perception", |v| v["perception"] = serde_json::json!({})),
         ("global discounts", |v| v["discounts"] = serde_json::json!([])),
         ("ICBPER", |v| v["lines"][0]["icbper"] = serde_json::json!("0.50")),
@@ -30,6 +30,60 @@ fn out_of_scope_features_get_named_errors() {
     }
     let ivap = with(|v| v["lines"][0]["affectation"] = serde_json::json!("17"));
     assert!(matches!(ivap, Err(ModelError::OutOfScope { .. })));
+}
+
+#[test]
+fn detraction_goes_with_its_operation_types() {
+    const DETRACTION: &str = include_str!("../../../fixtures/01-invoice-detraction.json");
+    let invoice = match Document::from_json(DETRACTION).unwrap() {
+        Document::Invoice(invoice) => invoice,
+        other => panic!("{other:?}"),
+    };
+    let detraction = invoice.detraction.unwrap();
+    assert_eq!((detraction.code.as_str(), detraction.amount.as_str()), ("037", "141.60"));
+    let receipt = edited(DETRACTION, |v| {
+        v["document_type"] = serde_json::json!("03");
+        v["series"] = serde_json::json!("B001");
+    });
+    assert!(receipt.is_ok(), "receipts take detraction too (catalog 51 code 1001): {receipt:?}");
+
+    let missing = edited(DETRACTION, |v| { v.as_object_mut().unwrap().remove("detraction"); });
+    assert!(matches!(missing, Err(ModelError::Missing { .. })), "1001 without detraction (3127): {missing:?}");
+    let wrong_type = edited(DETRACTION, |v| v["operation_type"] = serde_json::json!("0101"));
+    assert!(matches!(wrong_type, Err(ModelError::Invalid { .. })), "detraction with 0101 (3128): {wrong_type:?}");
+    for (operation, feature) in [
+        ("1002", "detraction on hydrobiological resources (operation type 1002)"),
+        ("1004", "detraction on freight transport (operation type 1004)"),
+    ] {
+        match edited(DETRACTION, |v| v["operation_type"] = serde_json::json!(operation)) {
+            Err(ModelError::OutOfScope { feature: f, .. }) => assert_eq!(f, feature),
+            other => panic!("{operation}: {other:?}"),
+        }
+    }
+    let rejected: [fn(&mut serde_json::Value); 7] = [
+        |v| v["operation_type"] = serde_json::json!("1003"),
+        |v| v["detraction"]["code"] = serde_json::json!("37"),
+        |v| v["detraction"]["payment_means_code"] = serde_json::json!("1"),
+        |v| v["detraction"]["account"] = serde_json::json!(""),
+        |v| v["detraction"]["amount"] = serde_json::json!("0.00"),
+        |v| v["detraction"]["amount"] = serde_json::json!("141.605"),
+        |v| v["detraction"]["percent"] = serde_json::json!("-12"),
+    ];
+    for edit in rejected {
+        assert!(matches!(edited(DETRACTION, edit), Err(ModelError::Invalid { .. })));
+    }
+    let passenger = edited(DETRACTION, |v| {
+        v["operation_type"] = serde_json::json!("1003");
+        v["detraction"]["code"] = serde_json::json!("028");
+    });
+    assert!(passenger.is_ok(), "1003 with code 028: {passenger:?}");
+    assert!(edited(DETRACTION, |v| v["detraction"]["currency"] = serde_json::json!("USD")).is_err(), "unknown fields");
+    match edited(include_str!("../../../fixtures/07-credit-note-void.json"), |v| {
+        v["detraction"] = serde_json::from_str(DETRACTION).map(|d: serde_json::Value| d["detraction"].clone()).unwrap();
+    }) {
+        Err(ModelError::Invalid { path, .. }) => assert_eq!(path, "$.detraction"),
+        other => panic!("note with detraction: {other:?}"),
+    }
 }
 
 #[test]

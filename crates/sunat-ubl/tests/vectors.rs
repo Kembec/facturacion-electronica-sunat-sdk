@@ -1,5 +1,5 @@
-//! Every `fixtures/*.json` rendered by `build` equals `tests/vectors/<case>.unsigned.xml` under
-//! inclusive Canonical XML 1.0.
+//! Every voucher fixture (`fixtures/0[1378]-*.json`; the `ra-`/`rc-` summaries are phase 2) rendered
+//! by `build` equals `tests/vectors/<case>.unsigned.xml` under inclusive Canonical XML 1.0.
 
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -20,6 +20,7 @@ fn cases() -> Vec<String> {
             let name = entry.ok()?.file_name().into_string().ok()?;
             name.strip_suffix(".json").map(str::to_owned)
         })
+        .filter(|case| ["01-", "03-", "07-", "08-"].iter().any(|prefix| case.starts_with(prefix)))
         .collect();
     cases.sort();
     cases

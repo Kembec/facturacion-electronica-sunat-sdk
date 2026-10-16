@@ -17,6 +17,8 @@ fn cases() -> Vec<String> {
     let mut cases: Vec<String> = std::fs::read_dir(root().join("fixtures"))
         .unwrap()
         .filter_map(|entry| entry.unwrap().file_name().into_string().unwrap().strip_suffix(".json").map(str::to_owned))
+        // The ra-/rc- summaries are phase 2, not build input.
+        .filter(|case| ["01-", "03-", "07-", "08-"].iter().any(|prefix| case.starts_with(prefix)))
         .collect();
     cases.sort();
     assert_eq!(cases.len(), 12, "fixtures");

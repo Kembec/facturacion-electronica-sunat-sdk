@@ -7,7 +7,7 @@ use std::path::{Path, PathBuf};
 
 use sunat_model::Document;
 
-const EXPECTED_CASES: usize = 18;
+const EXPECTED_CASES: usize = 20;
 const DECLARATION: &[u8] = b"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 
 fn repository() -> PathBuf {

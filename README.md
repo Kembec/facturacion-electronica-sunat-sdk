@@ -6,8 +6,8 @@ electrónico: tu sistema calcula los importes y decide qué emitir; el SDK arma 
 respuesta de la SUNAT.
 
 **Estado:** versión 0.1.0-beta.2. Genera y firma facturas, boletas, notas de crédito, notas de débito, resúmenes
-diarios y comunicaciones de baja, y en cada cambio el CI exige, en los tres, la firma exacta de 18 vectores de prueba.
-La beta de la SUNAT aceptó los 12 vectores de comprobantes y procesó los 6 de resúmenes y bajas (16/10/2026). Los
+diarios y comunicaciones de baja, y en cada cambio el CI exige, en los tres, la firma exacta de 20 vectores de prueba.
+La beta de la SUNAT aceptó los 14 vectores de comprobantes y procesó los 6 de resúmenes y bajas (16/10/2026). Los
 paquetes de Composer y npm aún no están publicados.
 
 Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec.com**
@@ -16,11 +16,12 @@ Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec
 
 | Capacidad | Estado | Cómo se comprueba |
 |---|---|---|
-| Factura (01), boleta (03), nota de crédito (07) y nota de débito (08): XML UBL 2.1 y firma | Comprobado en CI | En cada cambio, el CI genera y firma los 12 casos de `fixtures/` y exige el XML de `tests/vectors/` en forma canónica, y exactamente su `DigestValue` y su `SignatureValue`. Lo hace por la CLI, por PHP y por el paquete npm en Node 18, Node 22 y Chrome. Un verificador en Python, que no comparte código con el núcleo, acepta las firmas. |
+| Factura (01), boleta (03), nota de crédito (07) y nota de débito (08): XML UBL 2.1 y firma | Comprobado en CI | En cada cambio, el CI genera y firma los 14 casos de comprobantes de `fixtures/` y exige el XML de `tests/vectors/` en forma canónica, y exactamente su `DigestValue` y su `SignatureValue`. Lo hace por la CLI, por PHP y por el paquete npm en Node 18, Node 22 y Chrome. Un verificador en Python, que no comparte código con el núcleo, acepta las firmas. |
+| Descuento por línea que reduce la base del IGV (catálogo 53, código 00), en factura y boleta | Comprobado en CI y en la beta de la SUNAT | Dos de esos 14 casos, `01-invoice-line-discount` y `03-receipt-line-discount`, lo llevan; cada descuento se escribe como `cac:AllowanceCharge` con `ChargeIndicator` en `false`. El 16/10/2026 la beta aceptó los dos (F001-7 y B001-4): código 0, sin observaciones. |
 | ZIP y lectura de la CDR | Comprobado en CI, sin red | Pruebas con CDR sintéticas, escritas según los ejemplos del manual de la SUNAT. |
-| Envío (`send`) | Comprobado en la beta de la SUNAT | El 16/10/2026 la beta aceptó los 12 vectores firmados, enviados por la CLI tal como están en `tests/vectors/`: código 0, sin observaciones. |
+| Envío (`send`) | Comprobado en la beta de la SUNAT | El 16/10/2026 la beta aceptó los 14 vectores firmados, enviados por la CLI tal como están en `tests/vectors/`: código 0, sin observaciones. |
 | Consulta de la CDR (`status`) | Implementado, sin probar contra la SUNAT | La SUNAT ofrece `getStatusCdr` solo en producción. El sobre sigue el ejemplo del manual. |
-| Resumen diario (RC) y comunicación de baja (RA): XML UBL 2.0, firma, envío y consulta por ticket | Comprobado en CI; envío comprobado en la beta | El CI genera y firma los 6 casos `rc-` y `ra-` de `fixtures/` con las mismas exigencias que los 12 comprobantes. El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. Desde PHP se envían y consultan con la CLI. |
+| Resumen diario (RC) y comunicación de baja (RA): XML UBL 2.0, firma, envío y consulta por ticket | Comprobado en CI; envío comprobado en la beta | El CI genera y firma los 6 casos `rc-` y `ra-` de `fixtures/` con las mismas exigencias que los 14 comprobantes. El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. Desde PHP se envían y consultan con la CLI. |
 | Envío y consultas desde JavaScript (`soapRequest`, `soapResponse`, `soapTimeout`) | Comprobado en CI, sin red | El paquete npm arma el POST de `send`, `summary`, `ticket` y `status` y lee la respuesta con el mismo código de la CLI. Lo prueban las pruebas unitarias del binding y la prueba de Node del CI, sin red y con respuestas escritas a mano. Todavía no se ha enviado nada a la SUNAT desde JavaScript. |
 | Guía de remisión, retención y percepción | No incluidos | — |
 
@@ -29,9 +30,16 @@ los mismos valores y la acepta un verificador independiente, y la beta de la SUN
 primera fila cumplen los tres.
 
 **Solo IGV, y sin cálculo de impuestos.** Los importes los calcula tu sistema y llegan como texto (`"118.00"`): el SDK
-los valida y los escribe. Rechaza con un error explícito ISC, ICBPER, IVAP y otros tributos, descuentos o cargos
-globales, anticipos, detracción, percepción y referencias a guías. En los resúmenes rechaza además percepción,
+los valida y los escribe. Rechaza con un error explícito ISC, ICBPER, IVAP y otros tributos, descuentos y cargos
+globales, cargos por línea, descuentos por línea con un código distinto de 00 o en notas de crédito y débito,
+anticipos, detracción, percepción y referencias a guías. En los resúmenes rechaza además percepción,
 ICBPER, ISC e IVAP en las líneas, y los resúmenes de reversión (RR).
+
+**Con descuento por línea, `unit_value` es el valor antes del descuento.** El SDK valida el formato de cada descuento
+(`factor`, `amount`, `base_amount`), pero la aritmética es de tu sistema: `line_value` debe ser `unit_value` ×
+`quantity` menos los descuentos. En la beta, el mismo caso con un `unit_value` ya neto del descuento dio el rechazo 3271
+en la factura y la observación 4288 en la boleta. El detalle está en el
+[modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
 
 ## Instalación
 

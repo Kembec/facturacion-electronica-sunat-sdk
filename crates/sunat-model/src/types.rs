@@ -105,6 +105,24 @@ pub struct Line {
     pub unit_price: Option<Decimal>,
     pub line_value: Decimal,
     pub free_unit_value: Option<Decimal>,
+    /// Discounts that reduce the IGV base of this line (catalog 53 code `00`), invoice and receipt
+    /// only. `line_value` already has them subtracted: SUNAT checks `unit_value` × `quantity` minus
+    /// these amounts against it, within 1.
+    #[serde(default)]
+    pub discounts: Vec<LineDiscount>,
+}
+
+/// One `cac:AllowanceCharge` of a line with `ChargeIndicator` false. SUNAT checks `amount` against
+/// `base_amount` × `factor`, within 1.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LineDiscount {
+    /// Catalog 53; only `"00"`.
+    pub code: String,
+    /// Positive, up to 3 integer digits and 5 decimals (`"0.15"`).
+    pub factor: Decimal,
+    pub amount: Decimal,
+    pub base_amount: Decimal,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]

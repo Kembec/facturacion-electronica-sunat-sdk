@@ -9,7 +9,7 @@ lo envías con tu `fetch`, y convierte la respuesta en el mismo JSON que imprime
 
 **Estado:** versión 0.1.0-beta.2, todavía no publicada en npm; mientras tanto, el paquete se arma desde el repositorio
 como explica [su README](https://github.com/Kembec/facturacion-electronica-sunat-sdk#javascript-webassembly). En cada
-cambio, el CI instala el paquete empaquetado en un proyecto limpio y exige la firma exacta de los 18 vectores de prueba
+cambio, el CI instala el paquete empaquetado en un proyecto limpio y exige la firma exacta de los 20 vectores de prueba
 en Node 18, Node 22 y Chrome. Son las mismas firmas que la beta de la SUNAT aceptó el 16/10/2026, enviadas por la CLI.
 El envío y las consultas desde JavaScript (`soapRequest`, `soapResponse`, `soapTimeout`) los prueban las pruebas
 unitarias y la prueba de Node del CI, sin red; todavía no se ha enviado nada a la SUNAT desde este paquete.

@@ -1,0 +1,97 @@
+{
+  "kind": "invoice",
+  "ubl_version": "2.1",
+  "operation_type": "0101",
+  "document_type": "01",
+  "series": "F001",
+  "number": "7",
+  "issue_date": "2026-10-16T10:30:00-05:00",
+  "currency": "PEN",
+  "payment_terms": {
+    "type": "Contado"
+  },
+  "issuer": {
+    "ruc": "20123456789",
+    "legal_name": "EMPRESA DEMO ORACULO S.A.C.",
+    "trade_name": "DEMO ORACULO",
+    "email": "facturacion@example.com",
+    "telephone": "014000000",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "urbanization": "-",
+      "street": "AV. EJEMPLO 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "6",
+    "document_number": "20000000001",
+    "legal_name": "CLIENTE DEMO S.A.",
+    "address": {
+      "ubigeo": "150122",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "MIRAFLORES",
+      "street": "CALLE CLIENTE 456"
+    }
+  },
+  "totals": {
+    "taxed": "97.45",
+    "igv": "17.55",
+    "total_taxes": "17.55",
+    "sale_value": "97.45",
+    "subtotal": "115.00",
+    "payable": "115.00"
+  },
+  "lines": [
+    {
+      "unit": "ZZ",
+      "quantity": "2",
+      "product_code": "SRV001",
+      "sunat_product_code": "10191509",
+      "description": "Servicio de consultoria",
+      "unit_value": "42.37",
+      "igv_base": "72.03",
+      "igv_rate": "18.00",
+      "igv": "12.97",
+      "affectation": "10",
+      "total_taxes": "12.97",
+      "unit_price": "42.50",
+      "line_value": "72.03",
+      "discounts": [
+        {
+          "code": "00",
+          "factor": "0.15",
+          "amount": "12.71",
+          "base_amount": "84.74"
+        }
+      ]
+    },
+    {
+      "unit": "NIU",
+      "quantity": "1",
+      "product_code": "LIC001",
+      "sunat_product_code": "10191509",
+      "description": "Licencia mensual",
+      "unit_value": "25.42",
+      "igv_base": "25.42",
+      "igv_rate": "18.00",
+      "igv": "4.58",
+      "affectation": "10",
+      "total_taxes": "4.58",
+      "unit_price": "30.00",
+      "line_value": "25.42"
+    }
+  ],
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON CIENTO QUINCE CON 00/100 SOLES"
+    }
+  ]
+}

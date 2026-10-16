@@ -6,8 +6,9 @@ compute taxes.
 
 Phase 1 scope: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV only
 (affectations 10-16, 20, 21, 30-37, 40; 17 IVAP is out of phase 1). Out of phase 1, rejected with an
-explicit error: ISC, ICBPER, IVAP, other taxes, global discounts or charges, advances, detraction,
-perception, despatch references.
+explicit error: ISC, ICBPER, IVAP, other taxes, global discounts or charges, line charges, line
+discounts other than catalog 53 code `00` or in notes, advances, detraction, perception, despatch
+references.
 
 ## Document
 
@@ -49,7 +50,17 @@ issuer's), `email`, `telephone`.
 
 `unit` (catalog 03, `"NIU"`, `"ZZ"`), `quantity`, `product_code`, `sunat_product_code`, `description`,
 `unit_value`, `igv_base`, `igv_rate` (`"18.00"`), `igv`, `affectation` (catalog 07), `total_taxes`,
-`unit_price`, `line_value`, `free_unit_value` (free lines).
+`unit_price`, `line_value`, `free_unit_value` (free lines), `discounts` (invoice and receipt only).
+
+`discounts`: `[{ "code": "00", "factor": "0.15", "amount": "12.71", "base_amount": "84.74" }]`, discounts
+that reduce the line's IGV base (catalog 53 code `00`), each rendered as a `cac:AllowanceCharge` with
+`ChargeIndicator` false. `factor` is positive with up to 3 integer digits and 5 decimals; `amount` and
+`base_amount` are positive with up to 2 decimals; trailing zeros do not count and the three print in
+their shortest form (`0.10` → `0.1`). The arithmetic stays with the caller, as for every amount: SUNAT
+rejects an `amount` that differs from `base_amount` × `factor` by more than 1 (error 3290) and a
+`line_value` that differs from `unit_value` × `quantity` minus the discounts by more than 1 (3271).
+So `unit_value` is the value before the discount: SUNAT beta rejected an invoice whose `unit_value` was
+already net of the declared discount (3271) and accepted the same receipt with observation 4288.
 
 ## Note (07, 08)
 

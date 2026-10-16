@@ -1,11 +1,14 @@
 # facturacion-electronica-sunat-sdk
 
 Facturación electrónica de la SUNAT (Perú) desde PHP, JavaScript o la línea de comandos, con un mismo núcleo en Rust:
-los tres producen el mismo XML y la misma firma.
+los tres producen el mismo XML y la misma firma. Es para quien programa el sistema de facturación de un emisor
+electrónico: tu sistema calcula los importes y decide qué emitir; el SDK arma el XML, lo firma, lo envía y lee la
+respuesta de la SUNAT.
 
-**Estado:** genera y firma facturas, boletas, notas de crédito y notas de débito, y en cada cambio el CI exige, en los
-tres, la firma exacta de 12 vectores de prueba. La beta de la SUNAT aceptó esos 12 y los 6 resúmenes y bajas de
-prueba (16/10/2026). Los paquetes de Composer y npm aún no están publicados.
+**Estado:** versión 0.1.0-beta.2. Genera y firma facturas, boletas, notas de crédito, notas de débito, resúmenes
+diarios y comunicaciones de baja, y en cada cambio el CI exige, en los tres, la firma exacta de 18 vectores de prueba.
+La beta de la SUNAT aceptó los 12 vectores de comprobantes y procesó los 6 de resúmenes y bajas (16/10/2026). Los
+paquetes de Composer y npm aún no están publicados.
 
 Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec.com**
 
@@ -17,7 +20,7 @@ Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec
 | ZIP y lectura de la CDR | Comprobado en CI, sin red | Pruebas con CDR sintéticas, escritas según los ejemplos del manual de la SUNAT. |
 | Envío (`send`) | Comprobado en la beta de la SUNAT | El 16/10/2026 la beta aceptó los 12 vectores firmados, enviados por la CLI tal como están en `tests/vectors/`: código 0, sin observaciones. |
 | Consulta de la CDR (`status`) | Implementado, sin probar contra la SUNAT | La SUNAT ofrece `getStatusCdr` solo en producción. El sobre sigue el ejemplo del manual. |
-| Resumen diario (RC) y comunicación de baja (RA): XML UBL 2.0, firma, envío y consulta por ticket | Comprobado en CI; envío comprobado en la beta | El CI genera y firma los 6 casos `rc-` y `ra-` de `fixtures/` con las mismas exigencias que los 12 comprobantes. El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. |
+| Resumen diario (RC) y comunicación de baja (RA): XML UBL 2.0, firma, envío y consulta por ticket | Comprobado en CI; envío comprobado en la beta | El CI genera y firma los 6 casos `rc-` y `ra-` de `fixtures/` con las mismas exigencias que los 12 comprobantes. El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. El envío y la consulta por ticket están solo en la CLI. |
 | Guía de remisión, retención y percepción | No incluidos | — |
 
 Un tipo de documento se da por incorporado cuando cumple tres criterios: su XML coincide con los vectores, su firma da
@@ -26,13 +29,15 @@ primera fila cumplen los tres.
 
 **Solo IGV, y sin cálculo de impuestos.** Los importes los calcula tu sistema y llegan como texto (`"118.00"`): el SDK
 los valida y los escribe. Rechaza con un error explícito ISC, ICBPER, IVAP y otros tributos, descuentos o cargos
-globales, anticipos, detracción, percepción y referencias a guías.
+globales, anticipos, detracción, percepción y referencias a guías. En los resúmenes rechaza además percepción,
+ICBPER, ISC e IVAP en las líneas, y los resúmenes de reversión (RR).
 
 ## Instalación
 
-> **Composer y npm, todavía no.** Los paquetes están preparados, pero no están en Packagist ni en npm, y aún no hay un
-> release con el binario: hoy `composer require`, `npm install` y `vendor/bin/sunat-sdk-install` fallan. Cada sección
-> muestra cómo se instalará y cómo usarlo hoy desde este repositorio.
+> **Composer y npm, todavía no.** Los paquetes están preparados, pero no están en Packagist ni en npm: hoy
+> `composer require` y `npm install` fallan. `vendor/bin/sunat-sdk-install` descarga el binario del release de su misma
+> versión, 0.1.0-beta.2, que todavía no está publicado. Cada sección muestra cómo se instalará y cómo usarlo hoy desde
+> este repositorio.
 
 ### Línea de comandos
 
@@ -63,7 +68,9 @@ completo está en [`docs/cli.md`](https://github.com/Kembec/facturacion-electron
 modelo de entrada, en
 [`docs/input-model.md`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
 
-Cuando haya releases, cada uno traerá el binario estático para Linux x86_64 y su SHA-256.
+Cada [release](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) trae el binario estático para
+Linux x86_64 y su SHA-256. El único publicado, v0.1.0-beta.1, es anterior a `summary`, `ticket` y a la generación de
+resúmenes y bajas.
 
 ### PHP
 
@@ -113,6 +120,7 @@ echo $signed->getDigestValue();
 Los errores llegan como excepciones que heredan de `SunatSdkException`. Un error SOAP de la SUNAT no es una excepción,
 sino un resultado (`isFault()`). `send`, `status`, `zip` y `cdr`, y la tabla de excepciones, están en el
 [README del binding](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/bindings/php/README.md).
+Los resúmenes y las bajas se arman y firman con `build` y `sign`; para enviarlos y consultar su ticket, usa la CLI.
 
 ### JavaScript (WebAssembly)
 
@@ -152,6 +160,13 @@ Y en tu proyecto:
 ```bash
 npm install ../facturacion-electronica-sunat-sdk/bindings/wasm/npm/kembec-facturacion-electronica-sunat-sdk-0.1.0-beta.2.tgz
 ```
+
+## Documentación y soporte
+
+- Contratos: [arquitectura](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/architecture.md),
+  [CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md) y
+  [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
+- Errores y preguntas: [issues de GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/issues).
 
 ## Derechos y licencia
 

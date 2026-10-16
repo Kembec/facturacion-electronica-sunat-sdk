@@ -1,6 +1,6 @@
 {
   "name": "@kembec/facturacion-electronica-sunat-sdk",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.1",
   "description": "SUNAT (Peru) electronic invoicing in WebAssembly: builds the UBL 2.1 XML of invoices, receipts and credit and debit notes and signs it, in Node and in the browser.",
   "license": "MIT",
   "repository": {

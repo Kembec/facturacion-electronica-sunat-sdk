@@ -93,12 +93,19 @@ const timer = setTimeout(() => settle({ ok: false, error: `no result within ${TI
 
 const result = await outcome;
 clearTimeout(timer);
-chrome.removeAllListeners('exit');
-chrome.kill();
-server.close();
-rmSync(profile, { recursive: true, force: true });
-
 for (const line of result.lines ?? []) console.log(line);
+
+// Chrome keeps writing its profile until it has exited: wait for it before removing the directory
+// (CI run 38838510084 failed with ENOTEMPTY when the removal raced the kill).
+chrome.removeAllListeners('exit');
+if (chrome.exitCode === null && chrome.signalCode === null) {
+  const exited = new Promise((resolve) => chrome.once('exit', resolve));
+  chrome.kill();
+  await exited;
+}
+server.close();
+rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 200 });
+
 if (!result.ok) {
   console.error(result.error);
   process.exit(1);

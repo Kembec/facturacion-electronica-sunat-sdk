@@ -67,7 +67,7 @@ pub(crate) fn check(root: &Value) -> Result<(), ModelError> {
     Ok(())
 }
 
-fn reject_keys(value: &Value, path: &str, keys: &[(&str, &'static str)]) -> Result<(), ModelError> {
+pub(crate) fn reject_keys(value: &Value, path: &str, keys: &[(&str, &'static str)]) -> Result<(), ModelError> {
     let Value::Object(map) = value else { return Ok(()) };
     for (key, feature) in keys {
         if map.contains_key(*key) {
@@ -77,7 +77,7 @@ fn reject_keys(value: &Value, path: &str, keys: &[(&str, &'static str)]) -> Resu
     Ok(())
 }
 
-fn check_text(value: &Value, path: &str) -> Result<(), ModelError> {
+pub(crate) fn check_text(value: &Value, path: &str) -> Result<(), ModelError> {
     match value {
         Value::String(text) if !is_xml_text(text) => {
             Err(ModelError::invalid(path, "contains a character XML 1.0 does not allow"))

@@ -10,3 +10,4 @@ sunat-model = { path = "../sunat-model" }
 
 [dev-dependencies]
 sunat-xmldsig = { path = "../sunat-xmldsig" }
+serde_json = "1"

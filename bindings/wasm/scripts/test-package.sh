@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Installs the packed tarball in a clean project, as a user would, and checks it there: the
-# declarations type-check through `exports`, and the 12 voucher vectors (01, 03, 07, 08) are built
-# and signed like their signed XML in Node (`node` condition) and in headless Chrome (`default`).
+# declarations type-check through `exports`, and the 18 vectors (vouchers 01, 03, 07, 08, daily
+# summaries and void communications) are built and signed like their signed XML in Node (`node`
+# condition) and in headless Chrome (`default`).
 # Usage: bindings/wasm/scripts/test-package.sh <tarball>
 set -euo pipefail
 

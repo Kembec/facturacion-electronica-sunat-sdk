@@ -69,6 +69,6 @@ php composer.phar install && vendor/bin/phpunit
 
 They run against the real binary: `SUNAT_SDK_BIN`, or `target/debug/sunat-sdk` by default. The
 installer tests serve a release from a local `php -S` and need no network. The
-voucher fixtures in `fixtures/` must give, through `build` and `sign`, the XML in `tests/vectors/` under
+fixtures in `fixtures/` (vouchers, daily summaries and void communications) must give, through `build` and `sign`, the XML in `tests/vectors/` under
 inclusive C14N and exactly its `DigestValue` and `SignatureValue` (signed with the self-generated test
 certificate). Nothing is sent to SUNAT.

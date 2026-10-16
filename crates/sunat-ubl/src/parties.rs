@@ -8,7 +8,7 @@ use crate::writer::XmlWriter;
 use crate::Options;
 
 /// Catalog 06 code of a RUC.
-const RUC_SCHEME: &str = "6";
+pub(crate) const RUC_SCHEME: &str = "6";
 
 /// `cac:Signature`: who signs and where the `ds:Signature` is (`#` + its `Id`).
 pub(crate) fn signature_reference(w: &mut XmlWriter, issuer: &Company, options: &Options) {

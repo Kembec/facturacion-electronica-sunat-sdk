@@ -9,21 +9,21 @@ use Kembec\SunatSdk\SunatSdk;
 use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
- * The 12 fixtures, through the real binary, must give their vectors' XML, unsigned and signed, under
+ * The 18 fixtures, through the real binary, must give their vectors' XML, unsigned and signed, under
  * inclusive C14N, and their exact `DigestValue` and `SignatureValue`. The vectors come from another serializer
  * (declaration, CDATA, empty elements), so the bytes differ by design.
  */
 final class VectorsTest extends BinaryTestCase
 {
     /**
-     * The voucher fixtures (01, 03, 07, 08); `ra-`/`rc-` summaries are not `build` input.
+     * Vouchers (01, 03, 07, 08), daily summaries (`rc-`) and void communications (`ra-`).
      *
      * @return array<string, array{0: string}>
      */
     public static function fixtures(): array
     {
         $cases = [];
-        foreach (glob(self::repositoryPath('fixtures') . '/0[1378]-*.json') ?: [] as $path) {
+        foreach (glob(self::repositoryPath('fixtures') . '/*.json') ?: [] as $path) {
             $name = basename($path, '.json');
             $cases[$name] = [$name];
         }
@@ -31,9 +31,9 @@ final class VectorsTest extends BinaryTestCase
         return $cases;
     }
 
-    public function testThereAreTwelveFixtures(): void
+    public function testThereAreEighteenFixtures(): void
     {
-        self::assertCount(12, self::fixtures());
+        self::assertCount(18, self::fixtures());
     }
 
     /**
@@ -98,11 +98,19 @@ final class VectorsTest extends BinaryTestCase
         return (string) file_get_contents(self::repositoryPath('tests/vectors/' . $name . '.' . $kind . '.xml'));
     }
 
-    /** `<ruc>-<type>-<series>-<number>`, from the fixture's own fields. */
+    /** `<ruc>-<type>-<series>-<number>` or `<ruc>-RC|RA-<YYYYMMDD>-<number>`, from the fixture's own fields. */
     private function expectedFileName(string $name): string
     {
         $document = json_decode($this->fixture($name), true);
+        $ruc = $document['issuer']['ruc'];
 
-        return implode('-', [$document['issuer']['ruc'], $document['document_type'], $document['series'], $document['number']]);
+        switch ($document['kind']) {
+            case 'summary':
+                return implode('-', [$ruc, 'RC', str_replace('-', '', $document['generation_date']), $document['number']]);
+            case 'voided':
+                return implode('-', [$ruc, 'RA', str_replace('-', '', $document['communication_date']), $document['number']]);
+            default:
+                return implode('-', [$ruc, $document['document_type'], $document['series'], $document['number']]);
+        }
     }
 }

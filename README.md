@@ -17,7 +17,7 @@ Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec
 | ZIP y lectura de la CDR | Comprobado en CI, sin red | Pruebas con CDR sintéticas, escritas según los ejemplos del manual de la SUNAT. |
 | Envío (`send`) | Comprobado en la beta de la SUNAT | El 16/10/2026 la beta aceptó los 12 vectores firmados, enviados por la CLI tal como están en `tests/vectors/`: código 0, sin observaciones. |
 | Consulta de la CDR (`status`) | Implementado, sin probar contra la SUNAT | La SUNAT ofrece `getStatusCdr` solo en producción. El sobre sigue el ejemplo del manual. |
-| Resumen diario (RC) y comunicación de baja (RA) | Envío y consulta por ticket comprobados en la beta; `build` todavía no los genera | El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. |
+| Resumen diario (RC) y comunicación de baja (RA): XML UBL 2.0, firma, envío y consulta por ticket | Comprobado en CI; envío comprobado en la beta | El CI genera y firma los 6 casos `rc-` y `ra-` de `fixtures/` con las mismas exigencias que los 12 comprobantes. El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. |
 | Guía de remisión, retención y percepción | No incluidos | — |
 
 Un tipo de documento se da por incorporado cuando cumple tres criterios: su XML coincide con los vectores, su firma da

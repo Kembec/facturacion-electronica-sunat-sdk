@@ -1,5 +1,5 @@
-//! Runs `build` and `sign` through the binary on every voucher fixture (`fixtures/0[1378]-*.json`;
-//! the `ra-`/`rc-` summaries are phase 2, not `build` input): the built XML equals
+//! Runs `build` and `sign` through the binary on every fixture (vouchers `0[1378]-`, daily summaries
+//! `rc-` and void communications `ra-`): the built XML equals
 //! `tests/vectors/<case>.unsigned.xml` under inclusive C14N (the vectors come from another
 //! serializer: declaration, CDATA and empty elements differ), and signing it with
 //! `tests/vectors/test-cert/` gives the `DigestValue` and `SignatureValue` of `<case>.signed.xml`.
@@ -11,7 +11,7 @@ use std::process::{Command, Output, Stdio};
 
 use serde_json::{json, Value};
 
-const EXPECTED_CASES: usize = 12;
+const EXPECTED_CASES: usize = 18;
 
 fn repository() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
@@ -62,7 +62,6 @@ fn cases() -> Vec<String> {
     let mut cases: Vec<String> = std::fs::read_dir(repository().join("fixtures"))
         .unwrap()
         .filter_map(|entry| entry.ok()?.file_name().into_string().ok()?.strip_suffix(".json").map(str::to_owned))
-        .filter(|case| ["01-", "03-", "07-", "08-"].iter().any(|prefix| case.starts_with(prefix)))
         .collect();
     cases.sort();
     cases
@@ -95,7 +94,8 @@ fn every_fixture_builds_and_signs_like_its_vector() {
         let built = success(&run(&["build"], &fixture(case)), case);
         let xml = built["xml"].as_str().unwrap();
         let file_name = built["file_name"].as_str().unwrap();
-        assert!(case.starts_with(&file_name[12..14]), "{case}: {file_name}");
+        // `20123456789-01-F001-1`, `20123456789-RC-20261015-1`: the type matches the case prefix.
+        assert!(case.starts_with(&file_name[12..14].to_lowercase()), "{case}: {file_name}");
         let unsigned = read(vectors().join(format!("{case}.unsigned.xml")));
         assert!(canonical(xml) == canonical(&unsigned), "{case}: built XML differs from its vector");
 

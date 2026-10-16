@@ -44,12 +44,24 @@ jobs:
       - name: Check the wasm-bindgen pin
         run: grep -q "wasm-bindgen = \"=$WASM_BINDGEN_VERSION\"" bindings/wasm/Cargo.toml
       - run: cargo install wasm-bindgen-cli --version "$WASM_BINDGEN_VERSION" --locked
-      - run: cargo build -p sunat-sdk-wasm --target wasm32-unknown-unknown --release --locked
-      - run: wasm-bindgen --target nodejs --out-dir bindings/wasm/pkg target/wasm32-unknown-unknown/release/sunat_sdk_wasm.wasm
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: "22.11.0"
-      - run: node bindings/wasm/test/sign-fixture.mjs
+      - name: npm version equals the Cargo workspace version
+        run: node bindings/wasm/scripts/check-version.mjs
+      - run: bindings/wasm/scripts/build.sh
+      - name: npm pack
+        working-directory: bindings/wasm/npm
+        run: |
+          npm pack --dry-run
+          npm pack --pack-destination "$RUNNER_TEMP"
+      # The packed tarball, installed in a clean project: types, then the 12 voucher vectors in
+      # Node and in headless Chrome. Node 22 first, then the oldest supported line.
+      - run: bindings/wasm/scripts/test-package.sh "$RUNNER_TEMP"/kembec-facturacion-electronica-sunat-sdk-*.tgz
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "18.20.8"
+      - run: bindings/wasm/scripts/test-package.sh "$RUNNER_TEMP"/kembec-facturacion-electronica-sunat-sdk-*.tgz
 
   php:
     runs-on: ubuntu-24.04

@@ -1,6 +1,7 @@
 name: release
 
-# A pull request that touches the CLI build proves the static binary; only a `v*` tag publishes it.
+# A pull request that touches the CLI or the wasm binding proves the static binary and the npm
+# tarball; only a `v*` tag publishes them, after the owner approves the `release` environment.
 on:
   push:
     tags: ["v*"]
@@ -8,6 +9,7 @@ on:
     paths:
       - ".github/workflows/release.yml"
       - "bindings/cli/**"
+      - "bindings/wasm/**"
       - "crates/**"
       - "Cargo.toml"
       - "Cargo.lock"
@@ -83,3 +85,72 @@ jobs:
           gh release create "$GITHUB_REF_NAME" dist/* --repo "$GITHUB_REPOSITORY" --verify-tag $prerelease \
             --title "$GITHUB_REF_NAME" \
             --notes "sunat-sdk CLI $GITHUB_REF_NAME: static Linux x86_64 (musl) binary and its SHA-256."
+
+  npm-package:
+    runs-on: ubuntu-24.04
+    env:
+      # Must equal the exact wasm-bindgen pin in bindings/wasm/Cargo.toml.
+      WASM_BINDGEN_VERSION: "0.2.129"
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Rust toolchain with wasm32
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target wasm32-unknown-unknown
+          rustup default "$RUST_TOOLCHAIN"
+      - name: Check the wasm-bindgen pin
+        run: grep -q "wasm-bindgen = \"=$WASM_BINDGEN_VERSION\"" bindings/wasm/Cargo.toml
+      - run: cargo install wasm-bindgen-cli --version "$WASM_BINDGEN_VERSION" --locked
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22.11.0"
+      - name: npm version equals the Cargo workspace version, and the tag
+        run: |
+          tag=""
+          case "$GITHUB_REF" in refs/tags/*) tag="$GITHUB_REF_NAME" ;; esac
+          node bindings/wasm/scripts/check-version.mjs $tag
+      - run: bindings/wasm/scripts/build.sh
+      - name: npm pack
+        working-directory: bindings/wasm/npm
+        run: |
+          mkdir "$RUNNER_TEMP/npm"
+          npm pack --dry-run
+          npm pack --pack-destination "$RUNNER_TEMP/npm"
+      - name: The tarball passes the vectors in Node 22 and headless Chrome
+        run: bindings/wasm/scripts/test-package.sh "$RUNNER_TEMP"/npm/*.tgz
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "18.20.8"
+      - name: The tarball passes the vectors in Node 18
+        run: bindings/wasm/scripts/test-package.sh "$RUNNER_TEMP"/npm/*.tgz
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: npm-package
+          path: ${{ runner.temp }}/npm/
+          if-no-files-found: error
+
+  # Publishes the exact tarball npm-package tested, with provenance tied to this workflow run.
+  publish-npm:
+    needs: npm-package
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    # The environment allows only v* tags and waits for the owner's approval; NPM_TOKEN lives there.
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: npm-package
+          path: npm
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: "22.11.0"
+          registry-url: "https://registry.npmjs.org"
+      - name: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          dist_tag=""
+          case "$GITHUB_REF_NAME" in *-*) dist_tag="--tag beta" ;; esac
+          npm publish npm/*.tgz --provenance --access public $dist_tag

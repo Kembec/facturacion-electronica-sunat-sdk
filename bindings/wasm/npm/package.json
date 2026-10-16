@@ -1,0 +1,48 @@
+{
+  "name": "@kembec/facturacion-electronica-sunat-sdk",
+  "version": "0.1.0",
+  "description": "SUNAT (Peru) electronic invoicing in WebAssembly: builds the UBL 2.1 XML of invoices, receipts and credit and debit notes and signs it, in Node and in the browser.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kembec/facturacion-electronica-sunat-sdk.git",
+    "directory": "bindings/wasm/npm"
+  },
+  "homepage": "https://github.com/Kembec/facturacion-electronica-sunat-sdk#readme",
+  "bugs": "https://github.com/Kembec/facturacion-electronica-sunat-sdk/issues",
+  "keywords": [
+    "sunat",
+    "peru",
+    "facturacion-electronica",
+    "ubl",
+    "xmldsig",
+    "wasm"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=18"
+  },
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "node": "./node.js",
+      "default": "./web.js"
+    },
+    "./wasm": {
+      "types": "./wasm.d.ts",
+      "default": "./wasm/sunat_sdk_wasm_bg.wasm"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.d.ts",
+    "node.js",
+    "web.js",
+    "wasm.d.ts",
+    "NOTICE",
+    "wasm/sunat_sdk_wasm.js",
+    "wasm/sunat_sdk_wasm_bg.wasm"
+  ]
+}

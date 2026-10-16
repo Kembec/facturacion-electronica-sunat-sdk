@@ -2,6 +2,7 @@
 //! See docs/architecture.md.
 
 mod classify;
+pub mod exchange;
 
 pub use classify::{classify, classify_cdr, classify_code, ResponseClass};
 pub use sunat_transport as transport;

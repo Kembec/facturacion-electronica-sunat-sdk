@@ -26,6 +26,25 @@ await runVectors({
   read: async (path) => readFileSync(join(root, path), 'utf8'),
   log: (line) => console.log(line),
 });
+// The exchange with SUNAT goes through the caller's fetch: the package gives the POST and reads the
+// answer as the CLI would. A 401 to getStatus is no verdict, with the same ticket to ask again.
+const ticket = JSON.stringify({ ticket: '1760620000123' });
+const post = JSON.parse(sdk.soapRequest('ticket', ticket, '20100066603MODDATOS', 'moddatos'));
+if (post.method !== 'POST' || post.headers.SOAPAction !== '"urn:getStatus"' || !post.body.includes('<ticket>1760620000123</ticket>')) {
+  throw new Error(`soapRequest: ${JSON.stringify(post.headers)}`);
+}
+const unauthorized = JSON.parse(sdk.soapResponse('ticket', ticket, 401, new Uint8Array()));
+if (unauthorized.outcome !== 'no_verdict' || unauthorized.http_status !== 401 || unauthorized.ticket !== '1760620000123') {
+  throw new Error(`soapResponse 401: ${JSON.stringify(unauthorized)}`);
+}
+let sendTimeout;
+try {
+  sdk.soapTimeout('send', JSON.stringify({ name: '20100066603-01-F001-1', xml: '<Invoice/>' }), 45);
+} catch (error) {
+  sendTimeout = error.message;
+}
+if (!sendTimeout?.includes('the outcome is unknown')) throw new Error(`soapTimeout send: ${sendTimeout}`);
+console.log(`ok node exchange: soapRequest, soapResponse 401 -> no_verdict, soapTimeout send throws`);
 console.log(`ok node ${process.version} ${fromSource ? 'load(WebAssembly.Module)' : 'load()'} via ${resolve(PACKAGE)}`);
 
 if (!fromSource) {

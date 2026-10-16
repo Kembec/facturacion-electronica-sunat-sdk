@@ -42,4 +42,9 @@ and the HTTP wait from `--timeout` or `SUNAT_HTTP_TIMEOUT_SECONDS`.
 
 - `bindings/php`: Composer package; runs the binary with `proc_open`, writes the JSON to stdin, reads
   stdout and stderr, maps a non-zero exit to a typed exception carrying the `error` message.
-- `bindings/wasm`: exposes `build` and `sign` in memory with the same input and output shapes.
+- `bindings/wasm`: exposes `build`, `sign`, `zip` and `cdr` in memory with the same input and output
+  shapes. It does no network I/O: `soapRequest(exchange, input, user, password)` returns the `fetch`
+  options (`method`, `headers`, `body`) for `send`, `summary`, `ticket` or `status` with this command's
+  stdin as `input`; the caller POSTs them to the endpoint and passes the HTTP status and body to
+  `soapResponse(exchange, input, status, body)`, or the seconds waited to `soapTimeout`, which return
+  this command's stdout for the same answer, `no_verdict` included, and throw where it exits 1.

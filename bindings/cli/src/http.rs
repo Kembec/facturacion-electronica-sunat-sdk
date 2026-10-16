@@ -6,7 +6,8 @@ use std::time::Duration;
 
 const MAX_RESPONSE_BYTES: u64 = 16 * 1024 * 1024;
 
-/// Why a POST gave no body to parse. None of them carries request data.
+/// Why a POST gave no body to parse; `sunat_sdk::exchange` words the first two. None of them
+/// carries request data.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PostError {
     /// SUNAT answered with an HTTP status other than 200 or 500 (500 carries SOAP faults).
@@ -15,16 +16,6 @@ pub enum PostError {
     Timeout(u64),
     /// Any other transport or read failure.
     Other(String),
-}
-
-impl std::fmt::Display for PostError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Status(code) => write!(f, "SUNAT answered HTTP {code}"),
-            Self::Timeout(seconds) => write!(f, "timed out after {seconds} s waiting for SUNAT; the outcome is unknown"),
-            Self::Other(message) => f.write_str(message),
-        }
-    }
 }
 
 /// Posts `envelope` and returns the body. SOAP faults arrive as HTTP 500 and are returned too,

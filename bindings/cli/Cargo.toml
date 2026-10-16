@@ -10,7 +10,6 @@ name = "sunat-sdk"
 path = "src/main.rs"
 
 [dependencies]
-base64 = "0.22"
 serde_json = "1"
 sunat-model = { path = "../../crates/sunat-model" }
 sunat-sdk = { path = "../../crates/sunat-sdk" }

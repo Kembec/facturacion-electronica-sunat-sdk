@@ -678,6 +678,8 @@ dependencies = [
 name = "sunat-sdk"
 version = "0.1.0-beta.2"
 dependencies = [
+ "base64",
+ "serde_json",
  "sunat-transport",
 ]
 
@@ -698,8 +700,10 @@ dependencies = [
 name = "sunat-sdk-wasm"
 version = "0.1.0-beta.2"
 dependencies = [
+ "base64",
  "serde_json",
  "sunat-model",
+ "sunat-sdk",
  "sunat-ubl",
  "sunat-xmldsig",
  "wasm-bindgen",

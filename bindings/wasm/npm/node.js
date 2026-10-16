@@ -3,7 +3,7 @@
 import { readFileSync } from 'node:fs';
 import { webcrypto } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
-import { initSync, build, sign } from './wasm/sunat_sdk_wasm.js';
+import { initSync, build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout } from './wasm/sunat_sdk_wasm.js';
 
 const DEFAULT_WASM = new URL('./wasm/sunat_sdk_wasm_bg.wasm', import.meta.url);
 
@@ -33,7 +33,7 @@ export function load(source) {
         Object.defineProperty(globalThis, 'crypto', { value: webcrypto, configurable: true, writable: true });
       }
       initSync({ module });
-      return Object.freeze({ build, sign });
+      return Object.freeze({ build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout });
     })
     .catch((error) => {
       ready = undefined;

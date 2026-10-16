@@ -20,7 +20,8 @@ Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec
 | ZIP y lectura de la CDR | Comprobado en CI, sin red | Pruebas con CDR sintéticas, escritas según los ejemplos del manual de la SUNAT. |
 | Envío (`send`) | Comprobado en la beta de la SUNAT | El 16/10/2026 la beta aceptó los 12 vectores firmados, enviados por la CLI tal como están en `tests/vectors/`: código 0, sin observaciones. |
 | Consulta de la CDR (`status`) | Implementado, sin probar contra la SUNAT | La SUNAT ofrece `getStatusCdr` solo en producción. El sobre sigue el ejemplo del manual. |
-| Resumen diario (RC) y comunicación de baja (RA): XML UBL 2.0, firma, envío y consulta por ticket | Comprobado en CI; envío comprobado en la beta | El CI genera y firma los 6 casos `rc-` y `ra-` de `fixtures/` con las mismas exigencias que los 12 comprobantes. El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. El envío y la consulta por ticket están solo en la CLI. |
+| Resumen diario (RC) y comunicación de baja (RA): XML UBL 2.0, firma, envío y consulta por ticket | Comprobado en CI; envío comprobado en la beta | El CI genera y firma los 6 casos `rc-` y `ra-` de `fixtures/` con las mismas exigencias que los 12 comprobantes. El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. Desde PHP se envían y consultan con la CLI. |
+| Envío y consultas desde JavaScript (`soapRequest`, `soapResponse`, `soapTimeout`) | Comprobado en CI, sin red | El paquete npm arma el POST de `send`, `summary`, `ticket` y `status` y lee la respuesta con el mismo código de la CLI. Lo prueban las pruebas unitarias del binding y la prueba de Node del CI, sin red y con respuestas escritas a mano. Todavía no se ha enviado nada a la SUNAT desde JavaScript. |
 | Guía de remisión, retención y percepción | No incluidos | — |
 
 Un tipo de documento se da por incorporado cuando cumple tres criterios: su XML coincide con los vectores, su firma da
@@ -124,8 +125,11 @@ Los resúmenes y las bajas se arman y firman con `build` y `sign`; para enviarlo
 
 ### JavaScript (WebAssembly)
 
-`build` y `sign` en memoria, con la misma API en Node 18 o posterior y en el navegador. Este paquete no envía a la
-SUNAT: el envío está en la CLI y en PHP.
+Lo mismo que la CLI, con la misma API en Node 18 o posterior y en el navegador: `build`, `sign`, `zip` y `cdr` en
+memoria, y el envío y las consultas a la SUNAT con tu propio `fetch`. El paquete no hace red. `soapRequest` te da el
+POST ya armado, tú lo envías, y `soapResponse` convierte la respuesta en el mismo JSON que imprime la CLI. No necesita
+un binario ni un proceso aparte, así que puede ir donde la CLI no llega y solo hay `fetch`, como un Cloudflare Worker;
+ahí todavía no se ha probado.
 
 Cuando el paquete esté publicado:
 
@@ -139,11 +143,39 @@ import { load } from '@kembec/facturacion-electronica-sunat-sdk';
 const sdk = await load();
 const { file_name, xml } = JSON.parse(sdk.build(documentJson));
 const signed = JSON.parse(sdk.sign(xml, certPem, keyPem)); // { xml, digest_value, signature_value }
+
+// Una llamada al web service de la SUNAT: el paquete arma el POST y lee la respuesta; el fetch es tuyo.
+async function exchange(kind, input, url, seconds = 60) {
+  const post = JSON.parse(sdk.soapRequest(kind, input, solUser, solPassword)); // solUser: RUC + usuario SOL
+  const signal = AbortSignal.timeout(seconds * 1000);
+  try {
+    const res = await fetch(url, { ...post, signal });
+    return JSON.parse(sdk.soapResponse(kind, input, res.status, new Uint8Array(await res.arrayBuffer())));
+  } catch (error) {
+    if (!signal.aborted) throw error;
+    return JSON.parse(sdk.soapTimeout(kind, input, seconds)); // en send y summary lanza un Error
+  }
+}
+
+const sent = await exchange('send', JSON.stringify({ name: file_name, xml: signed.xml }), billServiceUrl);
+// { outcome: 'cdr', cdr, cdr_zip_base64 } o { outcome: 'fault', code, message, class }
 ```
 
-Las dos funciones devuelven texto JSON y lanzan un `Error` con el motivo cuando la entrada no sirve. `load` también
-acepta el módulo WebAssembly ya compilado, que es lo que piden entornos como Cloudflare Workers. El CI lo prueba así en
-Node, pero no en Workers ni con bundlers; esos casos están descritos en el
+Todas las funciones devuelven texto JSON y lanzan un `Error` con el motivo cuando la entrada no sirve. Cada llamada a
+la SUNAT recibe la misma entrada que su comando de la CLI (`send` y `summary`, `{ name, xml }`; `ticket`, `{ ticket }`;
+`status`, `{ ruc, document_type, series, number }`) y devuelve lo mismo que imprime
+([`docs/cli.md`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md)). `send`,
+`summary` y `ticket` van a la URL del billService, y `status`, a la del billConsultService.
+
+- Si `ticket` o `status` no reciben respuesta (un estado HTTP distinto de 200 y 500, o se acabó la espera), el
+  resultado es `{ outcome: 'no_verdict', ... }`: no dice nada del documento, así que se vuelve a consultar y nunca se
+  reenvía.
+- En `send` y `summary`, ese mismo caso lanza un `Error`, porque el documento pudo haber llegado.
+- Un error SOAP de la SUNAT no lanza: llega como `{ outcome: 'fault', ... }`.
+- Desde el navegador, el envío no se ha probado: depende de que la SUNAT acepte peticiones de otro origen (CORS).
+
+`load` también acepta el módulo WebAssembly ya compilado, que es lo que piden entornos como Cloudflare Workers. El CI
+lo prueba así en Node, pero no en Workers ni con bundlers; esos casos están descritos en el
 [README del paquete](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/bindings/wasm/npm/README.md).
 
 Hoy, el paquete se arma desde este repositorio con los mismos pasos del CI. Necesitas `rustup` y Node 18 o posterior:

@@ -15,9 +15,10 @@ use sunat_sdk::{
 };
 
 use crate::config::Connection;
+use crate::http::PostError;
 
 /// `post(endpoint, soap_action, envelope) -> body`.
-pub type Post<'a> = &'a dyn Fn(&str, &str, &str) -> Result<Vec<u8>, String>;
+pub type Post<'a> = &'a dyn Fn(&str, &str, &str) -> Result<Vec<u8>, PostError>;
 
 /// `{"name", "xml" | "xml_base64"}` → `{"file_name", "zip_base64"}`.
 pub fn zip(input: &Value) -> Result<Value, String> {
@@ -29,7 +30,7 @@ pub fn zip(input: &Value) -> Result<Value, String> {
 pub fn send(input: &Value, conn: &Connection, post: Post) -> Result<Value, String> {
     let (name, zip) = zipped(input)?;
     let envelope = send_bill_envelope(&conn.user, &conn.password, &zip_file_name(&name), &zip);
-    let body = post(&conn.endpoint, SOAP_ACTION_SEND_BILL, &envelope)?;
+    let body = post(&conn.endpoint, SOAP_ACTION_SEND_BILL, &envelope).map_err(|e| e.to_string())?;
     match parse_send_bill_response(&body).map_err(|e| e.to_string())? {
         SendBillOutcome::Cdr(cdr_zip) => Ok(json!({
             "outcome": "cdr",
@@ -46,7 +47,7 @@ pub fn send(input: &Value, conn: &Connection, post: Post) -> Result<Value, Strin
 pub fn summary(input: &Value, conn: &Connection, post: Post) -> Result<Value, String> {
     let (name, zip) = zipped(input)?;
     let envelope = send_summary_envelope(&conn.user, &conn.password, &zip_file_name(&name), &zip);
-    let body = post(&conn.endpoint, SOAP_ACTION_SEND_SUMMARY, &envelope)?;
+    let body = post(&conn.endpoint, SOAP_ACTION_SEND_SUMMARY, &envelope).map_err(|e| e.to_string())?;
     match parse_send_summary_response(&body).map_err(|e| e.to_string())? {
         SendSummaryOutcome::Ticket(ticket) => Ok(json!({ "outcome": "ticket", "ticket": ticket })),
         SendSummaryOutcome::Fault { code, message } => Ok(fault_json(&code, &message)),
@@ -55,9 +56,18 @@ pub fn summary(input: &Value, conn: &Connection, post: Post) -> Result<Value, St
 
 /// `{"ticket"}` → getStatus answer: `state` is `processed` (0), `in_process` (98: ask again with
 /// the same ticket, never send again) or `processed_with_errors` (99), with the CDR if attached.
+/// An HTTP status or a timeout instead of an answer is `no_verdict`, with the same ticket.
 pub fn ticket(input: &Value, conn: &Connection, post: Post) -> Result<Value, String> {
-    let envelope = get_status_envelope(&conn.user, &conn.password, text(input, "ticket")?).map_err(|e| e.to_string())?;
-    let body = post(&conn.endpoint, SOAP_ACTION_GET_STATUS, &envelope)?;
+    let ticket = text(input, "ticket")?;
+    let envelope = get_status_envelope(&conn.user, &conn.password, ticket).map_err(|e| e.to_string())?;
+    let body = match post(&conn.endpoint, SOAP_ACTION_GET_STATUS, &envelope) {
+        Ok(body) => body,
+        Err(error) => {
+            let mut out = no_verdict(error)?;
+            out["ticket"] = json!(ticket);
+            return Ok(out);
+        }
+    };
     match parse_get_status_response(&body).map_err(|e| e.to_string())? {
         TicketStatusOutcome::Fault { code, message } => Ok(fault_json(&code, &message)),
         TicketStatusOutcome::Status(status) => {
@@ -78,6 +88,7 @@ pub fn ticket(input: &Value, conn: &Connection, post: Post) -> Result<Value, Str
 }
 
 /// `{"ruc", "document_type", "series", "number"}` → getStatusCdr answer, with the CDR if attached.
+/// An HTTP status or a timeout instead of an answer is `no_verdict`.
 pub fn status(input: &Value, conn: &Connection, post: Post) -> Result<Value, String> {
     let number = input["number"]
         .as_u64()
@@ -93,7 +104,10 @@ pub fn status(input: &Value, conn: &Connection, post: Post) -> Result<Value, Str
         number,
     )
     .map_err(|e| e.to_string())?;
-    let body = post(&conn.endpoint, SOAP_ACTION_GET_STATUS_CDR, &envelope)?;
+    let body = match post(&conn.endpoint, SOAP_ACTION_GET_STATUS_CDR, &envelope) {
+        Ok(body) => body,
+        Err(error) => return no_verdict(error),
+    };
     match parse_get_status_cdr_response(&body).map_err(|e| e.to_string())? {
         StatusCdrOutcome::Fault { code, message } => Ok(fault_json(&code, &message)),
         StatusCdrOutcome::Status(status) => {
@@ -135,6 +149,19 @@ fn cdr_json(cdr: &Cdr) -> Value {
         "notes": cdr.notes,
         "class": classify_cdr(&cdr.response_code, &cdr.notes).map(|c| c.as_str()),
     })
+}
+
+/// A query that got no answer says nothing about the document: the caller asks again with the
+/// same ticket or number, and never sends the document again because of it. An HTTP status
+/// (SUNAT has answered 401 to a valid getStatus that succeeded when repeated) or a timeout is
+/// that; any other failure stays an error.
+fn no_verdict(error: PostError) -> Result<Value, String> {
+    let (reason, http_status) = match &error {
+        PostError::Status(code) => ("http_status", json!(code)),
+        PostError::Timeout(_) => ("timeout", Value::Null),
+        PostError::Other(_) => return Err(error.to_string()),
+    };
+    Ok(json!({ "outcome": "no_verdict", "reason": reason, "http_status": http_status, "message": error.to_string() }))
 }
 
 fn fault_json(code: &str, message: &str) -> Value {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kembec\SunatSdk\Tests;
 
+use Kembec\SunatSdk\Exception\InvalidOutputException;
 use Kembec\SunatSdk\SigningKey;
 use Kembec\SunatSdk\SolCredentials;
 use Kembec\SunatSdk\SunatSdk;
@@ -92,6 +93,31 @@ final class SymaCompatTest extends BinaryTestCase
         $input = json_decode($first, true);
         self::assertSame($stored, $input['xml']);
         self::assertSame('20000000001-03-B001-1', $input['name']);
+    }
+
+    public function testStatusWithoutAnAnswerIsNoVerdictNotAFault(): void
+    {
+        $credentials = new SolCredentials('20100066603MODDATOS', 'moddatos');
+        $endpoint = 'https://sunat.test/billConsultService';
+        $answers = [
+            [401, '{"outcome":"no_verdict","reason":"http_status","http_status":401,"message":"SUNAT answered HTTP 401"}'],
+            [null, '{"outcome":"no_verdict","reason":"timeout","http_status":null,"message":"timed out"}'],
+        ];
+
+        foreach ($answers as [$httpStatus, $json]) {
+            $bin = $this->fakeBinary(sprintf('cat >/dev/null; printf \'%s\'', $json));
+            $result = (new SunatSdk($bin, 30.0))->status('20100066603', '03', 'B001', 7, $credentials, $endpoint);
+
+            self::assertTrue($result->isNoVerdict());
+            self::assertFalse($result->isFault());
+            self::assertSame($httpStatus === null ? 'timeout' : 'http_status', $result->getNoVerdictReason());
+            self::assertSame($httpStatus, $result->getHttpStatus());
+            self::assertNull($result->getStatusCode());
+        }
+
+        $bin = $this->fakeBinary('cat >/dev/null; printf \'{"outcome":"no_verdict","reason":"http_status","http_status":"401"}\'');
+        $this->expectException(InvalidOutputException::class);
+        (new SunatSdk($bin, 30.0))->status('20100066603', '03', 'B001', 7, $credentials, $endpoint);
     }
 
     private function file(string $content): string

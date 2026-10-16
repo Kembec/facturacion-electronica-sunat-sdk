@@ -1,4 +1,4 @@
-use crate::{Company, Decimal, Document, DocumentType, Line, LineDiscount, ModelError, Summary, SummaryLine, Voided, Voucher};
+use crate::{Company, Decimal, Document, DocumentType, IgvRetention, Line, LineDiscount, ModelError, Summary, SummaryLine, Voided, Voucher};
 
 /// Catalog 07 codes the SDK renders. 17 (IVAP) is excluded: it needs IVAP totals.
 const AFFECTATIONS: &[&str] = &[
@@ -51,6 +51,9 @@ fn check_voucher(voucher: &Voucher, allowed: &[DocumentType]) -> Result<(), Mode
     require(voucher.totals.payable.is_some(), "$.totals.payable")?;
     require(!voucher.lines.is_empty(), "$.lines")?;
     crate::references::check(voucher.order_reference.as_deref(), &voucher.despatch_references)?;
+    if let Some(retention) = &voucher.igv_retention {
+        check_retention(voucher, retention)?;
+    }
     voucher.lines.iter().enumerate().try_for_each(|(index, line)| check_line(index, line))
 }
 
@@ -82,6 +85,24 @@ fn check_discount(path: &str, discount: &LineDiscount) -> Result<(), ModelError>
     positive("factor", &discount.factor, 3, 5)?;
     positive("amount", &discount.amount, 12, 2)?;
     positive("base_amount", &discount.base_amount, 12, 2)
+}
+
+/// What SUNAT rejects in the IGV retention without reading its registers: the formats (3025, 2968,
+/// 3016) and a customer without RUC (3262). Whether the customer is a designated retention agent and
+/// the issuer is not (3262, 3269) depends on SUNAT's register; the arithmetic (3263, 3264) stays
+/// with the caller, like every other amount.
+fn check_retention(voucher: &Voucher, retention: &IgvRetention) -> Result<(), ModelError> {
+    if voucher.customer.document_type != "6" {
+        return Err(ModelError::invalid("$.igv_retention", "requires a customer with RUC, document_type \"6\" (SUNAT 3262)"));
+    }
+    let positive = |field: &str, value: &Decimal, int_max: usize, frac_max: usize| {
+        let ok = !value.is_negative() && !value.is_zero() && fits(value, int_max, frac_max);
+        let expected = format!("a positive amount with up to {int_max} integer digits and {frac_max} decimals");
+        check_format(&format!("$.igv_retention.{field}"), value.as_str(), &expected, |_| ok)
+    };
+    positive("factor", &retention.factor, 3, 5)?;
+    positive("amount", &retention.amount, 12, 2)?;
+    positive("base_amount", &retention.base_amount, 12, 2)
 }
 
 /// At most `int_max` integer digits and `frac_max` decimals, as rendered (no leading or trailing zeros).

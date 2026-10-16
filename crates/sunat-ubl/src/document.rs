@@ -46,6 +46,9 @@ fn invoice_body(w: &mut XmlWriter, invoice: &Invoice, options: &Options) {
     references::order(w, v);
     references::despatches(w, v);
     parties_and_payment(w, v, options, true);
+    if let Some(retention) = &v.igv_retention {
+        totals::igv_retention(w, retention, &v.currency);
+    }
     totals::tax_total(w, &v.totals, &v.currency);
     totals::monetary_total(w, MonetaryTotal::Full("cac:LegalMonetaryTotal"), &v.totals, &v.currency);
     lines::lines(w, &INVOICE_LINE, &v.lines, &v.currency);
@@ -68,6 +71,9 @@ fn note_body(w: &mut XmlWriter, note: &Note, options: &Options) {
     references::despatches(w, v);
     // Payment terms apply to credit notes (reason 13 adjusts them); debit notes carry none.
     parties_and_payment(w, v, options, credit);
+    if let Some(retention) = &v.igv_retention {
+        totals::igv_retention(w, retention, &v.currency);
+    }
     totals::tax_total(w, &v.totals, &v.currency);
     if credit {
         totals::monetary_total(w, MonetaryTotal::PayableOnly, &v.totals, &v.currency);

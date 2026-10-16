@@ -242,6 +242,10 @@ la observación 4288 en la boleta.
 (`despatch_references`, tipo 09 o 31), en facturas, boletas y notas. El SDK rechaza lo que la beta observó (4005, 4006,
 4233) y la guía repetida (2364).
 
+**Retención del IGV informada en el comprobante**: en facturas, boletas y notas (`igv_retention`: factor, importe y
+base, cargo 62 del catálogo 53). El cliente debe tener RUC; que sea agente de retención lo valida SUNAT contra su
+padrón en producción (la beta no lo hace).
+
 La guía de remisión, el comprobante de retención y el de percepción no forman parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).
 

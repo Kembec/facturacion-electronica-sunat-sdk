@@ -5,7 +5,7 @@ use serde::Deserialize;
 use serde_json::Value;
 
 use crate::{
-    Client, Company, DateTime, DespatchReference, Document, DocumentType, Invoice, Legend, Line, ModelError, Note, NoteReference,
+    Client, Company, DateTime, DespatchReference, Document, DocumentType, IgvRetention, Invoice, Legend, Line, ModelError, Note, NoteReference,
     PaymentTerms, Totals, Voucher,
 };
 
@@ -32,6 +32,7 @@ struct RawDocument {
     order_reference: Option<String>,
     #[serde(default)]
     despatch_references: Vec<DespatchReference>,
+    igv_retention: Option<IgvRetention>,
 }
 
 pub(crate) fn parse(json: &str) -> Result<Document, ModelError> {
@@ -67,6 +68,7 @@ impl RawDocument {
             legends: self.legends,
             order_reference: self.order_reference,
             despatch_references: self.despatch_references,
+            igv_retention: self.igv_retention,
         };
         match self.kind.as_str() {
             "invoice" => {

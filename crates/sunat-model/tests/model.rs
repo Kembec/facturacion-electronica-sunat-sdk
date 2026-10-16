@@ -217,3 +217,36 @@ fn purchase_order_takes_20_characters_without_whitespace() {
         }
     }
 }
+
+#[test]
+fn igv_retention_goes_in_every_voucher_with_a_ruc_customer() {
+    const RETENTION: &str = include_str!("../../../fixtures/01-invoice-igv-retention.json");
+    let invoice = Document::from_json(RETENTION).unwrap();
+    let retention = invoice.voucher().unwrap().igv_retention.as_ref().unwrap();
+    assert_eq!((retention.factor.as_str(), retention.amount.as_str(), retention.base_amount.as_str()), ("0.03", "4.44", "148.00"));
+    for note in [
+        include_str!("../../../fixtures/07-credit-note-igv-retention.json"),
+        include_str!("../../../fixtures/08-debit-note-igv-retention.json"),
+    ] {
+        assert!(Document::from_json(note).unwrap().voucher().unwrap().igv_retention.is_some());
+    }
+
+    let dni = edited(RETENTION, |v| {
+        v["customer"]["document_type"] = serde_json::json!("1");
+        v["customer"]["document_number"] = serde_json::json!("12345678");
+    });
+    assert!(matches!(dni, Err(ModelError::Invalid { .. })), "retention needs a RUC customer (3262): {dni:?}");
+    let rejected: [fn(&mut serde_json::Value); 5] = [
+        |v| v["igv_retention"]["factor"] = serde_json::json!("0"),
+        |v| v["igv_retention"]["factor"] = serde_json::json!("0.000001"),
+        |v| v["igv_retention"]["amount"] = serde_json::json!("-4.44"),
+        |v| v["igv_retention"]["amount"] = serde_json::json!("4.444"),
+        |v| v["igv_retention"]["base_amount"] = serde_json::json!("0.00"),
+    ];
+    for edit in rejected {
+        let result = edited(RETENTION, edit);
+        assert!(matches!(result, Err(ModelError::Invalid { .. })), "{result:?}");
+    }
+    let unknown = edited(RETENTION, |v| v["igv_retention"]["code"] = serde_json::json!("62"));
+    assert!(unknown.is_err(), "the code is always 62: {unknown:?}");
+}

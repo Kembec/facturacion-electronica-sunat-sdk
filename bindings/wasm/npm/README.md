@@ -1,22 +1,22 @@
-# @kembec/facturacion-electronica-sunat-sdk
+# SDK de facturación electrónica SUNAT (Perú) para JavaScript y TypeScript
 
-Facturación electrónica de la SUNAT (Perú) desde **JavaScript y TypeScript**: arma el XML de facturas (01), boletas
-(03), notas de crédito (07) y notas de débito (08) en UBL 2.1, y de resúmenes diarios (RC) y comunicaciones de baja
-(RA) en UBL 2.0, lo firma, lo comprime y te deja enviarlo a la SUNAT con tu propio `fetch`. Corre con la misma API en
-Node 18 o posterior y en el navegador, sin binarios ni procesos aparte: es el núcleo en Rust del
-[SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk) compilado a WebAssembly, el mismo que usan sus
-versiones para PHP, Python, Rust y la línea de comandos, así que el mismo documento da la misma firma en todas.
+Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **JavaScript y TypeScript**, con la misma API en Node
+18 o posterior y en el navegador. Con los datos de una factura (01), una boleta (03), una nota de crédito (07) o de
+débito (08), un resumen diario de boletas (RC) o una comunicación de baja (RA), arma el archivo XML que pide la SUNAT,
+lo firma con tu certificado digital y lo comprime. El envío lo haces con tu propio `fetch`: el paquete te da la
+petición lista y lee la respuesta de la SUNAT, que dice si lo aceptó. Es la versión para JavaScript y TypeScript del
+[SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en PHP, Python, Rust y la
+línea de comandos: los mismos datos dan el mismo comprobante firmado en todos.
 
-SUNAT (Peru) e-invoicing for JavaScript and TypeScript, in WebAssembly: UBL XML, XML-DSig signature and the SOAP web
-service, in Node and in the browser.
+SUNAT (Peru) electronic invoicing SDK for JavaScript and TypeScript, in Node and in the browser.
 
-Tu sistema calcula los importes; el paquete los valida y los escribe, no calcula impuestos. Guías y ejemplos:
-https://fe.kembec.com
+Tu sistema calcula los importes; el paquete los valida y los pone en el XML, pero no calcula impuestos. Guías y
+ejemplos: https://fe.kembec.com
 
 ## Instalación
 
 ```bash
-npm install @kembec/facturacion-electronica-sunat-sdk
+npm install @kembec/facturacion-electronica-sunat-sdk@beta
 ```
 
 Los tipos de TypeScript vienen en el paquete (`index.d.ts`).
@@ -27,7 +27,7 @@ Baja a una carpeta vacía la factura de prueba y el certificado de prueba del re
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.2
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.3
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -73,9 +73,6 @@ const sent = await exchange('send', JSON.stringify({ name: file_name, xml: signe
 // { outcome: 'cdr', cdr, cdr_zip_base64 } o { outcome: 'fault', code, message, class }
 ```
 
-`zip`, `cdr`, `soapRequest`, `soapResponse` y `soapTimeout` llegan en la versión siguiente a 0.1.0-beta.2; la
-0.1.0-beta.2 trae `build` y `sign`.
-
 ## API
 
 Todas las funciones reciben y devuelven texto JSON, y lanzan un `Error` con el motivo cuando la entrada no sirve.
@@ -104,6 +101,9 @@ Todas las funciones reciben y devuelven texto JSON, y lanzan un `Error` con el m
 - El certificado, la llave y las credenciales SOL los pasa quien llama: el paquete no los busca en archivos ni en el entorno.
 
 ## Dónde se carga el WebAssembly
+
+El paquete es el núcleo en Rust del SDK compilado a WebAssembly, sin binarios ni procesos aparte: arma XML UBL 2.1
+(comprobantes) y UBL 2.0 (resúmenes y bajas) y lo firma con XML-DSig.
 
 En Node se lee de disco. En el navegador y con bundlers (Vite, webpack 5) se pide junto a `web.js`.
 Donde eso no aplique —por ejemplo, Cloudflare Workers— se pasa el módulo a `load`:

@@ -2,7 +2,7 @@
 <phpunit bootstrap="vendor/autoload.php" colors="true" failOnWarning="true">
     <testsuites>
         <testsuite name="sunat-sdk">
-            <directory>tests</directory>
+            <directory>bindings/php/tests</directory>
         </testsuite>
     </testsuites>
 </phpunit>

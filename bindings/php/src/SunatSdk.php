@@ -21,6 +21,12 @@ use Kembec\SunatSdk\Result\ZipResult;
  */
 final class SunatSdk
 {
+    /**
+     * Equal to the Cargo workspace version (checked in CI); the binary installer downloads the release
+     * `v` . VERSION, so the PHP client and the binary it drives come from the same tag.
+     */
+    public const VERSION = '0.1.0';
+
     public const DEFAULT_TIMEOUT_SECONDS = 120.0;
 
     /** @var BinaryRunner */

@@ -1,0 +1,15 @@
+# The Packagist dist (git archive) carries only what a PHP install needs: everything is export-ignored
+# and the PHP client is re-included. A new top-level path stays out of the dist until it is listed here.
+/*                          export-ignore
+/composer.json             -export-ignore
+/LICENSE                   -export-ignore
+/NOTICE                    -export-ignore
+/README.md                 -export-ignore
+/bindings                  -export-ignore
+/bindings/*                 export-ignore
+/bindings/php              -export-ignore
+/bindings/php/*             export-ignore
+/bindings/php/src          -export-ignore
+/bindings/php/bin          -export-ignore
+/bindings/php/bin/.gitignore export-ignore
+/bindings/php/README.md    -export-ignore

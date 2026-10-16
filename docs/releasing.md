@@ -18,13 +18,13 @@ PyPI, and the PHP package on Packagist.
 |---|---|---|
 | GitHub release | `publish` job | the workflow's `GITHUB_TOKEN` |
 | npm (`@kembec/facturacion-electronica-sunat-sdk`) | `publish-npm` job, Trusted Publishing (OIDC) bound to `release.yml` and the `release` environment | none |
-| PyPI (`facturacion-electronica-sunat-sdk`) | `publish-pypi` job, Trusted Publishing (OIDC) bound to `release.yml` and the `release` environment | none |
+| PyPI (`facturacion-electronica-sunat-sdk`) | `publish-pypi` job | `PYPI_API_TOKEN` in the `release` environment |
 | Packagist (`kembec/facturacion-electronica-sunat-sdk`) | reads the tag through the repository's GitHub webhook | none in the workflow |
 
 If npm rejects the OIDC exchange, check the trusted publisher on npmjs.com (package settings): owner `Kembec`,
 repository `facturacion-electronica-sunat-sdk`, workflow `release.yml`, environment `release`.
 
-PyPI works the same way: the project needs a trusted publisher on pypi.org (a pending publisher before the first
-upload, under the account's Publishing settings) with project `facturacion-electronica-sunat-sdk`, owner `Kembec`,
-repository `facturacion-electronica-sunat-sdk`, workflow `release.yml` and environment `release`. A version with `-` is
+To move PyPI to Trusted Publishing: add a trusted publisher on pypi.org (project `facturacion-electronica-sunat-sdk`,
+owner `Kembec`, repository `facturacion-electronica-sunat-sdk`, workflow `release.yml`, environment `release`), drop the
+`password` input from `publish-pypi` and delete `PYPI_API_TOKEN`. A version with `-` is
 a PEP 440 prerelease (`0.1.0b3`), which `pip install` skips unless asked with `--pre` or `==0.1.0b3`.

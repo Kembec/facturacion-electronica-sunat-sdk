@@ -1,8 +1,10 @@
 //! Root element and header of each document type, and the order of its sections, per SUNAT's
-//! UBL 2.1 guides for invoice and receipt (01, 03), credit note (07) and debit note (08).
+//! UBL 2.1 guides for invoice and receipt (01, 03), credit note (07) and debit note (08). The daily
+//! summary and the void communication are in `daily`.
 
 use sunat_model::{Document, DocumentType, Invoice, Note, Voucher};
 
+use crate::daily;
 use crate::lines::{self, CREDIT_NOTE_LINE, DEBIT_NOTE_LINE, INVOICE_LINE};
 use crate::parties;
 use crate::totals::{self, MonetaryTotal};
@@ -13,6 +15,7 @@ const NS_CAC: &str = "urn:oasis:names:specification:ubl:schema:xsd:CommonAggrega
 const NS_CBC: &str = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2";
 const NS_DS: &str = "http://www.w3.org/2000/09/xmldsig#";
 const NS_EXT: &str = "urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2";
+const NS_SAC: &str = "urn:sunat:names:specification:ubl:peru:schema:xsd:SunatAggregateComponents-1";
 
 /// SUNAT's customization of UBL 2.1 for these documents.
 const CUSTOMIZATION_ID: &str = "2.0";
@@ -22,13 +25,15 @@ pub(crate) fn render(document: &Document, options: &Options) -> Vec<u8> {
     match document {
         Document::Invoice(invoice) => invoice_body(&mut w, invoice, options),
         Document::Note(note) => note_body(&mut w, note, options),
+        Document::Summary(summary) => daily::summary_body(&mut w, summary, options),
+        Document::Voided(voided) => daily::voided_body(&mut w, voided, options),
     }
     w.finish()
 }
 
 fn invoice_body(w: &mut XmlWriter, invoice: &Invoice, options: &Options) {
     let v = &invoice.voucher;
-    root(w, "Invoice", "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2");
+    root(w, "Invoice", "urn:oasis:names:specification:ubl:schema:xsd:Invoice-2", false);
     header(w, v);
     if let Some(due) = &invoice.due_date {
         w.text("cbc:DueDate", &due.to_lima().date_string());
@@ -46,9 +51,9 @@ fn note_body(w: &mut XmlWriter, note: &Note, options: &Options) {
     let v = &note.voucher;
     let credit = v.document_type == DocumentType::CreditNote;
     if credit {
-        root(w, "CreditNote", "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2");
+        root(w, "CreditNote", "urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2", false);
     } else {
-        root(w, "DebitNote", "urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2");
+        root(w, "DebitNote", "urn:oasis:names:specification:ubl:schema:xsd:DebitNote-2", false);
     }
     header(w, v);
     legends_and_currency(w, v);
@@ -66,13 +71,15 @@ fn note_body(w: &mut XmlWriter, note: &Note, options: &Options) {
     w.close();
 }
 
-/// Root with its namespaces in canonical order (default first, then by prefix) and the empty
-/// extension the signature goes into.
-fn root(w: &mut XmlWriter, name: &'static str, namespace: &str) {
-    w.open(
-        name,
-        &[("xmlns", namespace), ("xmlns:cac", NS_CAC), ("xmlns:cbc", NS_CBC), ("xmlns:ds", NS_DS), ("xmlns:ext", NS_EXT)],
-    );
+/// Root with its namespaces in canonical order (default first, then by prefix; `sac` last, for the
+/// documents that use SUNAT's aggregates) and the empty extension the signature goes into.
+pub(crate) fn root(w: &mut XmlWriter, name: &'static str, namespace: &str, sunat_aggregates: bool) {
+    let mut namespaces =
+        vec![("xmlns", namespace), ("xmlns:cac", NS_CAC), ("xmlns:cbc", NS_CBC), ("xmlns:ds", NS_DS), ("xmlns:ext", NS_EXT)];
+    if sunat_aggregates {
+        namespaces.push(("xmlns:sac", NS_SAC));
+    }
+    w.open(name, &namespaces);
     w.open("ext:UBLExtensions", &[]);
     w.open("ext:UBLExtension", &[]);
     w.open("ext:ExtensionContent", &[]);

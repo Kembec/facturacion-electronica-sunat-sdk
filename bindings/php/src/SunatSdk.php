@@ -67,7 +67,7 @@ final class SunatSdk
     }
 
     /**
-     * Renders the unsigned UBL 2.1 XML of one voucher (docs/input-model.md).
+     * Renders the unsigned UBL XML of one voucher, daily summary or void communication (docs/input-model.md).
      *
      * @param array<string, mixed>|object|string $document the document as an array, an object or a JSON string
      * @throws SunatSdkException

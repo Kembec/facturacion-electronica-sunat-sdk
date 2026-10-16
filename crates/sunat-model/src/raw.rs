@@ -1,4 +1,5 @@
-//! The JSON document as written, before it is split into `Invoice` or `Note`.
+//! The JSON document as written, before it is split into `Invoice` or `Note`; summaries and void
+//! communications go to `daily`.
 
 use serde::Deserialize;
 use serde_json::Value;
@@ -32,6 +33,10 @@ struct RawDocument {
 
 pub(crate) fn parse(json: &str) -> Result<Document, ModelError> {
     let value: Value = serde_json::from_str(json).map_err(|e| ModelError::Json(e.to_string()))?;
+    if let Some(kind @ ("summary" | "voided")) = value.get("kind").and_then(Value::as_str) {
+        let kind = kind.to_owned();
+        return crate::daily::parse(&kind, value);
+    }
     crate::scope::check(&value)?;
     let raw: RawDocument = serde_json::from_value(value).map_err(|e| ModelError::Json(e.to_string()))?;
     raw.into_document()
@@ -67,7 +72,7 @@ impl RawDocument {
                 let reference = self.note.ok_or_else(|| ModelError::missing("$.note"))?;
                 Ok(Document::Note(Note { voucher, reference }))
             }
-            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\" or \"note\"")),
+            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\", \"note\", \"summary\" or \"voided\"")),
         }
     }
 }

@@ -1,4 +1,5 @@
-//! `build` and `sign`: a phase 1 document to unsigned UBL XML, and that XML to its signed form.
+//! `build` and `sign`: a document (voucher, daily summary or void communication) to unsigned UBL XML,
+//! and that XML to its signed form.
 
 use serde_json::{json, Value};
 use sunat_model::Document;

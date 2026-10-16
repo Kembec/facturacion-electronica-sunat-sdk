@@ -5,7 +5,7 @@ use std::fmt;
 pub enum ModelError {
     /// The input is not valid JSON or does not match the input model.
     Json(String),
-    /// The input uses a feature that phase 1 does not render.
+    /// The input uses a feature the SDK does not render.
     OutOfScope { path: String, feature: &'static str },
     /// A required value is absent.
     Missing { path: String },
@@ -28,7 +28,7 @@ impl fmt::Display for ModelError {
         match self {
             Self::Json(message) => write!(f, "invalid input: {message}"),
             Self::OutOfScope { path, feature } => {
-                write!(f, "{path}: {feature} is out of scope in phase 1")
+                write!(f, "{path}: {feature} is out of scope")
             }
             Self::Missing { path } => write!(f, "{path}: required"),
             Self::Invalid { path, reason } => write!(f, "{path}: {reason}"),

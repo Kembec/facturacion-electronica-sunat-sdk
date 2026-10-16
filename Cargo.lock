@@ -718,6 +718,7 @@ dependencies = [
 name = "sunat-ubl"
 version = "0.1.0-beta.2"
 dependencies = [
+ "serde_json",
  "sunat-model",
  "sunat-xmldsig",
 ]

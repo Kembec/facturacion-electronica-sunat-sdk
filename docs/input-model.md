@@ -75,9 +75,11 @@ reversal summaries (RR); despatch (GRE).
 Summary line: `document_type` (`"03"`, `"07"`, `"08"`), `document_number` (`"B001-1"`), `status`
 (catalog 19: `"1"` add, `"2"` modify, `"3"` void), `customer_document_type` (catalog 06),
 `customer_document_number`, optional `reference_document` (`{ "document_type": "03", "document_number":
-"B001-1" }`, for notes), and the amounts `total`, `taxed`, `exempt`, `unaffected`, `export`, `free`,
-`other_charges`, `igv`. `igv` is always rendered (`0.00` when absent); any amount given, even `"0.00"`, is
-rendered; an absent amount other than `igv` is not. Summary lines carry no tax percentage.
+"B001-1" }`, required for notes and rejected on receipts), and the amounts `total` (required), `taxed`,
+`exempt`, `unaffected`, `export`, `free`, `other_charges`, `igv`. `igv` is always rendered (`0.00` when
+absent); `taxed` is rendered whenever given, even `"0.00"`; `exempt`, `unaffected`, `export`, `free` and
+`other_charges` only when non-zero, so `"0.00"` there is the same as absent (the vectors' rule). Summary
+lines carry no tax percentage. `reference_date` must not be after `generation_date`.
 
 ## Void communication (`kind: "voided"`, RA)
 
@@ -87,6 +89,10 @@ rendered; an absent amount other than `igv` is not. Summary lines carry no tax p
 | `generation_date` | date of issue of the documents it voids |
 | `communication_date` | date the communication is sent |
 | `issuer` | see Issuer |
-| `lines` | `[{ "document_type": "01", "series": "F001", "number": "123", "reason": "..." }]` |
+| `lines` | `[{ "document_type": "01", "series": "F001", "number": "123", "reason": "..." }]`; `01`, `07` or `08` (a receipt is voided in a summary with status `3`) |
 
-Both are sent with `sendSummary` and return a ticket; the CDR comes from `getStatus` with that ticket.
+`generation_date` must not be after `communication_date`. In both documents `number` is 1 to 5 digits and
+dates are `YYYY-MM-DD`.
+
+`build` renders both (`file_name` `RUC-RC-YYYYMMDD-N` or `RUC-RA-YYYYMMDD-N`). Both are sent with
+`sendSummary` and return a ticket; the CDR comes from `getStatus` with that ticket.

@@ -17,11 +17,9 @@ fn cases() -> Vec<String> {
     let mut cases: Vec<String> = std::fs::read_dir(root().join("fixtures"))
         .unwrap()
         .filter_map(|entry| entry.unwrap().file_name().into_string().unwrap().strip_suffix(".json").map(str::to_owned))
-        // The ra-/rc- summaries are phase 2, not build input.
-        .filter(|case| ["01-", "03-", "07-", "08-"].iter().any(|prefix| case.starts_with(prefix)))
         .collect();
     cases.sort();
-    assert_eq!(cases.len(), 12, "fixtures");
+    assert_eq!(cases.len(), 18, "fixtures");
     cases
 }
 
@@ -42,7 +40,7 @@ fn build_then_sign_reproduces_every_vector() {
     for case in cases() {
         let built = parse(&build_json(&read(&format!("fixtures/{case}.json"))).unwrap());
         let xml = built["xml"].as_str().unwrap();
-        let type_code = built["file_name"].as_str().unwrap().split('-').nth(1).unwrap().to_owned();
+        let type_code = built["file_name"].as_str().unwrap().split('-').nth(1).unwrap().to_lowercase();
         assert!(case.starts_with(&type_code), "{case}: file_name document type");
 
         let signed = parse(&sign_json(xml, &cert(), &key(), None).unwrap());

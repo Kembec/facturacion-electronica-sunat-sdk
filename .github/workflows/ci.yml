@@ -55,7 +55,7 @@ jobs:
         run: |
           npm pack --dry-run
           npm pack --pack-destination "$RUNNER_TEMP"
-      # The packed tarball, installed in a clean project: types, then the 12 voucher vectors in
+      # The packed tarball, installed in a clean project: types, then the 18 vectors in
       # Node and in headless Chrome. Node 22 first, then the oldest supported line.
       - run: bindings/wasm/scripts/test-package.sh "$RUNNER_TEMP"/kembec-facturacion-electronica-sunat-sdk-*.tgz
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0

@@ -1,13 +1,13 @@
-// The voucher vectors (01, 03, 07, 08) through the package API, shared by the Node and the browser
-// runs: each fixture is built and signed and must carry the DigestValue and SignatureValue of its
-// vector. The ra-/rc- summaries are phase 2, not build input. No Node imports: it runs in a page.
+// Every vector through the package API, shared by the Node and the browser runs: vouchers (01, 03,
+// 07, 08), daily summaries (rc-) and void communications (ra-). Each fixture is built and signed and
+// must carry the DigestValue and SignatureValue of its vector. No Node imports: it runs in a page.
 
-export const EXPECTED_CASES = 12;
+export const EXPECTED_CASES = 18;
 
-/** Fixture names (without `.json`) that are voucher build input, sorted. */
+/** Fixture names (without `.json`), sorted. */
 export function selectCases(fileNames) {
   return fileNames
-    .filter((name) => /^0[1378]-.*\.json$/.test(name))
+    .filter((name) => /^(0[1378]|ra|rc)-.*\.json$/.test(name))
     .map((name) => name.slice(0, -'.json'.length))
     .sort();
 }
@@ -36,7 +36,7 @@ function throwsError(run, message) {
  * @param {{ sdk: import('../npm/index.d.ts').Sdk, cases: string[], read: (path: string) => Promise<string>, log: (line: string) => void }} run
  */
 export async function runVectors({ sdk, cases, read, log }) {
-  check(cases.length === EXPECTED_CASES, `${EXPECTED_CASES} voucher fixtures, found ${cases.length}`);
+  check(cases.length === EXPECTED_CASES, `${EXPECTED_CASES} fixtures, found ${cases.length}`);
   const cert = await read('tests/vectors/test-cert/test-cert.pem');
   const key = await read('tests/vectors/test-cert/test-key.pem');
 

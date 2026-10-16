@@ -15,6 +15,13 @@ pub struct DateTime {
     unix_seconds: i64,
 }
 
+/// A calendar date given as `YYYY-MM-DD`, without time or offset: the dates a daily summary and a
+/// void communication carry.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Date {
+    days: i64,
+}
+
 /// A wall-clock date and time in Lima.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct LimaDateTime {
@@ -52,6 +59,37 @@ impl LimaDateTime {
     }
 }
 
+impl Date {
+    /// `YYYY-MM-DD`.
+    pub fn date_string(&self) -> String {
+        let (year, month, day) = civil_from_days(self.days);
+        format!("{year:04}-{month:02}-{day:02}")
+    }
+
+    /// `YYYYMMDD`, the form in the identifiers `RC-YYYYMMDD-N` and `RA-YYYYMMDD-N`.
+    pub fn compact(&self) -> String {
+        let (year, month, day) = civil_from_days(self.days);
+        format!("{year:04}{month:02}{day:02}")
+    }
+}
+
+impl FromStr for Date {
+    type Err = ModelError;
+
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        parse_date(text.as_bytes())
+            .map(|days| Date { days })
+            .ok_or_else(|| ModelError::invalid("$", format!("not a date (YYYY-MM-DD): {text:?}")))
+    }
+}
+
+impl<'de> Deserialize<'de> for Date {
+    fn deserialize<D: Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        let text = String::deserialize(deserializer)?;
+        text.parse().map_err(|e: ModelError| serde::de::Error::custom(e.to_string()))
+    }
+}
+
 impl FromStr for DateTime {
     type Err = ModelError;
 
@@ -78,23 +116,34 @@ impl fmt::Display for DateTime {
 
 fn parse_atom(text: &str) -> Option<DateTime> {
     let b = text.as_bytes();
-    if b.len() < 20 || b[4] != b'-' || b[7] != b'-' || b[10] != b'T' || b[13] != b':' || b[16] != b':' {
+    if b.len() < 20 || b[10] != b'T' || b[13] != b':' || b[16] != b':' {
+        return None;
+    }
+    let days = parse_date(&b[0..10])?;
+    let hour = number(&b[11..13])?;
+    let minute = number(&b[14..16])?;
+    let second = number(&b[17..19])?;
+    let offset = parse_offset(&b[19..])?;
+    if hour > 23 || minute > 59 || second > 59 {
+        return None;
+    }
+    let local = days * 86_400 + hour * 3600 + minute * 60 + second;
+    Some(DateTime { unix_seconds: local - offset })
+}
+
+/// `YYYY-MM-DD` (exactly 10 bytes) to days since 1970-01-01.
+fn parse_date(b: &[u8]) -> Option<i64> {
+    if b.len() != 10 || b[4] != b'-' || b[7] != b'-' {
         return None;
     }
     let year = number(&b[0..4])?;
     let month = number(&b[5..7])?;
     let day = number(&b[8..10])?;
-    let hour = number(&b[11..13])?;
-    let minute = number(&b[14..16])?;
-    let second = number(&b[17..19])?;
-    let offset = parse_offset(&b[19..])?;
     let valid_date = (1..=12).contains(&month) && day >= 1 && day <= days_in_month(year, month);
-    if year < 1 || !valid_date || hour > 23 || minute > 59 || second > 59 {
+    if year < 1 || !valid_date {
         return None;
     }
-    let days = days_from_civil(year, month as u32, day as u32);
-    let local = days * 86_400 + hour * 3600 + minute * 60 + second;
-    Some(DateTime { unix_seconds: local - offset })
+    Some(days_from_civil(year, month as u32, day as u32))
 }
 
 fn parse_offset(b: &[u8]) -> Option<i64> {
@@ -168,6 +217,16 @@ mod tests {
         assert_eq!(lima("2026-10-15T03:00:00Z"), ("2026-10-14".into(), "22:00:00".into()));
         assert_eq!(lima("2024-02-29T23:59:59+01:00"), ("2024-02-29".into(), "17:59:59".into()));
         assert_eq!(lima("2027-01-01T04:59:59+00:00"), ("2026-12-31".into(), "23:59:59".into()));
+    }
+
+    #[test]
+    fn calendar_dates_round_trip_and_compact() {
+        let date: Date = "2024-02-29".parse().unwrap();
+        assert_eq!((date.date_string(), date.compact()), ("2024-02-29".into(), "20240229".into()));
+        assert!("2026-10-14".parse::<Date>().unwrap() < "2026-10-15".parse::<Date>().unwrap());
+        for text in ["2026-02-29", "2026-13-01", "2026-10-1", "2026-10-15T00:00:00-05:00", "20261015", ""] {
+            assert!(text.parse::<Date>().is_err(), "{text}");
+        }
     }
 
     #[test]

@@ -11,6 +11,7 @@ use Kembec\SunatSdk\Result\Cdr;
 use Kembec\SunatSdk\Result\SendResult;
 use Kembec\SunatSdk\Result\SignResult;
 use Kembec\SunatSdk\Result\StatusResult;
+use Kembec\SunatSdk\Result\ValidityResult;
 use Kembec\SunatSdk\Result\ZipResult;
 
 /**
@@ -140,6 +141,41 @@ final class SunatSdk
     }
 
     /**
+     * Asks SUNAT's Consulta Integrada whether a voucher (01, 03, 07, 08) exists and in which state: a
+     * token, then the query, both inside the HTTP wait. There is no test environment: this is production.
+     *
+     * @param string $issueDate `YYYY-MM-DD` or the document's ISO 8601 issue date
+     * @param string $total the voucher's total (PayableAmount), up to 2 decimals
+     * @param string|null $requesterRuc the RUC that asks; defaults to $ruc
+     * @throws SunatSdkException
+     */
+    public function validity(
+        string $ruc,
+        string $documentType,
+        string $series,
+        int $number,
+        string $issueDate,
+        string $total,
+        ApiCredentials $credentials,
+        ?string $requesterRuc = null
+    ): ValidityResult {
+        $input = [
+            'ruc' => $ruc,
+            'document_type' => $documentType,
+            'series' => $series,
+            'number' => $number,
+            'issue_date' => $issueDate,
+            'total' => $total,
+        ];
+        if ($requesterRuc !== null) {
+            $input['requester_ruc'] = $requesterRuc;
+        }
+        $env = $this->httpEnvironment() + $credentials->toEnvironment();
+
+        return ValidityResult::fromArray($this->runner->run('validity', $this->encode($input), $env));
+    }
+
+    /**
      * Reads a CDR (zip or XML) and classifies its response code.
      *
      * @param string $cdr the raw bytes of the CDR zip or XML
@@ -176,7 +212,7 @@ final class SunatSdk
     {
         if ($this->httpTimeoutSeconds === null) {
             throw new \InvalidArgumentException(sprintf(
-                'the process timeout is too short for send and status: it needs at least %d s',
+                'the process timeout is too short for send, status and validity: it needs at least %d s',
                 self::HTTP_TIMEOUT_MARGIN_SECONDS + 1
             ));
         }

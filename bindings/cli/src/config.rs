@@ -10,6 +10,10 @@ pub const ENV_PASSWORD: &str = "SUNAT_SOL_PASSWORD";
 pub const ENV_CERT_PATH: &str = "SUNAT_CERT_PATH";
 pub const ENV_KEY_PATH: &str = "SUNAT_KEY_PATH";
 pub const ENV_HTTP_TIMEOUT: &str = "SUNAT_HTTP_TIMEOUT_SECONDS";
+pub const ENV_API_CLIENT_ID: &str = "SUNAT_API_CLIENT_ID";
+pub const ENV_API_CLIENT_SECRET: &str = "SUNAT_API_CLIENT_SECRET";
+pub const ENV_VALIDITY_ENDPOINT: &str = "SUNAT_VALIDITY_ENDPOINT";
+pub const ENV_VALIDITY_TOKEN_ENDPOINT: &str = "SUNAT_VALIDITY_TOKEN_ENDPOINT";
 
 /// The wait before this flag existed; kept as the default so current callers see no change.
 pub const DEFAULT_HTTP_TIMEOUT_SECONDS: u64 = 90;
@@ -18,6 +22,7 @@ pub const MAX_HTTP_TIMEOUT_SECONDS: u64 = 300;
 
 const CONNECTION_FLAGS: &[&str] = &["endpoint", "user", "password", "timeout"];
 const SIGNING_FLAGS: &[&str] = &["cert", "key"];
+const API_FLAGS: &[&str] = &["client-id", "client-secret", "endpoint", "token-endpoint", "timeout"];
 
 /// Where and as whom to call SUNAT. `user` is the RUC followed by the SOL user; `timeout` bounds
 /// the whole HTTP exchange (connect, send, wait, read).
@@ -58,6 +63,52 @@ pub fn connection(
     }
     let timeout = http_timeout(flag_value(args, CONNECTION_FLAGS, "timeout")?.or_else(|| env(ENV_HTTP_TIMEOUT)))?;
     Ok(Connection { endpoint, user: pick("user", ENV_USER)?, password: pick("password", ENV_PASSWORD)?, timeout })
+}
+
+/// Credentials of «Credenciales de API SUNAT» (SOL) and the bases of the Consulta Integrada URLs.
+/// `timeout` bounds both calls together (token and query).
+pub struct ApiConnection {
+    pub client_id: String,
+    pub client_secret: String,
+    pub token_base: String,
+    pub query_base: String,
+    pub timeout: Duration,
+}
+
+impl fmt::Debug for ApiConnection {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("ApiConnection")
+            .field("client_id", &"<redacted>")
+            .field("client_secret", &"<redacted>")
+            .field("token_base", &self.token_base)
+            .field("query_base", &self.query_base)
+            .field("timeout", &self.timeout)
+            .finish()
+    }
+}
+
+/// `--client-id`/SUNAT_API_CLIENT_ID and `--client-secret`/SUNAT_API_CLIENT_SECRET, required;
+/// `--endpoint`/SUNAT_VALIDITY_ENDPOINT and `--token-endpoint`/SUNAT_VALIDITY_TOKEN_ENDPOINT default
+/// to SUNAT's production bases (there is no test environment). Only `https://` bases pass.
+pub fn api_connection(args: &[String], env: &dyn Fn(&str) -> Option<String>) -> Result<ApiConnection, String> {
+    let value = |flag: &str, var: &str| -> Result<Option<String>, String> {
+        Ok(flag_value(args, API_FLAGS, flag)?.or_else(|| env(var)).filter(|v| !v.is_empty()))
+    };
+    let required = |flag: &str, var: &str| value(flag, var)?.ok_or_else(|| format!("missing --{flag} or {var}"));
+    let base = |flag: &str, var: &str, default: &str| -> Result<String, String> {
+        let base = value(flag, var)?.unwrap_or_else(|| default.to_string());
+        if !base.starts_with("https://") {
+            return Err(format!("--{flag} must use https://"));
+        }
+        Ok(base)
+    };
+    Ok(ApiConnection {
+        client_id: required("client-id", ENV_API_CLIENT_ID)?,
+        client_secret: required("client-secret", ENV_API_CLIENT_SECRET)?,
+        token_base: base("token-endpoint", ENV_VALIDITY_TOKEN_ENDPOINT, sunat_sdk::validity::TOKEN_BASE)?,
+        query_base: base("endpoint", ENV_VALIDITY_ENDPOINT, sunat_sdk::validity::QUERY_BASE)?,
+        timeout: http_timeout(flag_value(args, API_FLAGS, "timeout")?.or_else(|| env(ENV_HTTP_TIMEOUT)))?,
+    })
 }
 
 /// `--timeout`/SUNAT_HTTP_TIMEOUT_SECONDS: whole seconds from 1 to [`MAX_HTTP_TIMEOUT_SECONDS`];
@@ -174,6 +225,20 @@ mod tests {
         let none = |_: &str| None;
         assert_eq!(key_files(&args(&["--cert", "c.pem"]), &none).unwrap_err(), "missing --key or SUNAT_KEY_PATH");
         assert!(key_files(&args(&["--endpoint", "https://x"]), &none).is_err());
+    }
+
+    #[test]
+    fn api_connection_needs_both_credentials_and_https() {
+        let none = |_: &str| None;
+        assert_eq!(api_connection(&[], &none).unwrap_err(), "missing --client-id or SUNAT_API_CLIENT_ID");
+        let env = env_of(&[(ENV_API_CLIENT_ID, "id-env"), (ENV_API_CLIENT_SECRET, "secret-env")]);
+        let c = api_connection(&args(&["--client-id", "id-flag", "--timeout=20"]), &env).unwrap();
+        assert_eq!((c.client_id.as_str(), c.client_secret.as_str(), c.timeout.as_secs()), ("id-flag", "secret-env", 20));
+        assert_eq!((c.token_base.as_str(), c.query_base.as_str()), (sunat_sdk::validity::TOKEN_BASE, sunat_sdk::validity::QUERY_BASE));
+        assert_eq!(api_connection(&args(&["--endpoint", "http://x"]), &env).unwrap_err(), "--endpoint must use https://");
+        assert!(api_connection(&args(&["--user", "u"]), &env).is_err());
+        let shown = format!("{c:?}");
+        assert!(!shown.contains("id-flag") && !shown.contains("secret-env"));
     }
 
     #[test]

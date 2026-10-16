@@ -45,6 +45,22 @@ try {
 }
 if (!sendTimeout?.includes('the outcome is unknown')) throw new Error(`soapTimeout send: ${sendTimeout}`);
 console.log(`ok node exchange: soapRequest, soapResponse 401 -> no_verdict, soapTimeout send throws`);
+// Consulta Integrada: token, then query, both through the caller's fetch; a 401 is no verdict.
+const tokenCall = JSON.parse(sdk.validityTokenRequest('c04864ce-f454-48e1-b41d-8730e575b905', 'OpzHz4pn8D1frRrv5iDklA=='));
+if (!tokenCall.url.endsWith('/c04864ce-f454-48e1-b41d-8730e575b905/oauth2/token/') || !tokenCall.body.includes('client_secret=OpzHz4pn8D1frRrv5iDklA%3D%3D')) {
+  throw new Error(`validityTokenRequest: ${tokenCall.url}`);
+}
+const encoder = new TextEncoder();
+const token = JSON.parse(sdk.validityTokenResponse(200, encoder.encode('{"access_token":"t0k","token_type":"JWT","expires_in":3600}')));
+const queryInput = JSON.stringify({ ruc: '20100066603', document_type: '03', series: 'B001', number: 7, issue_date: '2026-10-15', total: '118' });
+const queryCall = JSON.parse(sdk.validityRequest(queryInput, token.access_token));
+if (queryCall.headers.Authorization !== 'Bearer t0k' || JSON.parse(queryCall.body).monto !== '118.00') throw new Error(`validityRequest: ${queryCall.body}`);
+const reported = JSON.parse(sdk.validityResponse(200, encoder.encode('{"success":true,"message":"ok","data":{"estadoCp":"1","observaciones":[]}}')));
+const refused = JSON.parse(sdk.validityResponse(401, new Uint8Array()));
+if (reported.state !== 'accepted' || refused.outcome !== 'no_verdict' || refused.stage !== 'query') {
+  throw new Error(`validityResponse: ${JSON.stringify([reported, refused])}`);
+}
+console.log('ok node validity: token, query, 401 -> no_verdict');
 console.log(`ok node ${process.version} ${fromSource ? 'load(WebAssembly.Module)' : 'load()'} via ${resolve(PACKAGE)}`);
 
 if (!fromSource) {

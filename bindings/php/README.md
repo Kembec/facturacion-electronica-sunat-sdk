@@ -7,7 +7,7 @@ cada comando está en el [contrato de la CLI](https://github.com/Kembec/facturac
 Requiere PHP 7.4 o posterior con la extensión `json`; el instalador del binario usa además `openssl`.
 
 **Estado:** versión 0.1.0-beta.2, todavía no publicada en Packagist. En cada cambio, el CI corre las pruebas de este
-cliente en PHP 8.1 contra el binario compilado, con los 18 vectores de prueba. El estado de cada tipo de documento
+cliente en PHP 8.1 contra el binario compilado, con los 20 vectores de prueba. El estado de cada tipo de documento
 está en el [README del repositorio](https://github.com/Kembec/facturacion-electronica-sunat-sdk#qué-hace-hoy).
 
 ## Instalación

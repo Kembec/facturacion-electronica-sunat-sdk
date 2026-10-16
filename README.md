@@ -23,11 +23,15 @@ Guías y los 12 ejemplos, con su entrada, su XML y su firma: **https://fe.kembec
 | Consulta de la CDR (`status`) | Implementado, sin probar contra la SUNAT | La SUNAT ofrece `getStatusCdr` solo en producción. El sobre sigue el ejemplo del manual. |
 | Resumen diario (RC) y comunicación de baja (RA): XML UBL 2.0, firma, envío y consulta por ticket | Comprobado en CI; envío comprobado en la beta | El CI genera y firma los 6 casos `rc-` y `ra-` de `fixtures/` con las mismas exigencias que los 14 comprobantes. El 16/10/2026 la beta procesó los 6 vectores firmados, enviados con `summary` y seguidos con `ticket`: código 0 en todos. Desde PHP se envían y consultan con la CLI. |
 | Envío y consultas desde JavaScript (`soapRequest`, `soapResponse`, `soapTimeout`) | Comprobado en CI, sin red | El paquete npm arma el POST de `send`, `summary`, `ticket` y `status` y lee la respuesta con el mismo código de la CLI. Lo prueban las pruebas unitarias del binding y la prueba de Node del CI, sin red y con respuestas escritas a mano. Todavía no se ha enviado nada a la SUNAT desde JavaScript. |
-| Guía de remisión, retención y percepción | No incluidos | — |
+| Guía de remisión remitente (09): XML UBL 2.1 y firma | Comprobado en CI, sin la SUNAT; el envío no está incluido | En cada cambio, el CI genera y firma los 2 casos `09-` de `fixtures/` por el núcleo, la CLI, PHP, el paquete npm y Python, y exige exactamente el `DigestValue` y el `SignatureValue` de `tests/vectors/`; el verificador independiente acepta las firmas. Esos vectores los escribió el propio SDK: detectan regresiones, no prueban compatibilidad. Además, el XML firmado valida contra el esquema OASIS UBL 2.1 de `DespatchAdvice`, y hay una prueba por cada código de regla de la SUNAT que se puede comprobar sin red. La SUNAT no tiene ambiente de pruebas para guías y las recibe solo por su servicio REST, que el SDK no cubre. Rechaza los motivos de traslado 08, 09 y 18 (importación, exportación y emisor itinerante) y la guía del transportista (31). |
+| Retención y percepción | No incluidos | — |
 
 Un tipo de documento se da por incorporado cuando cumple tres criterios: su XML coincide con los vectores, su firma da
 los mismos valores y la acepta un verificador independiente, y la beta de la SUNAT lo acepta. Los cuatro tipos de la
-primera fila cumplen los tres.
+primera fila cumplen los tres. La guía de remisión remitente no puede cumplir el tercero, porque la SUNAT no tiene
+ambiente de pruebas para guías: en su lugar se exigen el esquema OASIS y las pruebas por código de regla. El detalle
+está en el [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md),
+sección «Despatch advice (09)».
 
 **Solo IGV, y sin cálculo de impuestos.** Los importes los calcula tu sistema y llegan como texto (`"118.00"`): el SDK
 los valida y los escribe. Rechaza con un error explícito ISC, ICBPER, IVAP y otros tributos, descuentos y cargos

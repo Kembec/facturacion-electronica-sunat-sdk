@@ -9,6 +9,7 @@ mod despatch_rules;
 mod despatch_transport;
 mod error;
 mod raw;
+mod references;
 mod scope;
 mod types;
 mod validate;
@@ -20,7 +21,7 @@ pub use despatch::{Carrier, Despatch, DespatchLine, DespatchParty, Driver, Place
 pub use error::ModelError;
 pub use scope::is_xml_text;
 pub use types::{
-    Address, Client, Company, DocumentType, Installment, Invoice, Legend, Line, LineDiscount, Note, NoteReference, PaymentTerms,
+    Address, Client, Company, DespatchReference, DocumentType, Installment, Invoice, Legend, Line, LineDiscount, Note, NoteReference, PaymentTerms,
     Totals, Voucher,
 };
 

@@ -1,0 +1,85 @@
+{
+  "kind": "invoice",
+  "ubl_version": "2.1",
+  "operation_type": "0101",
+  "document_type": "03",
+  "series": "B001",
+  "number": "6001",
+  "issue_date": "2026-10-15T10:30:00-05:00",
+  "currency": "PEN",
+  "issuer": {
+    "ruc": "20123456789",
+    "legal_name": "EMPRESA DEMO ORACULO S.A.C.",
+    "trade_name": "DEMO ORACULO",
+    "email": "facturacion@example.com",
+    "telephone": "014000000",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "urbanization": "-",
+      "street": "AV. EJEMPLO 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "1",
+    "document_number": "12345678",
+    "legal_name": "JUAN PEREZ QUISPE"
+  },
+  "totals": {
+    "taxed": "93.21",
+    "igv": "16.78",
+    "total_taxes": "16.78",
+    "sale_value": "93.21",
+    "subtotal": "109.99",
+    "payable": "109.99"
+  },
+  "lines": [
+    {
+      "unit": "NIU",
+      "quantity": "3",
+      "product_code": "POL001",
+      "sunat_product_code": "10191509",
+      "description": "Polo algodon",
+      "unit_value": "25.42",
+      "igv_base": "76.26",
+      "igv_rate": "18.00",
+      "igv": "13.73",
+      "affectation": "10",
+      "total_taxes": "13.73",
+      "unit_price": "30.00",
+      "line_value": "76.26"
+    },
+    {
+      "unit": "NIU",
+      "quantity": "1",
+      "product_code": "GOR001",
+      "sunat_product_code": "10191509",
+      "description": "Gorra",
+      "unit_value": "16.95",
+      "igv_base": "16.95",
+      "igv_rate": "18.00",
+      "igv": "3.05",
+      "affectation": "10",
+      "total_taxes": "3.05",
+      "unit_price": "20.00",
+      "line_value": "16.95"
+    }
+  ],
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON CIENTO NUEVE CON 99/100 SOLES"
+    }
+  ],
+  "order_reference": "PED-88",
+  "despatch_references": [
+    {
+      "document_type": "09",
+      "number": "T001-45"
+    }
+  ]
+}

@@ -50,6 +50,7 @@ fn check_voucher(voucher: &Voucher, allowed: &[DocumentType]) -> Result<(), Mode
     require(voucher.totals.total_taxes.is_some(), "$.totals.total_taxes")?;
     require(voucher.totals.payable.is_some(), "$.totals.payable")?;
     require(!voucher.lines.is_empty(), "$.lines")?;
+    crate::references::check(voucher.order_reference.as_deref(), &voucher.despatch_references)?;
     voucher.lines.iter().enumerate().try_for_each(|(index, line)| check_line(index, line))
 }
 

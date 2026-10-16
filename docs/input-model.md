@@ -7,8 +7,7 @@ compute taxes.
 Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV only
 (affectations 10-16, 20, 21, 30-37, 40; 17 IVAP is not supported). Not supported, rejected with an
 explicit error: ISC, ICBPER, IVAP, other taxes, global discounts or charges, line charges, line
-discounts other than catalog 53 code `00` or in notes, advances, detraction, perception, despatch
-references.
+discounts other than catalog 53 code `00` or in notes, advances, detraction, perception.
 
 The daily summary (RC), the void communication (RA) and the sender's despatch advice (09) have their
 own sections below.
@@ -33,6 +32,26 @@ own sections below.
 | `lines` | see Line |
 | `legends` | `[{ "code": "1000", "value": "..." }]` |
 | `note` | only for 07/08, see Note |
+| `order_reference` | optional, the purchase or service order number, see Related documents |
+| `despatch_references` | optional, `[{ "document_type": "09", "number": "T001-45" }]`, see Related documents |
+
+## Related documents
+
+`order_reference` renders as `cac:OrderReference/cbc:ID` and each `despatch_references` entry as a
+`cac:DespatchDocumentReference` (`cbc:ID` the guide, `cbc:DocumentTypeCode` catalog 01), in 01, 03, 07 and 08. In a
+note they go around `cac:BillingReference`, in UBL 2.1's order; the guide's optional `listAgencyName`, `listName` and
+`listURI` are not written. SUNAT answers these only with observations and one error, and the SDK refuses what beta
+observed on 16/10/2026, so nothing reaches SUNAT with a note on it:
+
+| Field | Accepted | What SUNAT beta did otherwise |
+|---|---|---|
+| `order_reference` | 1 to 20 characters, no space, tab or line break | 4233 on `OC 1` (the validation sheet says a space is allowed), `  X`, `OC<tab>1` and 21 characters; no note on `ÑANDÚ/9.5_x`, 20 characters or a no-break space. Beta validates it on invoices only: 03, 07 and 08 passed `OC 1`, and the SDK applies the same rule to all four so a document does not turn into an observed one by changing type |
+| `despatch_references[].document_type` | `"09"` (sender's guide) or `"31"` (carrier's) | 4005 on `"99"` |
+| `despatch_references[].number` | `SERIES-NUMBER`, 1 to 8 digits, series `T`+3 uppercase letters or digits, `V`+3, `G`+3 digits, 4 digits, `EG01` to `EG04` or `EG07` | 4006 on `XX-5`, `E1-5` (the sheet's `[EG0][1-4]` read literally), `EG05-1`, `t001-1` and a 9-digit number; no note on `T001-00000012`, `V001-1` as type 09 or `T001-1` as type 31 |
+| repeated guide | the same type and number once | error 2364 |
+
+Vectors `01-invoice-references` (F001-6001), `03-receipt-references`, `07-credit-note-references` and
+`08-debit-note-references` (6001 each) were accepted by beta with code 0 and no notes.
 
 ## Issuer
 

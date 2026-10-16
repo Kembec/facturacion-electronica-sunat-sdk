@@ -8,6 +8,7 @@ use crate::daily;
 use crate::despatch;
 use crate::lines::{self, CREDIT_NOTE_LINE, DEBIT_NOTE_LINE, INVOICE_LINE};
 use crate::parties;
+use crate::references;
 use crate::totals::{self, MonetaryTotal};
 use crate::writer::XmlWriter;
 use crate::Options;
@@ -42,6 +43,8 @@ fn invoice_body(w: &mut XmlWriter, invoice: &Invoice, options: &Options) {
     }
     w.leaf("cbc:InvoiceTypeCode", &[("listID", invoice.operation_type.as_str())], v.document_type.code());
     legends_and_currency(w, v);
+    references::order(w, v);
+    references::despatches(w, v);
     parties_and_payment(w, v, options, true);
     totals::tax_total(w, &v.totals, &v.currency);
     totals::monetary_total(w, MonetaryTotal::Full("cac:LegalMonetaryTotal"), &v.totals, &v.currency);
@@ -59,7 +62,10 @@ fn note_body(w: &mut XmlWriter, note: &Note, options: &Options) {
     }
     header(w, v);
     legends_and_currency(w, v);
-    discrepancy_and_billing_reference(w, note);
+    discrepancy_response(w, note);
+    references::order(w, v);
+    billing_reference(w, note);
+    references::despatches(w, v);
     // Payment terms apply to credit notes (reason 13 adjusts them); debit notes carry none.
     parties_and_payment(w, v, options, credit);
     totals::tax_total(w, &v.totals, &v.currency);
@@ -106,13 +112,17 @@ fn legends_and_currency(w: &mut XmlWriter, v: &Voucher) {
     w.text("cbc:DocumentCurrencyCode", &v.currency);
 }
 
-fn discrepancy_and_billing_reference(w: &mut XmlWriter, note: &Note) {
+fn discrepancy_response(w: &mut XmlWriter, note: &Note) {
     let reference = &note.reference;
     w.open("cac:DiscrepancyResponse", &[]);
     w.text("cbc:ReferenceID", &reference.affected_document_number);
     w.text("cbc:ResponseCode", &reference.reason_code);
     w.text("cbc:Description", &reference.reason);
     w.close();
+}
+
+fn billing_reference(w: &mut XmlWriter, note: &Note) {
+    let reference = &note.reference;
     w.open("cac:BillingReference", &[]);
     w.open("cac:InvoiceDocumentReference", &[]);
     w.text("cbc:ID", &reference.affected_document_number);

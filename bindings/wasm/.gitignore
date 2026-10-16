@@ -1,0 +1,5 @@
+# Build output of scripts/build.sh: the npm package gets it, git does not.
+/npm/wasm/
+/npm/LICENSE
+/npm/NOTICE
+/pkg/

@@ -1,7 +1,7 @@
 //! Document lines (`InvoiceLine`, `CreditNoteLine`, `DebitNoteLine`), per the «Datos por línea»
 //! sections of SUNAT's UBL 2.1 guides.
 
-use sunat_model::Line;
+use sunat_model::{Decimal, Line};
 
 use crate::amount::{shortest, two_decimals};
 use crate::tax::{scheme_for_affectation, TaxScheme};
@@ -35,6 +35,7 @@ fn one_line(w: &mut XmlWriter, names: &LineNames, number: usize, line: &Line, cu
     w.leaf(names.quantity, &[("unitCode", line.unit.as_str())], &shortest(&line.quantity));
     w.leaf("cbc:LineExtensionAmount", &money, &two_decimals(&line.line_value));
     pricing_reference(w, line, currency);
+    discounts(w, line, currency);
     line_tax_total(w, line, currency);
     item(w, line);
     w.open("cac:Price", &[]);
@@ -57,6 +58,31 @@ fn pricing_reference(w: &mut XmlWriter, line: &Line, currency: &str) {
     w.text("cbc:PriceTypeCode", code);
     w.close();
     w.close();
+}
+
+/// Discounts that reduce the IGV base (catalog 53 code 00). Factor, amount and base print in the
+/// shortest form, as the compatibility vectors carry them (`0.10` -> `0.1`, `10.00` -> `10`).
+fn discounts(w: &mut XmlWriter, line: &Line, currency: &str) {
+    let money = [("currencyID", currency)];
+    for discount in &line.discounts {
+        w.open("cac:AllowanceCharge", &[]);
+        w.text("cbc:ChargeIndicator", "false");
+        w.text("cbc:AllowanceChargeReasonCode", &discount.code);
+        w.text("cbc:MultiplierFactorNumeric", &factor_text(&discount.factor));
+        w.leaf("cbc:Amount", &money, &shortest(&discount.amount));
+        w.leaf("cbc:BaseAmount", &money, &shortest(&discount.base_amount));
+        w.close();
+    }
+}
+
+/// The factor never in exponent form, which SUNAT rejects: below 1e-4 it prints with five decimals.
+fn factor_text(factor: &Decimal) -> String {
+    let text = shortest(factor);
+    if text.contains('E') {
+        format!("{:.5}", factor.to_f64())
+    } else {
+        text
+    }
 }
 
 fn line_tax_total(w: &mut XmlWriter, line: &Line, currency: &str) {

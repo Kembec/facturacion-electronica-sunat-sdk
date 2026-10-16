@@ -16,7 +16,7 @@ pub use decimal::Decimal;
 pub use error::ModelError;
 pub use scope::is_xml_text;
 pub use types::{
-    Address, Client, Company, DocumentType, Installment, Invoice, Legend, Line, Note, NoteReference, PaymentTerms,
+    Address, Client, Company, DocumentType, Installment, Invoice, Legend, Line, LineDiscount, Note, NoteReference, PaymentTerms,
     Totals, Voucher,
 };
 

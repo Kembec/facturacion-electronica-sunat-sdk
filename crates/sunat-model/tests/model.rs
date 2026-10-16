@@ -33,6 +33,39 @@ fn out_of_scope_features_get_named_errors() {
 }
 
 #[test]
+fn line_discounts_take_code_00_with_sunat_formats() {
+    const RECEIPT: &str = include_str!("../../../fixtures/03-receipt-line-discount.json");
+    let discount = |edit: fn(&mut serde_json::Value)| edited(RECEIPT, |v| edit(&mut v["lines"][0]["discounts"][0]));
+    let receipt = Document::from_json(RECEIPT).unwrap();
+    let line = &receipt.voucher().unwrap().lines[0];
+    assert_eq!((line.discounts[0].code.as_str(), line.discounts[0].factor.as_str()), ("00", "0.10"));
+    assert!(discount(|d| d["factor"] = serde_json::json!("0.100000")).is_ok(), "trailing zeros do not count");
+
+    match discount(|d| d["code"] = serde_json::json!("01")) {
+        Err(ModelError::OutOfScope { feature, .. }) => assert_eq!(feature, "line discounts other than catalog 53 code 00"),
+        other => panic!("code 01: {other:?}"),
+    }
+    let rejected: [fn(&mut serde_json::Value); 6] = [
+        |d| d["factor"] = serde_json::json!("0.123456"),
+        |d| d["factor"] = serde_json::json!("1000"),
+        |d| d["factor"] = serde_json::json!("0"),
+        |d| d["amount"] = serde_json::json!("5.095"),
+        |d| d["amount"] = serde_json::json!("-5.09"),
+        |d| d["base_amount"] = serde_json::json!("0.00"),
+    ];
+    for edit in rejected {
+        assert!(matches!(discount(edit), Err(ModelError::Invalid { .. })));
+    }
+    assert!(discount(|d| d["reason"] = serde_json::json!("x")).is_err(), "unknown fields");
+    match edited(include_str!("../../../fixtures/07-credit-note-void.json"), |v| {
+        v["lines"][0]["discounts"] = serde_json::json!([{ "code": "00", "factor": "0.1", "amount": "1", "base_amount": "10" }])
+    }) {
+        Err(ModelError::OutOfScope { feature, .. }) => assert_eq!(feature, "line discounts in credit and debit notes"),
+        other => panic!("note: {other:?}"),
+    }
+}
+
+#[test]
 fn kind_and_type_must_agree() {
     assert!(with(|v| v["document_type"] = serde_json::json!("07")).is_err());
     assert!(with(|v| v["kind"] = serde_json::json!("note")).is_err());

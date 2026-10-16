@@ -49,7 +49,6 @@ const LINE_KEYS: &[(&str, &str)] = &[
     ("other_tax", "other taxes"),
     ("other_tax_base", "other taxes"),
     ("other_tax_rate", "other taxes"),
-    ("discounts", "line discounts"),
     ("charges", "line charges"),
 ];
 

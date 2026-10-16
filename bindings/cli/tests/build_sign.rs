@@ -135,9 +135,9 @@ fn build_rejects_invalid_json_and_out_of_scope_documents() {
     assert!(message.starts_with("invalid input"), "{message}");
 
     let mut document: Value = serde_json::from_str(&fixture("01-invoice-taxed-cash")).unwrap();
-    document["detraction"] = json!({});
+    document["advances"] = json!([]);
     let message = failure(&run(&["build"], &document.to_string()), "out of scope");
-    assert!(message.contains("detraction is out of scope"), "{message}");
+    assert!(message.contains("advances is out of scope"), "{message}");
 
     failure(&run(&["build", "--cert", "x"], "{}"), "build with flags");
 }

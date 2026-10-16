@@ -8,6 +8,7 @@ members = [
   "crates/sunat-sdk",
   "bindings/cli",
   "bindings/wasm",
+  "bindings/python",
 ]
 
 [workspace.package]

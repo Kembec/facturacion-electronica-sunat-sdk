@@ -13,6 +13,9 @@ env:
   RUST_TOOLCHAIN: "1.94.1"
   # Must equal the exact wasm-bindgen pin in bindings/wasm/Cargo.toml.
   WASM_BINDGEN_VERSION: "0.2.129"
+  # Must equal maturin in bindings/python/pyproject.toml [build-system] and MATURIN_VERSION in release.yml.
+  MATURIN_VERSION: "1.15.0"
+  TWINE_VERSION: "7.0.0"
 
 jobs:
   test:
@@ -62,6 +65,35 @@ jobs:
         with:
           node-version: "18.20.8"
       - run: bindings/wasm/scripts/test-package.sh "$RUNNER_TEMP"/kembec-facturacion-electronica-sunat-sdk-*.tgz
+
+  # The sdist, as pip installs it on a platform without a wheel: it compiles, passes the vectors from
+  # outside the tree and passes twine. release.yml builds and tests the wheel of each platform.
+  python:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+          rustup default "$RUST_TOOLCHAIN"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Check the maturin pin
+        run: |
+          grep -q "requires = \[\"maturin==$MATURIN_VERSION\"\]" bindings/python/pyproject.toml
+          grep -q "MATURIN_VERSION: \"v$MATURIN_VERSION\"" .github/workflows/release.yml
+      - name: Build the sdist
+        run: |
+          cp LICENSE NOTICE bindings/python/
+          python -m venv "$RUNNER_TEMP/build"
+          "$RUNNER_TEMP/build/bin/pip" install --quiet "maturin==$MATURIN_VERSION" "twine==$TWINE_VERSION"
+          "$RUNNER_TEMP/build/bin/maturin" sdist --out "$RUNNER_TEMP/dist" -m bindings/python/Cargo.toml
+      - name: Version equals the Cargo workspace version
+        run: python bindings/python/scripts/check_version.py --dist "$RUNNER_TEMP/dist"
+      - run: "$RUNNER_TEMP/build/bin/twine" check --strict "$RUNNER_TEMP"/dist/*
+      - name: The sdist compiles and passes the vectors
+        run: bindings/python/scripts/test_wheel.sh "$RUNNER_TEMP"/dist/*.tar.gz python
 
   php:
     runs-on: ubuntu-24.04

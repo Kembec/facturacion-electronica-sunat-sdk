@@ -128,3 +128,37 @@ fn send_resends_a_stored_signed_xml_byte_for_byte() {
         assert!(envelope.contains(&format!("<fileName>{name}.zip</fileName>")), "same series and number");
     }
 }
+
+#[test]
+fn summary_sends_with_send_summary_and_returns_the_ticket() {
+    let calls = RefCell::new(Vec::new());
+    let post = |endpoint: &str, action: &str, envelope: &str| -> Result<Vec<u8>, String> {
+        calls.borrow_mut().push((endpoint.to_string(), action.to_string(), envelope.to_string()));
+        Ok(br#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:sendSummaryResponse xmlns:ns2="http://service.sunat.gob.pe"><ticket>1760620000123</ticket></ns2:sendSummaryResponse></S:Body></S:Envelope>"#.to_vec())
+    };
+    let input = json!({ "name": "20123456789-RC-20261016-1", "xml": "<SummaryDocuments/>" });
+    assert_eq!(summary(&input, &conn(), &post).unwrap(), json!({ "outcome": "ticket", "ticket": "1760620000123" }));
+    let calls = calls.borrow();
+    assert_eq!(calls[0].1, "urn:sendSummary");
+    assert!(calls[0].2.contains("<fileName>20123456789-RC-20261016-1.zip</fileName>"));
+}
+
+#[test]
+fn ticket_reports_in_process_and_the_cdr_once_processed() {
+    let answers = RefCell::new(vec![
+        format!(r#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:getStatusResponse xmlns:ns2="http://service.sunat.gob.pe"><status><content>{}</content><statusCode>99</statusCode></status></ns2:getStatusResponse></S:Body></S:Envelope>"#, STANDARD.encode(CDR_REJECTED_ZIP)),
+        r#"<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/"><S:Body><ns2:getStatusResponse xmlns:ns2="http://service.sunat.gob.pe"><status><statusCode>98</statusCode></status></ns2:getStatusResponse></S:Body></S:Envelope>"#.to_string(),
+    ]);
+    let post = |_: &str, action: &str, envelope: &str| -> Result<Vec<u8>, String> {
+        assert_eq!(action, "urn:getStatus");
+        assert!(envelope.contains("<ticket>1760620000123</ticket>"));
+        Ok(answers.borrow_mut().pop().unwrap().into_bytes())
+    };
+    let input = json!({ "ticket": "1760620000123" });
+    assert_eq!(ticket(&input, &conn(), &post).unwrap(), json!({ "outcome": "ticket_status", "status_code": "98", "state": "in_process" }));
+    let done = ticket(&input, &conn(), &post).unwrap();
+    assert_eq!(done["state"], "processed_with_errors");
+    assert_eq!(done["cdr"]["response_code"], "2047");
+    assert_eq!(done["cdr"]["class"], "rejected");
+    assert!(ticket(&json!({ "ticket": "17-6" }), &conn(), &post).is_err());
+}

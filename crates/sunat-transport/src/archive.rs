@@ -7,13 +7,15 @@ use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 use crate::TransportError;
 
-/// Zip file name SUNAT expects for a document name (`RUC-TIPO-SERIE-NUMERO.zip`).
+/// Zip file name SUNAT expects for a document name (`RUC-TIPO-SERIE-NUMERO.zip`, or
+/// `RUC-RC-YYYYMMDD-N.zip` and `RUC-RA-YYYYMMDD-N.zip` for summaries and void communications).
 pub fn zip_file_name(name: &str) -> String {
     format!("{name}.zip")
 }
 
-/// Zips `xml` as `<name>.xml`. `name` must be `RUC-TIPO-SERIE-NUMERO`
-/// (RUC of 11 digits, type of 2 characters, series of 4, number of 1 to 8 digits).
+/// Zips `xml` as `<name>.xml`. `name` must be `RUC-TIPO-SERIE-NUMERO` (RUC of 11 digits, type of
+/// 2 characters, series of 4, number of 1 to 8 digits) or `RUC-RC|RA-YYYYMMDD-N` (date of 8
+/// digits, correlative of 1 to 5 digits).
 /// The entry carries the zip epoch timestamp, so the same input gives the same bytes.
 pub fn zip_document(name: &str, xml: &[u8]) -> Result<Vec<u8>, TransportError> {
     validate_name(name)?;
@@ -45,11 +47,14 @@ pub fn unzip_xml(zip_bytes: &[u8]) -> Result<Vec<u8>, TransportError> {
 
 fn validate_name(name: &str) -> Result<(), TransportError> {
     let parts: Vec<&str> = name.split('-').collect();
+    let summary = matches!(parts.get(1), Some(&"RC" | &"RA"));
     let valid = parts.len() == 4
         && is_digits(parts[0], 11, 11)
-        && is_alnum(parts[1], 2, 2)
-        && is_alnum(parts[2], 4, 4)
-        && is_digits(parts[3], 1, 8);
+        && if summary {
+            is_digits(parts[2], 8, 8) && is_digits(parts[3], 1, 5)
+        } else {
+            is_alnum(parts[1], 2, 2) && is_alnum(parts[2], 4, 4) && is_digits(parts[3], 1, 8)
+        };
     if valid {
         return Ok(());
     }

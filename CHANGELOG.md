@@ -10,6 +10,13 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- Which input field a SUNAT code points at: `sunat_sdk::diagnose(document_type, code, message)` gives the node and value
+  SUNAT names in the message, if any, and the candidate fields from SUNAT's validation rules of 26.08.2026 (01, 03, 07,
+  08). The CLI's `send`, `summary`, `ticket` and `status` add `diagnosis` to their JSON, one element per code in the
+  answer ([`docs/cli.md`](docs/cli.md#diagnosis)).
+
 ## [0.1.0-beta.5] - 2026-10-17
 
 ### Added

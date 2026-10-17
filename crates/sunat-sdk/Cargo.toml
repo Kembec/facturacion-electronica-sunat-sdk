@@ -11,9 +11,9 @@ description = "SUNAT (Peru) e-invoicing calls without I/O: SOAP and REST request
 categories = ["finance", "api-bindings"]
 readme = "README.md"
 # The library, its tests' code and the notices. The data the tests read (fixtures/, tests/vectors/,
-# tests/xsd/ and this crate's tests/data/) stays in the repository: the crates workflow runs this
-# package's tests against it.
-include = ["/src/**/*.rs", "/tests/**/*.rs", "/tests/*.py", "/README.md", "/LICENSE", "/NOTICE"]
+# tests/xsd/ and this crate's tests/data/, error-fields.source.json included) stays in the repository: the crates workflow runs this
+# package's tests against it. data/error-fields.json is the table `diagnose` embeds.
+include = ["/src/**/*.rs", "/data/error-fields.json", "/tests/**/*.rs", "/tests/*.py", "/README.md", "/LICENSE", "/NOTICE"]
 
 [dependencies]
 base64 = "0.22"

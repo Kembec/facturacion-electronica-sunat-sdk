@@ -13,6 +13,8 @@ use Kembec\SunatSdk\Result\GreTicketResult;
 use Kembec\SunatSdk\Result\SendResult;
 use Kembec\SunatSdk\Result\SignResult;
 use Kembec\SunatSdk\Result\StatusResult;
+use Kembec\SunatSdk\Result\SummaryResult;
+use Kembec\SunatSdk\Result\TicketResult;
 use Kembec\SunatSdk\Result\ValidityResult;
 use Kembec\SunatSdk\Result\ZipResult;
 
@@ -32,7 +34,7 @@ final class SunatSdk
 
     public const DEFAULT_TIMEOUT_SECONDS = 120.0;
 
-    /** HTTP wait of `send`, `status`, `validity` and GRE when none is given and the process timeout allows it. */
+    /** HTTP wait of `send`, `summary`, `ticket`, `status`, `validity` and GRE when none is given and the process timeout allows it. */
     public const DEFAULT_HTTP_TIMEOUT_SECONDS = 90;
 
     /**
@@ -120,6 +122,38 @@ final class SunatSdk
         $output = $this->runner->run('send', $this->encode(['name' => $name, 'xml' => $signedXml]), $env);
 
         return SendResult::fromArray($output);
+    }
+
+    /**
+     * Zips a signed daily summary (RC) or void communication (RA) and sends it with sendSummary. A SOAP
+     * fault is a result. No answer throws SdkErrorException: the summary may have arrived, so check the
+     * documents with validity() and resend the same file under the same name, never another number.
+     *
+     * @param string $name `RUC-RC-YYYYMMDD-N` or `RUC-RA-YYYYMMDD-N`
+     * @param string $endpoint the billService URL (https only), the same one send() uses
+     * @throws SunatSdkException
+     */
+    public function summary(string $name, string $signedXml, SolCredentials $credentials, string $endpoint): SummaryResult
+    {
+        $env = ['SUNAT_ENDPOINT' => $endpoint] + $this->httpEnvironment() + $credentials->toEnvironment();
+        $output = $this->runner->run('summary', $this->encode(['name' => $name, 'xml' => $signedXml]), $env);
+
+        return SummaryResult::fromArray($output);
+    }
+
+    /**
+     * Asks getStatus for the outcome of a summary by its ticket. 98 (in process) and no verdict mean ask
+     * again with the same ticket; never send the summary again.
+     *
+     * @param string $endpoint the billService URL (https only), the same one summary() uses
+     * @throws SunatSdkException
+     */
+    public function ticket(string $ticket, SolCredentials $credentials, string $endpoint): TicketResult
+    {
+        $env = ['SUNAT_ENDPOINT' => $endpoint] + $this->httpEnvironment() + $credentials->toEnvironment();
+        $output = $this->runner->run('ticket', $this->encode(['ticket' => $ticket]), $env);
+
+        return TicketResult::fromArray($output, $ticket);
     }
 
     /**
@@ -258,7 +292,7 @@ final class SunatSdk
     {
         if ($this->httpTimeoutSeconds === null) {
             throw new \InvalidArgumentException(sprintf(
-                'the process timeout is too short for send, status, validity and GRE: it needs at least %d s',
+                'the process timeout is too short for send, summary, ticket, status, validity and GRE: it needs at least %d s',
                 self::HTTP_TIMEOUT_MARGIN_SECONDS + 1
             ));
         }

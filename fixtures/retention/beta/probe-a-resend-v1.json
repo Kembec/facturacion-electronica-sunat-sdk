@@ -1,0 +1,13 @@
+{
+  "sent_at": "2026-10-17T14:28:35-05:00",
+  "endpoint": "e-beta otroscpe billService",
+  "cdr": {
+    "class": "accepted",
+    "description": "El Comprobante numero R001-1 ha sido aceptado",
+    "notes": [],
+    "reference_id": "R001-1",
+    "response_code": "0"
+  },
+  "diagnosis": [],
+  "outcome": "cdr"
+}

@@ -19,8 +19,10 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 - Retention voucher (20): `kind: "retention"`, UBL 2.0 `Retention` built, signed and zipped (`RUC-20-R###-N.zip`)
   through the core and the CLI; SUNAT's «Retenciones1_0» rules that read only the document are checked before
   sending, each with its code (2619 rate of the regime, 2623 amounts and exchange rate, 2626 payment number, 2628 and
-  2629 totals, among others). The send term (2600) is a parameter of `Retention::check_send_deadline`. Not sent to
-  SUNAT beta yet; sending by `otroscpe` comes next (#51).
+  2629 totals, among others). The send term (2600) is a parameter of `Retention::check_send_deadline` (#51). Sent by
+  the CLI to SUNAT beta (`otroscpe`): the three valid vectors accepted with code 0; 2619 and 2626 answered as the SDK
+  predicts; a line that breaks both the exchange rate and its amounts is now reported as 2715 before 2623, as the beta
+  answers ([`docs/input-model.md`](docs/input-model.md), `fixtures/retention/beta/`).
 
 ## [0.1.0-beta.5] - 2026-10-17
 

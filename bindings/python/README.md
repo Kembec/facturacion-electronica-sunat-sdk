@@ -3,9 +3,12 @@
 Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **Python**. Con los datos de una factura (01), una
 boleta (03), una nota de crédito (07) o de débito (08), un resumen diario de boletas (RC) o una comunicación de baja
 (RA), arma el archivo XML que pide la SUNAT, lo firma con tu certificado digital, lo comprime, lo envía y lee la
-respuesta de la SUNAT, que dice si lo aceptó. Es la versión para Python del
+respuesta de la SUNAT, que dice si lo aceptó. Después puede consultar el estado de un comprobante ya enviado en la
+Consulta Integrada de la SUNAT (`validity`: aceptado, anulado o no informado). También arma y firma la guía de remisión
+remitente (09), que la rama `main` ya envía por la API REST de la SUNAT. Es la versión para Python del
 [SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y TypeScript,
-PHP, Rust y la línea de comandos: los mismos datos dan el mismo comprobante firmado en todos.
+PHP, Rust y la línea de comandos: los mismos datos dan el mismo comprobante firmado en todos. Es para quien programa el
+sistema de facturación de una empresa en Python.
 
 SUNAT (Peru) electronic invoicing SDK for Python.
 
@@ -74,7 +77,32 @@ sent = sunat_sdk.exchange(
 # {"outcome": "cdr", "cdr": {...}, "cdr_zip_base64": "..."} o {"outcome": "fault", "code", "message", "class"}
 ```
 
+## Consultar el estado de un comprobante (Consulta Integrada)
+
+`validity` pregunta a la Consulta Integrada de la SUNAT si una factura, boleta o nota (01, 03, 07, 08) existe y en qué
+estado está. Usa las «Credenciales de API SUNAT» que se crean en SOL para esta consulta: no el usuario SOL ni el par de
+la GRE.
+
+```python
+check = sunat_sdk.validity(
+    {"ruc": "20123456789", "document_type": "01", "series": "F001", "number": 123,
+     "issue_date": "2026-10-16", "total": "118.00"},       # fecha de emisión y total del comprobante
+    client_id, client_secret,
+)
+# {"outcome": "validity", "state": "accepted" | "voided" | "not_reported" | ..., "observations": [...], ...}
+# {"outcome": "query_error", "error_code", ...}: la SUNAT rechazó la consulta, no el comprobante
+# {"outcome": "no_verdict", "stage": "token" | "query", ...}: sin respuesta (401 incluido), vuelve a consultar
+```
+
+- **No hay ambiente de pruebas**: por defecto la consulta va a producción; `token_base` y `base` reemplazan las URL
+  base. El token y el secreto nunca vuelven en el resultado.
+- Ningún resultado es motivo para emitir la operación con otro número: `not_reported` no prueba que el comprobante no
+  llegó (el ticket de un resumen puede seguir en proceso), así que antes se concilia con `ticket` o `status`.
+
 ## Guía de remisión remitente (09) por la API REST
+
+`gre_send`, `gre_ticket` y sus piezas sin red están en la rama `main` y todavía no en un release: la 0.1.0-beta.4 de
+PyPI no los trae. Para usarlos hoy, instala la versión en desarrollo como se explica arriba, en «Instalación».
 
 ```python
 sent = sunat_sdk.gre_send(
@@ -115,6 +143,9 @@ siempre las pasas tú (las del manual: `https://api-seguridad.sunat.gob.pe/v1/cl
   `ssl.SSLContext`, nunca uno sin verificación.
 - `soap_request`, `soap_response` y `soap_timeout` son las mismas piezas sin red, para quien hace el POST con su propio
   cliente HTTP (`httpx`, `aiohttp`).
+- `validity(input, client_id, client_secret, timeout=60, context=None, token_base=None, base=None)` pide el token y hace
+  la consulta dentro de `timeout`. `validity_token_request`, `validity_token_response`, `validity_request`,
+  `validity_response` y `validity_timeout` son sus piezas sin red.
 - Un error SOAP de la SUNAT es un resultado (`{"outcome": "fault", ...}`), no una excepción. Si `ticket` o `status` no
   reciben respuesta, el resultado es `{"outcome": "no_verdict", ...}`: se vuelve a consultar y nunca se reenvía. En
   `send` y `summary`, ese caso lanza `SunatSdkError`, porque el documento pudo haber llegado.
@@ -122,12 +153,30 @@ siempre las pasas tú (las del manual: `https://api-seguridad.sunat.gob.pe/v1/cl
 - El certificado, la llave y las credenciales SOL los pasa quien llama: el paquete no los busca en archivos ni en el
   entorno, y no escribe logs.
 
+## Qué cubre y qué no
+
+- IGV al 18 % y al 10,5 %, operaciones gravadas, exoneradas, inafectas, de exportación y gratuitas, en soles y en
+  dólares, al contado o a crédito en cuotas; descuento por línea; detracción con operación 1001 o 1003; retención del
+  IGV informada en el comprobante; IVAP; orden de compra y guías de remisión citadas.
+- Lo que el SDK no cubre lo rechaza con `SunatSdkError` en vez de armar un XML que la SUNAT rechazaría: ISC, ICBPER,
+  percepción, anticipos, descuentos y cargos globales, entre otros.
+- En la guía de remisión quedan fuera los traslados de importación y exportación y la guía del transportista (31).
+
+La lista completa está en el
+[alcance del SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk#alcance) y cada campo, en el
+[modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
+
 ## Cómo se comprueba
 
-En cada cambio, el CI instala el paquete en un entorno limpio y exige, para los 38 vectores de prueba del repositorio, el
-XML sin firmar igual al del vector en C14N y el `DigestValue` y el `SignatureValue` exactos: las mismas firmas que dieron
-código 0 en la beta de la SUNAT el 16/10/2026, enviadas con la CLI. `exchange`, `gre_send` y `gre_ticket` se prueban
-contra un servidor local, sin red.
+En cada cambio, el CI instala el paquete en un entorno limpio y exige, para los 38 documentos de
+[fixtures](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/fixtures) (comprobantes, resúmenes
+diarios, comunicaciones de baja y 2 guías de remisión), el XML sin firmar igual al del vector en C14N y el
+`DigestValue` y el `SignatureValue` exactos. `exchange`, `validity`, `gre_send` y `gre_ticket` se prueban contra un
+servidor local, sin red; `validity`, `gre_send` y `gre_ticket`, con las respuestas grabadas de los manuales de la
+SUNAT y, en la GRE, de un cliente de terceros.
+
+Aparte, la beta de la SUNAT aceptó 22 de esos documentos firmados, enviados con la CLI el 16/10/2026. Las guías de
+remisión no pasan por esa prueba: la SUNAT no tiene ambiente de pruebas para la GRE.
 
 ## Licencia
 

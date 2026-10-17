@@ -3,10 +3,13 @@
 Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **PHP**. Con los datos de una factura (01), una boleta
 (03), una nota de crédito (07) o una de débito (08), arma el archivo XML que pide la SUNAT, lo firma con tu certificado
 digital, lo comprime, lo envía y lee la respuesta de la SUNAT: la CDR, la constancia que dice si lo aceptó. Después
-puede consultar el estado de un comprobante ya enviado. También arma y firma resúmenes diarios de boletas (RC) y
-comunicaciones de baja (RA); esos dos se envían con el programa de línea de comandos `sunat-sdk`. Es la versión para PHP
-del [SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y
-TypeScript, Python y Rust: los mismos datos dan el mismo comprobante firmado en todos.
+puede consultar un comprobante ya enviado de dos formas: su CDR (`status`) o su estado en la Consulta Integrada de la
+SUNAT (`validity`: aceptado, anulado o no informado). También arma y firma resúmenes diarios de boletas (RC) y
+comunicaciones de baja (RA), que se envían con el programa de línea de comandos `sunat-sdk`, y la guía de remisión
+remitente (09), que la rama `main` ya envía por la API REST de la SUNAT. Es la versión para PHP del
+[SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y TypeScript,
+Python y Rust: los mismos datos dan el mismo comprobante firmado en todos. Es para quien programa el sistema de
+facturación de una empresa en PHP.
 
 SUNAT (Peru) electronic invoicing SDK for PHP.
 
@@ -99,7 +102,42 @@ $sdk->cdr($cdrZipOrXmlBytes);                                 // Cdr
 - `build` y `sign` también arman y firman resúmenes diarios (RC) y comunicaciones de baja (RA). Este cliente no los
   envía ni consulta su ticket: para eso están los comandos `summary` y `ticket` de la CLI.
 
+### Consultar el estado de un comprobante (Consulta Integrada)
+
+`validity` pregunta a la Consulta Integrada de la SUNAT si una factura, boleta o nota (01, 03, 07, 08) existe y en qué
+estado está. Usa las «Credenciales de API SUNAT» que se crean en SOL para esta consulta: no el usuario SOL ni el par de
+la GRE.
+
+```php
+use Kembec\SunatSdk\ApiCredentials;
+use Kembec\SunatSdk\Result\ValidityResult;
+
+$check = $sdk->validity('20123456789', '01', 'F001', 123, '2026-10-16', '118.00',
+    new ApiCredentials($clientId, $clientSecret));             // fecha de emisión y total del comprobante
+
+if ($check->hasState()) {
+    $check->getState();                                       // ValidityResult::ACCEPTED, VOIDED, NOT_REPORTED…
+    $check->getObservations();                                // dónde difieren tus datos de los de la SUNAT
+} elseif ($check->isQueryError()) {
+    $check->getErrorCode();                                   // la SUNAT rechazó la consulta, no el comprobante
+} else {
+    $check->getStage();                                       // isNoVerdict(): sin respuesta en "token" o "query"
+}
+```
+
+- **No hay ambiente de pruebas**: la consulta va siempre a producción. Las pruebas del paquete usan las respuestas del
+  manual de la SUNAT, sin red.
+- Ningún resultado es motivo para emitir la operación con otro número: `NOT_REPORTED` no prueba que el comprobante no
+  llegó (el ticket de un resumen puede seguir en proceso), así que antes se concilia con `status` o con el ticket.
+- Un token o una consulta sin respuesta, un 401 incluido, dan `isNoVerdict()`: se vuelve a consultar con los mismos
+  datos.
+
 ### Guía de remisión remitente (09) por la API REST
+
+`greSend` y `greTicket` están en la rama `main` y todavía no en un release: la 0.1.0-beta.4 de Packagist no los trae, y
+su binario no tiene los comandos `gre-send` ni `gre-ticket`. Para usarlos hoy, instala
+`kembec/facturacion-electronica-sunat-sdk:dev-main` y compila el binario de `main` con Rust, como se explica
+arriba, en «Instalación».
 
 ```php
 use Kembec\SunatSdk\ApiCredentials;
@@ -144,6 +182,19 @@ Errores, todos subclases de `Exception\SunatSdkException`:
 
 Un error SOAP de la SUNAT es un resultado (`isFault()`), no una excepción.
 
+## Qué cubre y qué no
+
+- IGV al 18 % y al 10,5 %, operaciones gravadas, exoneradas, inafectas, de exportación y gratuitas, en soles y en
+  dólares, al contado o a crédito en cuotas; descuento por línea; detracción con operación 1001 o 1003; retención del
+  IGV informada en el comprobante; IVAP; orden de compra y guías de remisión citadas.
+- Lo que el SDK no cubre lo rechaza con un error explícito en vez de armar un XML que la SUNAT rechazaría: ISC, ICBPER,
+  percepción, anticipos, descuentos y cargos globales, entre otros.
+- En la guía de remisión quedan fuera los traslados de importación y exportación y la guía del transportista (31).
+
+La lista completa está en el
+[alcance del SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk#alcance) y cada campo, en el
+[modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
+
 ## Cómo se comprueba
 
 Desde la raíz del repositorio, donde está el único `composer.json` del paquete:
@@ -154,13 +205,17 @@ php composer.phar install && vendor/bin/phpunit
 ```
 
 Corren contra el binario real: `SUNAT_SDK_BIN`, o `target/debug/sunat-sdk` por defecto. Las pruebas del instalador
-sirven un release desde un `php -S` local y no necesitan red. Los 22 casos de
+sirven un release desde un `php -S` local y no necesitan red. Los 38 documentos de
 [fixtures](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/fixtures) (comprobantes,
-resúmenes diarios y comunicaciones de baja) tienen que dar, con `build` y `sign`, el XML de
+resúmenes diarios, comunicaciones de baja y 2 guías de remisión) tienen que dar, con `build` y `sign`, el XML de
 [tests/vectors](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/tests/vectors) en C14N
 inclusiva y exactamente su `DigestValue` y su `SignatureValue`, firmados con el certificado de prueba autogenerado.
-No se envía nada a la SUNAT. El CI las corre en cada cambio en PHP 8.1 contra el binario compilado; esos mismos documentos
-firmados, enviados con la CLI, dieron código 0 en la beta de la SUNAT el 16/10/2026.
+`validity`, `greSend` y `greTicket` se prueban sin red, contra respuestas grabadas de los manuales de la SUNAT y, en la
+GRE, de un cliente de terceros. No se envía nada a la SUNAT. El CI las corre en cada cambio en PHP 8.1 contra el
+binario compilado.
+
+Aparte, la beta de la SUNAT aceptó 22 de esos documentos firmados, enviados con la CLI el 16/10/2026. Las guías de
+remisión no pasan por esa prueba: la SUNAT no tiene ambiente de pruebas para la GRE.
 
 ## Licencia
 

@@ -106,6 +106,9 @@ In the core (`sunat_sdk::gre`): `token_request`/`token_read` (with `expires_at` 
 
 - `bindings/ffi`: the same commands in process through a C ABI, with the flags in the request and no environment
   (`docs/c-abi.md`).
+- `bindings/dotnet`: NuGet package `Kembec.SunatSdk` (C# and VB.NET; .NET Framework 4.6.2+, .NET Standard 2.0, .NET 10+)
+  over that ABI by P/Invoke, with the six native builds inside; one method per command, typed results with the
+  response in `RawJson`, the SDK's `{"error"}` as `SunatSdkException`.
 - `bindings/java`: Maven artifact `com.kembec:sunat-sdk` (Java 8+) over that ABI through JNA, with the six native
   builds inside the jar; one method per command, typed results with the response in `getRawJson()`, the SDK's
   `{"error"}` as `SunatSdkException`.

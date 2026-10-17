@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- The same restore as Vectors.CSharp: the package from ../artifacts. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFrameworks>net10.0;net48</TargetFrameworks>
+    <RootNamespace>Kembec.SunatSdk.Vectors</RootNamespace>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <StartupObject>Kembec.SunatSdk.Vectors.Program</StartupObject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Kembec.SunatSdk" Version="$(SunatSdkVersion)" />
+  </ItemGroup>
+
+</Project>

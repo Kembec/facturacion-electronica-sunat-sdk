@@ -1,0 +1,8 @@
+<Project>
+  <PropertyGroup>
+    <!-- Its own package folder: a cached copy of the same version from an earlier pack would be tested instead
+         of the one in ../artifacts. -->
+    <RestorePackagesPath>$(MSBuildThisFileDirectory)out/packages/</RestorePackagesPath>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

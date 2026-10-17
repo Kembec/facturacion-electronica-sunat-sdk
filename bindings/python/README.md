@@ -175,8 +175,9 @@ diarios, comunicaciones de baja y 2 guías de remisión), el XML sin firmar igua
 servidor local, sin red; `validity`, `gre_send` y `gre_ticket`, con las respuestas grabadas de los manuales de la
 SUNAT y, en la GRE, de un cliente de terceros.
 
-Aparte, la beta de la SUNAT aceptó 22 de esos documentos firmados, enviados con la CLI el 16/10/2026. Las guías de
-remisión no pasan por esa prueba: la SUNAT no tiene ambiente de pruebas para la GRE.
+Aparte, el 16/10/2026 la beta de la SUNAT aceptó 36 de esos documentos firmados, enviados con la CLI: los 29
+comprobantes, con código 0 y sin observaciones, y los 7 resúmenes diarios y comunicaciones de baja, con código 0. Las
+2 guías de remisión no pasan por esa prueba: la SUNAT no tiene ambiente de pruebas para la GRE.
 
 ## Licencia
 

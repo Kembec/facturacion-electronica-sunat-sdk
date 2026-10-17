@@ -1,14 +1,18 @@
 # SDK de facturación electrónica SUNAT (Perú) para Python
 
-Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **Python**. Con los datos de una factura (01), una
-boleta (03), una nota de crédito (07) o de débito (08), un resumen diario de boletas (RC) o una comunicación de baja
-(RA), arma el archivo XML que pide la SUNAT, lo firma con tu certificado digital, lo comprime, lo envía y lee la
-respuesta de la SUNAT, que dice si lo aceptó. Después puede consultar el estado de un comprobante ya enviado en la
-Consulta Integrada de la SUNAT (`validity`: aceptado, anulado o no informado). También arma y firma la guía de remisión
-remitente (09), que la rama `main` ya envía por la API REST de la SUNAT. Es la versión para Python del
+Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **Python**, para quien programa el sistema de
+facturación de una empresa. Con los datos de una factura (01), una boleta (03), una nota de crédito (07) o de débito
+(08), un resumen diario de boletas (RC) o una comunicación de baja (RA):
+
+- arma el archivo XML que pide la SUNAT y lo firma con tu certificado digital;
+- lo comprime, lo envía y lee la respuesta de la SUNAT, que dice si lo aceptó;
+- después consulta el estado de un comprobante ya enviado en la Consulta Integrada de la SUNAT (`validity`: aceptado,
+  anulado o no informado).
+
+También arma y firma la guía de remisión remitente (09); su envío está solo en la rama `main`
+([abajo](#guía-de-remisión-remitente-09-por-la-api-rest)). Es la versión para Python del
 [SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y TypeScript,
-PHP, Rust y la línea de comandos: los mismos datos dan el mismo comprobante firmado en todos. Es para quien programa el
-sistema de facturación de una empresa en Python.
+PHP, Rust y la línea de comandos: los mismos datos dan el mismo comprobante firmado en todos.
 
 SUNAT (Peru) electronic invoicing SDK for Python.
 
@@ -17,7 +21,7 @@ ejemplos: https://fe.kembec.com
 
 ## Instalación
 
-El paquete está en PyPI desde la 0.1.0-beta.3. Como es una beta, `pip` la instala solo si se le pide:
+La versión publicada es una beta, y `pip` la instala solo si se le pide:
 
 ```bash
 pip install --pre facturacion-electronica-sunat-sdk
@@ -61,9 +65,8 @@ signed = sunat_sdk.sign(built["xml"], read("test-cert.pem"), read("test-key.pem"
 print(built["file_name"], signed["digest_value"])  # 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
 ```
 
-`+te61a2ub5MlTFf8tKTPNGWEXKI=` es el `DigestValue` del vector
-[`01-invoice-taxed-cash`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/tests/vectors/01-invoice-taxed-cash.signed.xml):
-el mismo que dan JavaScript, PHP, Rust y la CLI. Tus documentos llevan la forma del
+Si imprime `20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=` (el nombre del archivo y la huella de la firma), el
+paquete funciona: es la misma salida que dan JavaScript, PHP, Rust y la CLI. Tus propios documentos siguen la forma del
 [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md), como
 `dict` o como texto JSON.
 
@@ -116,18 +119,17 @@ status = sunat_sdk.gre_ticket(sent["ticket"], client_id, client_secret, sol_user
 # state: "processed" (0, con la CDR leída), "in_process" (98) o "processed_with_errors" (99, con su error)
 ```
 
-**La SUNAT no tiene ambiente de pruebas para la GRE**: estas funciones se prueban sin red, contra respuestas del manual
-de la SUNAT y de un cliente de terceros, y ninguna guía de este SDK figura como aceptada por la SUNAT. Las URL base
-siempre las pasas tú (las del manual: `https://api-seguridad.sunat.gob.pe/v1/clientessol` para el token y
+**La SUNAT no tiene ambiente de pruebas para la GRE**, y ninguna guía de este SDK figura como aceptada por la SUNAT. Las
+URL base siempre las pasas tú (las del manual: `https://api-seguridad.sunat.gob.pe/v1/clientessol` para el token y
 `https://api-cpe.sunat.gob.pe/v1` para la API). Cada llamada pide su propio token y `timeout` cubre las dos.
 
 - Con 98, vuelve a consultar con el mismo ticket; nunca reenvíes la guía por eso.
 - Si el envío no recibe respuesta, `gre_send` lanza `SunatSdkError`: la guía pudo haber llegado, así que se reenvía el
   mismo archivo, nunca la operación con otro número. Un token o una consulta sin respuesta dan
   `{"outcome": "no_verdict", "stage", ...}`, y un rechazo de la SUNAT, `{"outcome": "api_error", "stage", "errors", ...}`.
-- `gre_token_request`, `gre_token_response`, `gre_token_usable`, `gre_send_request`, `gre_send_response`,
-  `gre_ticket_request`, `gre_ticket_response` y `gre_timeout` son las mismas piezas sin red, para quien usa su propio
-  cliente HTTP o reutiliza el token hasta diez minutos antes de que venza.
+- Para usar tu propio cliente HTTP, o reutilizar el token hasta diez minutos antes de que venza, están las mismas piezas
+  sin red: `gre_token_request` y `gre_token_response`, `gre_send_request` y `gre_send_response`, `gre_ticket_request` y
+  `gre_ticket_response`, más `gre_token_usable` y `gre_timeout`.
 
 ## API
 
@@ -136,11 +138,18 @@ siempre las pasas tú (las del manual: `https://api-seguridad.sunat.gob.pe/v1/cl
 - `build(document)`, `sign(xml, cert_pem, key_pem, signature_id=None)`, `zip({name, xml})` y `cdr({cdr_base64})`
   devuelven el mismo JSON que la CLI y el paquete npm, ya convertido en `dict`. La llave PEM tiene que ser RSA sin
   cifrar; `signature_id` es `signatureKG` si no se indica.
-- `exchange(kind, input, user, password, endpoint, timeout=60)`: `kind` es `send`, `summary`, `ticket` o `status`, e
-  `input`, la entrada de ese comando de la CLI: `name` y `xml` en `send` y `summary`; `ticket` en `ticket`; `ruc`,
-  `document_type`, `series` y `number` en `status`. `send`, `summary` y `ticket` van a la URL del billService, y `status`, a la
-  del billConsultService. Verifica TLS con el contexto por defecto del sistema; `context=` admite otro
-  `ssl.SSLContext`, nunca uno sin verificación.
+- `exchange(kind, input, user, password, endpoint, timeout=60)` hace una llamada al web service de la SUNAT. `input` es
+  la entrada del mismo comando de la CLI:
+
+  | `kind` | `input` | `endpoint` |
+  |---|---|---|
+  | `send` | `name`, `xml` | billService |
+  | `summary` | `name`, `xml` | billService |
+  | `ticket` | `ticket` | billService |
+  | `status` | `ruc`, `document_type`, `series`, `number` | billConsultService |
+
+  Verifica TLS con el contexto por defecto del sistema; `context=` admite otro `ssl.SSLContext`, nunca uno sin
+  verificación.
 - `soap_request`, `soap_response` y `soap_timeout` son las mismas piezas sin red, para quien hace el POST con su propio
   cliente HTTP (`httpx`, `aiohttp`).
 - `validity(input, client_id, client_secret, timeout=60, context=None, token_base=None, base=None)` pide el token y hace
@@ -166,18 +175,14 @@ La lista completa está en el
 [alcance del SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk#alcance) y cada campo, en el
 [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
 
-## Cómo se comprueba
+## Pruebas
 
-En cada cambio, el CI instala el paquete en un entorno limpio y exige, para los 38 documentos de
-[fixtures](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/fixtures) (comprobantes, resúmenes
-diarios, comunicaciones de baja y 2 guías de remisión), el XML sin firmar igual al del vector en C14N y el
-`DigestValue` y el `SignatureValue` exactos. `exchange`, `validity`, `gre_send` y `gre_ticket` se prueban contra un
-servidor local, sin red; `validity`, `gre_send` y `gre_ticket`, con las respuestas grabadas de los manuales de la
-SUNAT y, en la GRE, de un cliente de terceros.
-
-Aparte, el 16/10/2026 la beta de la SUNAT aceptó 36 de esos documentos firmados, enviados con la CLI: los 29
-comprobantes, con código 0 y sin observaciones, y los 7 resúmenes diarios y comunicaciones de baja, con código 0. Las
-2 guías de remisión no pasan por esa prueba: la SUNAT no tiene ambiente de pruebas para la GRE.
+Lo que aceptó la SUNAT y cómo se comprueba cada versión está en
+[Cómo se comprueba](https://github.com/Kembec/facturacion-electronica-sunat-sdk#cómo-se-comprueba): la beta de la SUNAT
+aceptó 36 de los 38 documentos de ejemplo; las 2 guías de remisión no tienen beta. Para este paquete, el CI lo instala
+en un entorno limpio y exige el XML y la firma exactos de los 38; `exchange`, `validity`, `gre_send` y `gre_ticket` se
+prueban contra un servidor local, sin red; las tres últimas, con respuestas grabadas de los manuales de la SUNAT y, en
+la GRE, de un cliente de terceros.
 
 ## Licencia
 

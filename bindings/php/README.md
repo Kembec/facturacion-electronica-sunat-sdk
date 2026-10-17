@@ -1,15 +1,18 @@
 # SDK de facturación electrónica SUNAT (Perú) para PHP
 
-Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **PHP**. Con los datos de una factura (01), una boleta
-(03), una nota de crédito (07) o una de débito (08), arma el archivo XML que pide la SUNAT, lo firma con tu certificado
-digital, lo comprime, lo envía y lee la respuesta de la SUNAT: la CDR, la constancia que dice si lo aceptó. Después
-puede consultar un comprobante ya enviado de dos formas: su CDR (`status`) o su estado en la Consulta Integrada de la
-SUNAT (`validity`: aceptado, anulado o no informado). También arma y firma resúmenes diarios de boletas (RC) y
-comunicaciones de baja (RA), que se envían con el programa de línea de comandos `sunat-sdk`, y la guía de remisión
-remitente (09), que la rama `main` ya envía por la API REST de la SUNAT. Es la versión para PHP del
+Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **PHP**, para quien programa el sistema de facturación
+de una empresa. Con los datos de una factura (01), una boleta (03) o una nota de crédito (07) o de débito (08):
+
+- arma el archivo XML que pide la SUNAT y lo firma con tu certificado digital;
+- lo comprime, lo envía y lee la CDR, la constancia con la que la SUNAT dice si lo aceptó;
+- después consulta un comprobante ya enviado: su CDR (`status`) o su estado en la Consulta Integrada de la SUNAT
+  (`validity`: aceptado, anulado o no informado).
+
+También arma y firma resúmenes diarios de boletas (RC), comunicaciones de baja (RA) y guías de remisión remitente (09).
+Los resúmenes y las bajas se envían con el programa de línea de comandos `sunat-sdk`; las guías, solo desde la rama
+`main` ([abajo](#guía-de-remisión-remitente-09-por-la-api-rest)). Es la versión para PHP del
 [SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y TypeScript,
-Python y Rust: los mismos datos dan el mismo comprobante firmado en todos. Es para quien programa el sistema de
-facturación de una empresa en PHP.
+Python y Rust: los mismos datos dan el mismo comprobante firmado en todos.
 
 SUNAT (Peru) electronic invoicing SDK for PHP.
 
@@ -26,14 +29,14 @@ export "$(vendor/bin/sunat-sdk-install)"     # opcional: --dir=<directorio>
 Las versiones publicadas son beta, por eso la restricción `^0.1@beta`.
 
 El trabajo lo hace el binario `sunat-sdk`, el núcleo en Rust del SDK: este paquete es su cliente y lo ejecuta una vez
-por llamada con `proc_open`. El contrato de cada comando está en el
+por llamada. El contrato de cada comando está en el
 [contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md).
-`sunat-sdk-install` descarga, del release de
-GitHub `v<SunatSdk::VERSION>`, el binario estático para Linux x86_64 y su `.sha256`, con TLS verificado. Deja el binario
-ejecutable solo si el SHA-256 coincide e imprime `SUNAT_SDK_BIN=<ruta absoluta>`: esa ruta es el primer argumento de
-`SunatSdk`. Por defecto lo deja en `vendor/kembec/facturacion-electronica-sunat-sdk/bindings/php/bin/`; usa `--dir` si
-`vendor/` es de solo lectura al ejecutar. Composer no lo corre por su cuenta. En otra plataforma falla e indica cómo
-compilar el binario con Rust:
+
+`sunat-sdk-install` baja de GitHub el binario de la misma versión del paquete, para Linux x86_64, y lo deja ejecutable
+solo si su SHA-256 coincide. Imprime `SUNAT_SDK_BIN=<ruta absoluta>`: esa ruta es el primer argumento de `SunatSdk`.
+Por defecto lo deja en `vendor/kembec/facturacion-electronica-sunat-sdk/bindings/php/bin/`; usa `--dir` si `vendor/`
+es de solo lectura al ejecutar. Composer no lo corre por su cuenta. En otra plataforma falla e indica cómo compilar el
+binario con Rust:
 
 ```bash
 git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git
@@ -66,9 +69,9 @@ $signed = $sdk->sign($built->getXml(), new SigningKey('test-cert.pem', 'test-key
 echo $built->getFileName(), ' ', $signed->getDigestValue(), PHP_EOL; // 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
 ```
 
-`+te61a2ub5MlTFf8tKTPNGWEXKI=` es el `DigestValue` del vector
-[`01-invoice-taxed-cash`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/tests/vectors/01-invoice-taxed-cash.signed.xml):
-el mismo que dan JavaScript, Python, Rust y la CLI.
+Si imprime `20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=` (el nombre del archivo y la huella de la firma), el
+SDK funciona: es la misma salida que dan JavaScript, Python, Rust y la CLI. Tus propios documentos siguen la forma del
+[modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
 
 ## Enviar a la SUNAT y leer la respuesta
 
@@ -97,10 +100,10 @@ $sdk->cdr($cdrZipOrXmlBytes);                                 // Cdr
 
 - `isAccepted()` es verdadero solo con código 0 y sin observaciones. Con código 0 y una nota de 4000 o más, la CDR
   queda `observed`; `isValidDocument()` es verdadero en los dos casos.
-- `send` y `status` esperan a la SUNAT hasta 90 segundos, o menos si el tiempo máximo por llamada no deja 5 segundos
-  de margen. El tercer argumento opcional del constructor fija esa espera, en segundos enteros.
-- `build` y `sign` también arman y firman resúmenes diarios (RC) y comunicaciones de baja (RA). Este cliente no los
-  envía ni consulta su ticket: para eso están los comandos `summary` y `ticket` de la CLI.
+- `send` y `status` esperan a la SUNAT 90 segundos, o el tiempo máximo por llamada menos 5 si es más corto. El tercer
+  argumento opcional del constructor cambia esa espera, en segundos enteros, y tiene que dejar esos 5 de margen.
+- Los resúmenes diarios (RC) y las comunicaciones de baja (RA) se arman y firman con `build` y `sign`, pero este
+  cliente no los envía ni consulta su ticket: para eso están los comandos `summary` y `ticket` de la CLI.
 
 ### Consultar el estado de un comprobante (Consulta Integrada)
 
@@ -125,8 +128,7 @@ if ($check->hasState()) {
 }
 ```
 
-- **No hay ambiente de pruebas**: la consulta va siempre a producción. Las pruebas del paquete usan las respuestas del
-  manual de la SUNAT, sin red.
+- **No hay ambiente de pruebas**: la consulta va siempre a producción.
 - Ningún resultado es motivo para emitir la operación con otro número: `NOT_REPORTED` no prueba que el comprobante no
   llegó (el ticket de un resumen puede seguir en proceso), así que antes se concilia con `status` o con el ticket.
 - Un token o una consulta sin respuesta, un 401 incluido, dan `isNoVerdict()`: se vuelve a consultar con los mismos
@@ -157,13 +159,13 @@ if ($sent->hasTicket()) {
 }
 ```
 
-- **La SUNAT no tiene ambiente de pruebas para la GRE**: este cliente se prueba con respuestas del manual de la SUNAT y
-  de un cliente de terceros, sin red, y ninguna guía de este SDK figura como aceptada por la SUNAT.
+- **La SUNAT no tiene ambiente de pruebas para la GRE**, y ninguna guía de este SDK figura como aceptada por la SUNAT.
 - Los endpoints no tienen valor por defecto y solo se aceptan `https://` (los del manual:
   `https://api-seguridad.sunat.gob.pe/v1/clientessol` para el token y `https://api-cpe.sunat.gob.pe/v1` para la API).
   Cada llamada pide su propio token, dentro de la misma espera HTTP que `send`.
 - Si el envío no recibe respuesta, `greSend` lanza `SdkErrorException`: la guía pudo haber llegado, así que se reenvía el
-  mismo archivo, nunca la operación con otro número. Un token o una consulta sin respuesta dan `isNoVerdict()`.
+  mismo archivo, nunca la operación con otro número. Un token o una consulta sin respuesta dan `isNoVerdict()`, como en
+  `validity`.
 
 Secretos: las credenciales SOL y de API, los endpoints y las rutas de las llaves llegan al binario solo por su entorno, nunca
 por sus argumentos. El proceso hijo no hereda el entorno del padre, y cualquier valor que se le pasa se reemplaza por
@@ -195,28 +197,26 @@ La lista completa está en el
 [alcance del SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk#alcance) y cada campo, en el
 [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
 
-## Cómo se comprueba
+## Pruebas
 
-Desde la raíz del repositorio, donde está el único `composer.json` del paquete:
+Lo que aceptó la SUNAT y cómo se comprueba cada versión está en
+[Cómo se comprueba](https://github.com/Kembec/facturacion-electronica-sunat-sdk#cómo-se-comprueba): la beta de la SUNAT
+aceptó 36 de los 38 documentos de ejemplo; las 2 guías de remisión no tienen beta.
+
+Para correr las pruebas de este paquete, desde la raíz del repositorio (donde está su único `composer.json`):
 
 ```bash
 curl -sSL https://getcomposer.org/download/latest-stable/composer.phar -o composer.phar
 php composer.phar install && vendor/bin/phpunit
 ```
 
-Corren contra el binario real: `SUNAT_SDK_BIN`, o `target/debug/sunat-sdk` por defecto. Las pruebas del instalador
-sirven un release desde un `php -S` local y no necesitan red. Los 38 documentos de
-[fixtures](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/fixtures) (comprobantes,
-resúmenes diarios, comunicaciones de baja y 2 guías de remisión) tienen que dar, con `build` y `sign`, el XML de
-[tests/vectors](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/tests/vectors) en C14N
-inclusiva y exactamente su `DigestValue` y su `SignatureValue`, firmados con el certificado de prueba autogenerado.
-`validity`, `greSend` y `greTicket` se prueban sin red, contra respuestas grabadas de los manuales de la SUNAT y, en la
-GRE, de un cliente de terceros. No se envía nada a la SUNAT. El CI las corre en cada cambio en PHP 8.1 contra el
-binario compilado.
-
-Aparte, el 16/10/2026 la beta de la SUNAT aceptó 36 de esos documentos firmados, enviados con la CLI: los 29
-comprobantes, con código 0 y sin observaciones, y los 7 resúmenes diarios y comunicaciones de baja, con código 0. Las
-2 guías de remisión no pasan por esa prueba: la SUNAT no tiene ambiente de pruebas para la GRE.
+Corren contra el binario real (`SUNAT_SDK_BIN`, o `target/debug/sunat-sdk` por defecto) y no envían nada a la SUNAT:
+cada uno de los 38 documentos de
+[fixtures](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/fixtures) tiene que dar, con `build`
+y `sign`, el XML y la firma exactos de
+[tests/vectors](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/tests/vectors), y `validity`,
+`greSend` y `greTicket` se prueban contra respuestas grabadas de los manuales de la SUNAT y, en la GRE, de un cliente de
+terceros. El CI las corre en cada cambio en PHP 8.1.
 
 ## Licencia
 

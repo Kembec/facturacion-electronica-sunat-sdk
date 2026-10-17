@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json;
 using Kembec.SunatSdk.Results;
 
@@ -9,6 +10,7 @@ namespace Kembec.SunatSdk
         internal SendResult(JsonElement value, string rawJson)
             : base(rawJson)
         {
+            Diagnosis = Kembec.SunatSdk.Diagnosis.ListFrom(value);
             Outcome = Fields.ReadOutcome(value, Outcome.Cdr, Outcome.Fault);
             if (Outcome == Outcome.Cdr)
             {
@@ -32,6 +34,12 @@ namespace Kembec.SunatSdk
 
         /// <summary>Set with <see cref="Outcome.Fault"/>.</summary>
         public Fault? Fault { get; }
+
+        /// <summary>
+        /// The input field each code in the answer points at, one per code: the fault's, a CDR's non-zero response
+        /// code and each note that starts with a code. Empty when the answer has none.
+        /// </summary>
+        public IReadOnlyList<Diagnosis> Diagnosis { get; }
     }
 
     /// <summary><c>summary</c> (sendSummary): the ticket, or SUNAT's fault.</summary>
@@ -40,6 +48,7 @@ namespace Kembec.SunatSdk
         internal SummaryResult(JsonElement value, string rawJson)
             : base(rawJson)
         {
+            Diagnosis = Kembec.SunatSdk.Diagnosis.ListFrom(value);
             Outcome = Fields.ReadOutcome(value, Outcome.Ticket, Outcome.Fault);
             if (Outcome == Outcome.Ticket)
             {
@@ -59,6 +68,12 @@ namespace Kembec.SunatSdk
 
         /// <summary>Set with <see cref="Outcome.Fault"/>.</summary>
         public Fault? Fault { get; }
+
+        /// <summary>
+        /// The input field each code in the answer points at, one per code: the fault's, a CDR's non-zero response
+        /// code and each note that starts with a code. Empty when the answer has none.
+        /// </summary>
+        public IReadOnlyList<Diagnosis> Diagnosis { get; }
     }
 
     /// <summary><c>ticket</c> (getStatus): the state of a summary's or a void's ticket.</summary>
@@ -67,6 +82,7 @@ namespace Kembec.SunatSdk
         internal TicketResult(JsonElement value, string rawJson)
             : base(rawJson)
         {
+            Diagnosis = Kembec.SunatSdk.Diagnosis.ListFrom(value);
             Outcome = Fields.ReadOutcome(value, Outcome.TicketStatus, Outcome.Fault, Outcome.NoVerdict);
             Ticket = Fields.OptionalText(value, "ticket");
             if (Outcome == Outcome.TicketStatus)
@@ -110,6 +126,12 @@ namespace Kembec.SunatSdk
 
         /// <summary>Set with <see cref="Outcome.NoVerdict"/>: ask again; the ticket proves the file arrived.</summary>
         public NoVerdict? NoVerdict { get; }
+
+        /// <summary>
+        /// The input field each code in the answer points at, one per code: the fault's, a CDR's non-zero response
+        /// code and each note that starts with a code. Empty when the answer has none.
+        /// </summary>
+        public IReadOnlyList<Diagnosis> Diagnosis { get; }
     }
 
     /// <summary><c>status</c> (getStatusCdr): one voucher's status, with its CDR when SUNAT attaches it.</summary>
@@ -118,6 +140,7 @@ namespace Kembec.SunatSdk
         internal StatusResult(JsonElement value, string rawJson)
             : base(rawJson)
         {
+            Diagnosis = Kembec.SunatSdk.Diagnosis.ListFrom(value);
             Outcome = Fields.ReadOutcome(value, Outcome.Status, Outcome.Fault, Outcome.NoVerdict);
             if (Outcome == Outcome.Status)
             {
@@ -157,5 +180,11 @@ namespace Kembec.SunatSdk
 
         /// <summary>Set with <see cref="Outcome.NoVerdict"/>: ask again.</summary>
         public NoVerdict? NoVerdict { get; }
+
+        /// <summary>
+        /// The input field each code in the answer points at, one per code: the fault's, a CDR's non-zero response
+        /// code and each note that starts with a code. Empty when the answer has none.
+        /// </summary>
+        public IReadOnlyList<Diagnosis> Diagnosis { get; }
     }
 }

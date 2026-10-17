@@ -50,6 +50,7 @@ namespace Kembec.SunatSdk.Vectors
             Run("cdr", () => ReadCdr(client, repo));
             Run("errors", () => Errors(client, key, repo));
             Run("no_verdict", () => NoVerdicts());
+            Run("diagnosis", () => Diagnoses(repo));
             Run("threads", () => Threads(client, key, repo));
 
             var runtime = (IntPtr.Size * 8) + "-bit " + System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
@@ -114,6 +115,50 @@ namespace Kembec.SunatSdk.Vectors
                 () => client.Send("20123456789-01-F001-1", signed, sol, "http://127.0.0.1/billService"),
                 e => e.Command == "send" && e.Message.Contains("endpoint must use https://") && !e.Message.Contains("moddatos-secret"),
                 "send over http://");
+        }
+
+        /// <summary>
+        /// The core's answers (tests/data, the ones the PHP and wasm bindings check): the beta's real 2800 to a boleta,
+        /// a CDR with two coded notes, and an answer without <c>diagnosis</c>. The result types have no public
+        /// constructor, so they are built the way the client builds them, from the response JSON.
+        /// </summary>
+        private static void Diagnoses(string repo)
+        {
+            var sent = Parse<SendResult>(repo, "send-beta-2800.json");
+            Check(sent.Outcome == Outcome.Fault && sent.Fault!.Code == "2800", "diagnosis: the 2800 is a fault");
+            Check(sent.Diagnosis.Count == 1 && sent.Diagnosis[0].Code == "2800", "diagnosis: one element, 2800");
+            var detail = sent.Diagnosis[0].Detail;
+            Check(detail != null && detail.Node == "cbc:ID/schemeID" && detail.Value == "1", "diagnosis: detail cbc:ID/schemeID = 1");
+            var fields = sent.Diagnosis[0].Fields;
+            Check(fields.Count == 1 && fields[0].InputPath == "customer.document_type" && fields[0].Certainty == DiagnosisField.Source
+                && fields[0].Xpath!.EndsWith("cbc:ID@schemeID", StringComparison.Ordinal), "diagnosis: customer.document_type, fuente");
+
+            var status = Parse<StatusResult>(repo, "status-observed-4287.json");
+            Check(status.Diagnosis.Select(d => d.Code).SequenceEqual(new[] { "4287", "4001" }), "diagnosis: 4287 and 4001");
+            Check(status.Diagnosis[0].Detail == null && status.Diagnosis[0].Fields[0].InputPath == "lines[].unit_price"
+                && status.Diagnosis[0].Fields[0].Certainty == DiagnosisField.Inferred, "diagnosis: 4287 points at lines[].unit_price, inferido");
+            Check(status.Diagnosis[1].Fields.Count == 0, "diagnosis: 4001 is not in the rules");
+
+            var without = Construct<SummaryResult>("{\"outcome\":\"ticket\",\"ticket\":\"1700000000000\"}");
+            Check(without.Diagnosis.Count == 0, "diagnosis: absent is an empty list");
+            var ticket = Construct<TicketResult>("{\"outcome\":\"fault\",\"code\":\"0109\",\"message\":\"x\",\"class\":null}");
+            Check(ticket.Diagnosis.Count == 0, "diagnosis: a fault without it is empty");
+        }
+
+        private static T Parse<T>(string repo, string file)
+            where T : SdkResult
+        {
+            return Construct<T>(File.ReadAllText(Path.Combine(repo, "bindings", "dotnet", "tests", "data", file), Encoding.UTF8));
+        }
+
+        private static T Construct<T>(string json)
+            where T : SdkResult
+        {
+            using (var document = JsonDocument.Parse(json))
+            {
+                var constructor = typeof(T).GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(JsonElement), typeof(string) }, null)!;
+                return (T)constructor.Invoke(new object[] { document.RootElement.Clone(), json });
+            }
         }
 
         /// <summary>A listener that accepts and never answers the TLS handshake: every query waits out its 1 s.</summary>

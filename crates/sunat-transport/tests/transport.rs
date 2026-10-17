@@ -1,5 +1,5 @@
 use base64::Engine;
-use sunat_transport::*;
+use kembec_sunat_transport::*;
 
 /// Synthetic CDRs shaped after the programmer's manual examples C.1 (accepted with notes) and
 /// C.2 (rejected); see `data/README.md`.

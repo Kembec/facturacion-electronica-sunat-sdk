@@ -5,7 +5,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use sunat_xmldsig::{sign, sign_with_id, verify, SignError, DEFAULT_SIGNATURE_ID};
+use kembec_sunat_xmldsig::{sign, sign_with_id, verify, SignError, DEFAULT_SIGNATURE_ID};
 
 const VECTOR_SIGNATURE_ID: &str = "signatureKG";
 

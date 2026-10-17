@@ -36,3 +36,9 @@ pub fn canonicalize(xml: &[u8]) -> Result<Vec<u8>, SignError> {
     let doc = xml::parse(source.text)?;
     Ok(c14n::canonicalize_document(&doc, None))
 }
+
+// The README examples compile against this crate as doctests, so the page on crates.io cannot drift
+// from the API.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;

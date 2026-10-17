@@ -1,14 +1,27 @@
 [package]
-name = "sunat-ubl"
+name = "kembec-sunat-ubl"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 keywords.workspace = true
+description = "UBL 2.1 and 2.0 XML for SUNAT (Peru) electronic invoicing, in canonical form and byte-identical to the SDK compatibility vectors"
+categories = ["finance", "encoding"]
+readme = "README.md"
+# The library, its tests' code and the notices. The data the tests read (fixtures/, tests/vectors/,
+# tests/xsd/ and this crate's tests/data/) stays in the repository: the crates workflow runs this
+# package's tests against it.
+include = ["/src/**/*.rs", "/tests/**/*.rs", "/tests/*.py", "/README.md", "/LICENSE", "/NOTICE"]
 
 [dependencies]
-sunat-model = { path = "../sunat-model" }
+sunat-model = { workspace = true }
 
 [dev-dependencies]
-sunat-xmldsig = { path = "../sunat-xmldsig" }
+sunat-xmldsig = { workspace = true }
 serde_json = "1"
+
+# Pure Rust with no target-specific code: one target is the whole documentation.
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]

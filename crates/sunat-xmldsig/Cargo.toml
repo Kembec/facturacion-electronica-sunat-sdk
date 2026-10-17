@@ -1,10 +1,19 @@
 [package]
-name = "sunat-xmldsig"
+name = "kembec-sunat-xmldsig"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 keywords.workspace = true
+description = "Enveloped XML-DSig (RSA-SHA1, inclusive C14N 1.0) for SUNAT (Peru) electronic documents, deterministic and sans-IO"
+categories = ["cryptography", "finance", "encoding"]
+readme = "README.md"
+# The library, its tests' code and the notices. The data the tests read (fixtures/, tests/vectors/,
+# tests/xsd/ and this crate's tests/data/) stays in the repository: the crates workflow runs this
+# package's tests against it.
+include = ["/src/**/*.rs", "/tests/**/*.rs", "/tests/*.py", "/README.md", "/LICENSE", "/NOTICE"]
 
 [dependencies]
 base64 = "0.22"
@@ -15,3 +24,7 @@ roxmltree = "0.21"
 sha1 = { version = "0.10", features = ["oid"] }
 x509-cert = { version = "0.2.5", default-features = false }
 zeroize = "1"
+
+# Pure Rust with no target-specific code: one target is the whole documentation.
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]

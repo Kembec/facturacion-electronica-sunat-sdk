@@ -25,7 +25,7 @@ fn read(path: PathBuf) -> String {
 fn signed(case: &str) -> Vec<u8> {
     let json = read(repository().join("fixtures").join(format!("{case}.json")));
     let document = Document::from_json(&json).unwrap_or_else(|e| panic!("{case}: {e}"));
-    let xml = sunat_ubl::build(&document).unwrap_or_else(|e| panic!("{case}: {e}"));
+    let xml = kembec_sunat_ubl::build(&document).unwrap_or_else(|e| panic!("{case}: {e}"));
     let cert = read(repository().join("tests/vectors/test-cert/test-cert.pem"));
     let key = read(repository().join("tests/vectors/test-cert/test-key.pem"));
     sunat_xmldsig::sign(&xml, &cert, &key).unwrap_or_else(|e| panic!("{case}: {e}"))

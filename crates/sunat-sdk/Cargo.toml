@@ -1,13 +1,26 @@
 [package]
-name = "sunat-sdk"
+name = "kembec-sunat-sdk"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 keywords.workspace = true
+description = "SUNAT (Peru) e-invoicing calls without I/O: SOAP and REST requests to send, query and validate, their answers read and classified"
+categories = ["finance", "api-bindings"]
+readme = "README.md"
+# The library, its tests' code and the notices. The data the tests read (fixtures/, tests/vectors/,
+# tests/xsd/ and this crate's tests/data/) stays in the repository: the crates workflow runs this
+# package's tests against it.
+include = ["/src/**/*.rs", "/tests/**/*.rs", "/tests/*.py", "/README.md", "/LICENSE", "/NOTICE"]
 
 [dependencies]
 base64 = "0.22"
 sha2 = "0.10"
 serde_json = "1"
-sunat-transport = { path = "../sunat-transport" }
+sunat-transport = { workspace = true }
+
+# Pure Rust with no target-specific code: one target is the whole documentation.
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]

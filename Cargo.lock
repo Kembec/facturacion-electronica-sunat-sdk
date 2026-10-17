@@ -394,6 +394,56 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
+name = "kembec-sunat-model"
+version = "0.1.0-beta.4"
+dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "kembec-sunat-sdk"
+version = "0.1.0-beta.4"
+dependencies = [
+ "base64",
+ "kembec-sunat-transport",
+ "serde_json",
+ "sha2",
+]
+
+[[package]]
+name = "kembec-sunat-transport"
+version = "0.1.0-beta.4"
+dependencies = [
+ "base64",
+ "quick-xml",
+ "zip",
+]
+
+[[package]]
+name = "kembec-sunat-ubl"
+version = "0.1.0-beta.4"
+dependencies = [
+ "kembec-sunat-model",
+ "kembec-sunat-xmldsig",
+ "serde_json",
+]
+
+[[package]]
+name = "kembec-sunat-xmldsig"
+version = "0.1.0-beta.4"
+dependencies = [
+ "base64",
+ "crypto-bigint",
+ "pkcs1",
+ "pkcs8",
+ "roxmltree",
+ "sha1",
+ "x509-cert",
+ "zeroize",
+]
+
+[[package]]
 name = "libc"
 version = "0.2.190"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -747,33 +797,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
-name = "sunat-model"
-version = "0.1.0-beta.4"
-dependencies = [
- "serde",
- "serde_json",
-]
-
-[[package]]
-name = "sunat-sdk"
-version = "0.1.0-beta.4"
-dependencies = [
- "base64",
- "serde_json",
- "sha2",
- "sunat-transport",
-]
-
-[[package]]
 name = "sunat-sdk-cli"
 version = "0.1.0-beta.4"
 dependencies = [
  "base64",
+ "kembec-sunat-model",
+ "kembec-sunat-sdk",
+ "kembec-sunat-ubl",
+ "kembec-sunat-xmldsig",
  "serde_json",
- "sunat-model",
- "sunat-sdk",
- "sunat-ubl",
- "sunat-xmldsig",
  "ureq",
 ]
 
@@ -781,10 +813,10 @@ dependencies = [
 name = "sunat-sdk-ffi"
 version = "0.1.0-beta.4"
 dependencies = [
+ "kembec-sunat-xmldsig",
  "serde",
  "serde_json",
  "sunat-sdk-cli",
- "sunat-xmldsig",
 ]
 
 [[package]]
@@ -800,44 +832,12 @@ name = "sunat-sdk-wasm"
 version = "0.1.0-beta.4"
 dependencies = [
  "base64",
+ "kembec-sunat-model",
+ "kembec-sunat-sdk",
+ "kembec-sunat-ubl",
+ "kembec-sunat-xmldsig",
  "serde_json",
- "sunat-model",
- "sunat-sdk",
- "sunat-ubl",
- "sunat-xmldsig",
  "wasm-bindgen",
-]
-
-[[package]]
-name = "sunat-transport"
-version = "0.1.0-beta.4"
-dependencies = [
- "base64",
- "quick-xml",
- "zip",
-]
-
-[[package]]
-name = "sunat-ubl"
-version = "0.1.0-beta.4"
-dependencies = [
- "serde_json",
- "sunat-model",
- "sunat-xmldsig",
-]
-
-[[package]]
-name = "sunat-xmldsig"
-version = "0.1.0-beta.4"
-dependencies = [
- "base64",
- "crypto-bigint",
- "pkcs1",
- "pkcs8",
- "roxmltree",
- "sha1",
- "x509-cert",
- "zeroize",
 ]
 
 [[package]]

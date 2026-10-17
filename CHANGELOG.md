@@ -16,6 +16,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   SUNAT names in the message, if any, and the candidate fields from SUNAT's validation rules of 26.08.2026 (01, 03, 07,
   08). The CLI's `send`, `summary`, `ticket` and `status` add `diagnosis` to their JSON, one element per code in the
   answer ([`docs/cli.md`](docs/cli.md#diagnosis)).
+- Retention voucher (20): `kind: "retention"`, UBL 2.0 `Retention` built, signed and zipped (`RUC-20-R###-N.zip`)
+  through the core and the CLI; SUNAT's «Retenciones1_0» rules that read only the document are checked before
+  sending, each with its code (2619 rate of the regime, 2623 amounts and exchange rate, 2626 payment number, 2628 and
+  2629 totals, among others). The send term (2600) is a parameter of `Retention::check_send_deadline`. Not sent to
+  SUNAT beta yet; sending by `otroscpe` comes next (#51).
 
 ## [0.1.0-beta.5] - 2026-10-17
 

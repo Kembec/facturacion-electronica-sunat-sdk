@@ -1,0 +1,59 @@
+{
+  "kind": "retention",
+  "document_type": "20",
+  "ubl_version": "2.0",
+  "series": "R001",
+  "number": "5",
+  "issue_date": "2026-10-17T10:00:00-05:00",
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "supplier": {
+    "document_type": "6",
+    "document_number": "20100066603",
+    "legal_name": "PROVEEDOR DE PRUEBA SAC"
+  },
+  "regime": "01",
+  "rate": "3.00",
+  "note": "VECTOR v5-usd-as-syma-sends-it",
+  "total_retained": "30.00",
+  "total_paid": "970.00",
+  "lines": [
+    {
+      "related_document": {
+        "document_type": "01",
+        "number": "F001-210",
+        "issue_date": "2026-10-02",
+        "currency": "USD",
+        "total": "1000.00"
+      },
+      "payment": {
+        "number": 1,
+        "date": "2026-10-15",
+        "amount": "1000.00"
+      },
+      "retention": {
+        "date": "2026-10-15",
+        "amount": "30.00",
+        "net_paid": "970.00"
+      },
+      "exchange_rate": {
+        "source_currency": "USD",
+        "target_currency": "USD",
+        "rate": "3.750000",
+        "date": "2026-10-15"
+      }
+    }
+  ]
+}

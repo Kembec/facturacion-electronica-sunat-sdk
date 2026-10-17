@@ -1,0 +1,91 @@
+{
+  "kind": "retention",
+  "document_type": "20",
+  "ubl_version": "2.0",
+  "series": "R001",
+  "number": "6",
+  "issue_date": "2026-10-17T10:00:00-05:00",
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "supplier": {
+    "document_type": "6",
+    "document_number": "20100066603",
+    "legal_name": "PROVEEDOR DE PRUEBA SAC"
+  },
+  "regime": "01",
+  "rate": "3.00",
+  "note": "VECTOR v6-totals-unrounded",
+  "total_retained": "9.05",
+  "total_paid": "292.46",
+  "lines": [
+    {
+      "related_document": {
+        "document_type": "01",
+        "number": "F001-301",
+        "issue_date": "2026-10-05",
+        "currency": "PEN",
+        "total": "100.50"
+      },
+      "payment": {
+        "number": 1,
+        "date": "2026-10-17",
+        "amount": "100.50"
+      },
+      "retention": {
+        "date": "2026-10-17",
+        "amount": "3.02",
+        "net_paid": "97.49"
+      }
+    },
+    {
+      "related_document": {
+        "document_type": "01",
+        "number": "F001-302",
+        "issue_date": "2026-10-05",
+        "currency": "PEN",
+        "total": "100.50"
+      },
+      "payment": {
+        "number": 1,
+        "date": "2026-10-17",
+        "amount": "100.50"
+      },
+      "retention": {
+        "date": "2026-10-17",
+        "amount": "3.02",
+        "net_paid": "97.49"
+      }
+    },
+    {
+      "related_document": {
+        "document_type": "01",
+        "number": "F001-303",
+        "issue_date": "2026-10-05",
+        "currency": "PEN",
+        "total": "100.50"
+      },
+      "payment": {
+        "number": 1,
+        "date": "2026-10-17",
+        "amount": "100.50"
+      },
+      "retention": {
+        "date": "2026-10-17",
+        "amount": "3.02",
+        "net_paid": "97.49"
+      }
+    }
+  ]
+}

@@ -1,0 +1,110 @@
+{
+  "kind": "retention",
+  "document_type": "20",
+  "ubl_version": "2.0",
+  "series": "R001",
+  "number": "2",
+  "issue_date": "2026-10-17T10:00:00-05:00",
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "supplier": {
+    "document_type": "6",
+    "document_number": "20100066603",
+    "legal_name": "PROVEEDOR DE PRUEBA SAC"
+  },
+  "regime": "01",
+  "rate": "3.00",
+  "note": "VECTOR v2-several-documents",
+  "total_retained": "51.24",
+  "total_paid": "1656.76",
+  "lines": [
+    {
+      "related_document": {
+        "document_type": "01",
+        "number": "F001-102",
+        "issue_date": "2026-10-03",
+        "currency": "PEN",
+        "total": "590.00"
+      },
+      "payment": {
+        "number": 1,
+        "date": "2026-10-10",
+        "amount": "300.00"
+      },
+      "retention": {
+        "date": "2026-10-10",
+        "amount": "9.00",
+        "net_paid": "291.00"
+      }
+    },
+    {
+      "related_document": {
+        "document_type": "01",
+        "number": "F001-102",
+        "issue_date": "2026-10-03",
+        "currency": "PEN",
+        "total": "590.00"
+      },
+      "payment": {
+        "number": 2,
+        "date": "2026-10-14",
+        "amount": "290.00"
+      },
+      "retention": {
+        "date": "2026-10-14",
+        "amount": "8.70",
+        "net_paid": "281.30"
+      }
+    },
+    {
+      "related_document": {
+        "document_type": "01",
+        "number": "F001-087",
+        "issue_date": "2026-09-20",
+        "currency": "PEN",
+        "total": "1000.00"
+      },
+      "payment": {
+        "number": 1,
+        "date": "2026-10-12",
+        "amount": "1000.00"
+      },
+      "retention": {
+        "date": "2026-10-12",
+        "amount": "30.00",
+        "net_paid": "970.00"
+      }
+    },
+    {
+      "related_document": {
+        "document_type": "08",
+        "number": "FD01-12",
+        "issue_date": "2026-10-05",
+        "currency": "PEN",
+        "total": "118.00"
+      },
+      "payment": {
+        "number": 1,
+        "date": "2026-10-14",
+        "amount": "118.00"
+      },
+      "retention": {
+        "date": "2026-10-14",
+        "amount": "3.54",
+        "net_paid": "114.46"
+      }
+    }
+  ]
+}

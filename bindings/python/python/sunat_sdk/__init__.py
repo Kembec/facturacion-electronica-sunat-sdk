@@ -4,7 +4,8 @@ The same Rust core and the same commands as the npm package (``build``, ``sign``
 ``soap_request``, ``soap_response``, ``soap_timeout``) with the same input and output shapes
 (``docs/cli.md`` of the repository). Inputs are a JSON string or a mapping; results are the parsed
 JSON (a ``dict``). :func:`exchange` does the POST to SUNAT with :mod:`urllib` and verified TLS, and
-:func:`validity` asks the Consulta Integrada (token, then query) the same way.
+:func:`validity` asks the Consulta Integrada (token, then query) the same way. :func:`gre_send` and
+:func:`gre_ticket` deliver the despatch advice (09) by SUNAT's GRE REST API, which has no test environment.
 """
 
 from __future__ import annotations
@@ -21,6 +22,16 @@ __all__ = [
     "build",
     "cdr",
     "exchange",
+    "gre_send",
+    "gre_send_request",
+    "gre_send_response",
+    "gre_ticket",
+    "gre_ticket_request",
+    "gre_ticket_response",
+    "gre_timeout",
+    "gre_token_request",
+    "gre_token_response",
+    "gre_token_usable",
     "sign",
     "soap_request",
     "soap_response",
@@ -42,6 +53,7 @@ except PackageNotFoundError:  # imported from a build tree without metadata
 
 Json = Union[str, Mapping[str, Any]]
 Exchange = Literal["send", "summary", "ticket", "status"]
+GreStage = Literal["token", "send", "ticket"]
 
 
 def _text(value: Json) -> str:
@@ -111,4 +123,49 @@ def validity_timeout(stage: Literal["token", "query"], seconds: int) -> Dict[str
     return json.loads(_native.validity_timeout(stage, int(seconds)))
 
 
+def gre_token_request(client_id: str, client_secret: str, user: str, password: str, token_base: str) -> Dict[str, Any]:
+    """GRE token request (``grant_type=password``) -> ``{method, url, headers, body}``.
+
+    ``user`` is the RUC followed by the SOL user; ``token_base`` has no default. The body carries the
+    client secret and the SOL password: never log it.
+    """
+    return json.loads(_native.gre_token_request(client_id, client_secret, user, password, token_base))
+
+
+def gre_token_response(http_status: int, body: bytes, received_at: int) -> Dict[str, Any]:
+    """The token answer and the Unix seconds when it arrived -> ``token`` (with ``expires_at``), ``api_error`` or ``no_verdict``."""
+    return json.loads(_native.gre_token_response(http_status, bytes(body), int(received_at)))
+
+
+def gre_token_usable(token: Json, now: int) -> bool:
+    """Whether a ``token`` outcome can still be used at ``now`` (Unix seconds): renewed ten minutes before expiry."""
+    return _native.gre_token_usable(_text(token), int(now))
+
+
+def gre_send_request(input: Json, access_token: str, base: str) -> Dict[str, Any]:
+    """The send of ``{name, xml | xml_base64}`` (the signed guide) -> ``{method, url, headers, body, zip_name, hash_zip}``."""
+    return json.loads(_native.gre_send_request(_text(input), access_token, base))
+
+
+def gre_send_response(http_status: int, body: bytes) -> Dict[str, Any]:
+    """The send answer -> ``ticket`` or ``api_error``; raises when it is not GRE-M's: the guide may have arrived."""
+    return json.loads(_native.gre_send_response(http_status, bytes(body)))
+
+
+def gre_ticket_request(ticket: str, access_token: str, base: str) -> Dict[str, Any]:
+    """The ticket query (a GET) -> ``{method, url, headers, body}``."""
+    return json.loads(_native.gre_ticket_request(ticket, access_token, base))
+
+
+def gre_ticket_response(http_status: int, body: bytes, ticket: str) -> Dict[str, Any]:
+    """The ticket answer -> ``ticket_status`` (0, 98, 99), ``api_error`` or ``no_verdict``, all with ``ticket``."""
+    return json.loads(_native.gre_ticket_response(http_status, bytes(body), ticket))
+
+
+def gre_timeout(stage: GreStage, seconds: int, ticket: Optional[str] = None) -> Dict[str, Any]:
+    """No answer within ``seconds`` -> ``no_verdict`` for ``token`` and ``ticket`` (with the ticket); raises for ``send``."""
+    return json.loads(_native.gre_timeout(stage, int(seconds), ticket))
+
+
 from ._http import exchange, validity  # noqa: E402 - uses the functions above
+from ._gre import gre_send, gre_ticket  # noqa: E402 - uses the functions above

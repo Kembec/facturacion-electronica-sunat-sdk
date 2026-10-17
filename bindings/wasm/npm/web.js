@@ -3,6 +3,7 @@
 import init, {
   build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout,
   validityTokenRequest, validityTokenResponse, validityRequest, validityResponse, validityTimeout,
+  greTokenRequest, greTokenResponse, greTokenUsable, greSendRequest, greSendResponse, greTicketRequest, greTicketResponse, greTimeout,
 } from './wasm/sunat_sdk_wasm.js';
 
 let ready;
@@ -12,6 +13,7 @@ export function load(source) {
     .then(() => Object.freeze({
       build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout,
       validityTokenRequest, validityTokenResponse, validityRequest, validityResponse, validityTimeout,
+      greTokenRequest, greTokenResponse, greTokenUsable, greSendRequest, greSendResponse, greTicketRequest, greTicketResponse, greTimeout,
     }))
     .catch((error) => {
       ready = undefined;

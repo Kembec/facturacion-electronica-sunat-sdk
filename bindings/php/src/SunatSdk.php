@@ -8,6 +8,8 @@ use Kembec\SunatSdk\Exception\SunatSdkException;
 use Kembec\SunatSdk\Process\BinaryRunner;
 use Kembec\SunatSdk\Result\BuildResult;
 use Kembec\SunatSdk\Result\Cdr;
+use Kembec\SunatSdk\Result\GreSendResult;
+use Kembec\SunatSdk\Result\GreTicketResult;
 use Kembec\SunatSdk\Result\SendResult;
 use Kembec\SunatSdk\Result\SignResult;
 use Kembec\SunatSdk\Result\StatusResult;
@@ -30,7 +32,7 @@ final class SunatSdk
 
     public const DEFAULT_TIMEOUT_SECONDS = 120.0;
 
-    /** HTTP wait of `send` and `status` when none is given and the process timeout allows it. */
+    /** HTTP wait of `send`, `status`, `validity` and GRE when none is given and the process timeout allows it. */
     public const DEFAULT_HTTP_TIMEOUT_SECONDS = 90;
 
     /**
@@ -176,6 +178,50 @@ final class SunatSdk
     }
 
     /**
+     * Sends a signed despatch advice (09) by SUNAT's GRE REST API: a token by password, then the zip
+     * with its hashZip, both inside the HTTP wait. SUNAT has no test environment for GRE and the
+     * endpoints have no default. No answer to the send throws SdkErrorException: the guide may have
+     * arrived, so send the same file again, never the operation with another number.
+     *
+     * @param string $name `RUC-09-SERIE-NUMERO`
+     * @param ApiCredentials $api the GRE pair of «Credenciales de API SUNAT»
+     * @param SolCredentials $sol the RUC followed by the SOL user, and its password
+     * @param string $tokenEndpoint the token base, https only (GRE manual: `https://api-seguridad.sunat.gob.pe/v1/clientessol`)
+     * @param string $endpoint the API base, https only (`https://api-cpe.sunat.gob.pe/v1`)
+     * @throws SunatSdkException
+     */
+    public function greSend(
+        string $name,
+        string $signedXml,
+        ApiCredentials $api,
+        SolCredentials $sol,
+        string $tokenEndpoint,
+        string $endpoint
+    ): GreSendResult {
+        $env = $this->greEnvironment($api, $sol, $tokenEndpoint, $endpoint);
+
+        return GreSendResult::fromArray($this->runner->run('gre-send', $this->encode(['name' => $name, 'xml' => $signedXml]), $env));
+    }
+
+    /**
+     * Asks for the outcome of a sent guide by its ticket (a token, then the query). 98 is in process:
+     * ask again later with the same ticket.
+     *
+     * @throws SunatSdkException
+     */
+    public function greTicket(
+        string $ticket,
+        ApiCredentials $api,
+        SolCredentials $sol,
+        string $tokenEndpoint,
+        string $endpoint
+    ): GreTicketResult {
+        $env = $this->greEnvironment($api, $sol, $tokenEndpoint, $endpoint);
+
+        return GreTicketResult::fromArray($this->runner->run('gre-ticket', $this->encode(['ticket' => $ticket]), $env));
+    }
+
+    /**
      * Reads a CDR (zip or XML) and classifies its response code.
      *
      * @param string $cdr the raw bytes of the CDR zip or XML
@@ -212,12 +258,22 @@ final class SunatSdk
     {
         if ($this->httpTimeoutSeconds === null) {
             throw new \InvalidArgumentException(sprintf(
-                'the process timeout is too short for send, status and validity: it needs at least %d s',
+                'the process timeout is too short for send, status, validity and GRE: it needs at least %d s',
                 self::HTTP_TIMEOUT_MARGIN_SECONDS + 1
             ));
         }
 
         return ['SUNAT_HTTP_TIMEOUT_SECONDS' => (string) $this->httpTimeoutSeconds];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    private function greEnvironment(ApiCredentials $api, SolCredentials $sol, string $tokenEndpoint, string $endpoint): array
+    {
+        $endpoints = ['SUNAT_GRE_TOKEN_ENDPOINT' => $tokenEndpoint, 'SUNAT_GRE_ENDPOINT' => $endpoint];
+
+        return $endpoints + $this->httpEnvironment() + $api->toEnvironment() + $sol->toEnvironment();
     }
 
     /**

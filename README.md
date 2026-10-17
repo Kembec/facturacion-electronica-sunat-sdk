@@ -10,8 +10,8 @@ facturación de una empresa.
 SUNAT (Peru) electronic invoicing SDK for Rust, JavaScript/TypeScript, Python and PHP.
 
 Todos los lenguajes usan el mismo motor por dentro, así que los mismos datos dan el mismo comprobante firmado en
-cualquiera de ellos. Las pruebas automáticas lo comprueban en cada cambio con 22 documentos de ejemplo, y el entorno de
-pruebas de la SUNAT aceptó esos documentos el 16/10/2026.
+cualquiera de ellos. Las pruebas automáticas lo comprueban en cada cambio con los 38 documentos de ejemplo de
+[`fixtures/`](fixtures), y el entorno de pruebas de la SUNAT aceptó 22 de ellos el 16/10/2026.
 
 Guías y ejemplos: **https://fe.kembec.com**
 
@@ -255,7 +255,9 @@ padrón en producción (la beta no lo hace).
 
 **Guía de remisión remitente (09)**: se arma, se firma y se valida contra sus vectores, el esquema OASIS y las reglas de la
 SUNAT. La CLI la envía por la API REST de la SUNAT (`gre-send`: token con la clave SOL, zip y su `hashZip`) y consulta el
-ticket hasta tener la CDR (`gre-ticket`). **La SUNAT no tiene ambiente de pruebas para la GRE**: el envío se probó solo
+ticket hasta tener la CDR (`gre-ticket`); PHP (`greSend`, `greTicket`) y Python (`gre_send`, `gre_ticket`) hacen lo mismo,
+y el paquete npm arma cada llamada y lee su respuesta para que tu `fetch` la haga (`greTokenRequest`, `greSendRequest`,
+`greTicketRequest` y sus `*Response`). **La SUNAT no tiene ambiente de pruebas para la GRE**: el envío se probó solo
 contra respuestas del manual de la SUNAT y de un cliente de terceros, y ninguna guía de este SDK figura como aceptada por
 la SUNAT. Quedan fuera los traslados de importación y exportación y la guía del transportista (31).
 

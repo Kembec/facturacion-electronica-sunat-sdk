@@ -73,6 +73,43 @@ const sent = await exchange('send', JSON.stringify({ name: file_name, xml: signe
 // { outcome: 'cdr', cdr, cdr_zip_base64 } o { outcome: 'fault', code, message, class }
 ```
 
+## Guía de remisión remitente (09) por la API REST
+
+La guía no va por SOAP: un token con la clave SOL, el envío del zip y la consulta del ticket. El paquete arma cada
+llamada (con su `url`) y lee cada respuesta; el `fetch` es tuyo, como con `soapRequest`.
+
+```js
+const read = async (res) => new Uint8Array(await res.arrayBuffer());
+// 1. Token: el par de GRE de «Credenciales de API SUNAT» y el usuario SOL (RUC + usuario).
+const tokenCall = JSON.parse(sdk.greTokenRequest(clientId, clientSecret, solUser, solPassword, tokenBase));
+const tokenRes = await fetch(tokenCall.url, tokenCall);
+const token = JSON.parse(sdk.greTokenResponse(tokenRes.status, await read(tokenRes), Math.floor(Date.now() / 1000)));
+if (token.outcome !== 'token') throw new Error(token.message); // api_error o no_verdict: no se envió nada
+// 2. Envío de la guía firmada: guarda el ticket antes que nada, es lo único que lleva al resultado.
+const sendCall = JSON.parse(sdk.greSendRequest(JSON.stringify({ name: file_name, xml: signed.xml }), token.access_token, apiBase));
+const sendRes = await fetch(sendCall.url, sendCall);
+const sent = JSON.parse(sdk.greSendResponse(sendRes.status, await read(sendRes))); // { outcome: 'ticket', ticket } o api_error
+// 3. Consulta del ticket: 0 processed (con la CDR), 98 in_process (vuelve a consultar), 99 processed_with_errors.
+const ticketCall = JSON.parse(sdk.greTicketRequest(sent.ticket, token.access_token, apiBase));
+const ticketRes = await fetch(ticketCall.url, { method: 'GET', headers: ticketCall.headers }); // fetch no acepta body en un GET
+const status = JSON.parse(sdk.greTicketResponse(ticketRes.status, await read(ticketRes), sent.ticket));
+```
+
+**La SUNAT no tiene ambiente de pruebas para la GRE**: estas funciones se prueban sin red, contra respuestas del manual
+de la SUNAT y de un cliente de terceros, y ninguna guía de este SDK figura como aceptada por la SUNAT. Las URL base no
+tienen valor por defecto (las del manual: `https://api-seguridad.sunat.gob.pe/v1/clientessol` para el token y
+`https://api-cpe.sunat.gob.pe/v1` para la API).
+
+- `greTokenResponse` pide la hora de llegada en segundos Unix y devuelve `expires_at`; `greTokenUsable(tokenJson, now)`
+  dice si el token sirve todavía (se renueva diez minutos antes de vencer). El token y el cuerpo del pedido de token son
+  secretos: no los guardes en logs.
+- Si el envío no recibe respuesta, o recibe una que no es de la SUNAT, `greSendResponse` y `greTimeout('send', s)` lanzan
+  un `Error`: la guía pudo haber llegado, así que se reenvía el mismo archivo, nunca la operación con otro número.
+  `greTimeout('token', s)` y `greTimeout('ticket', s, ticket)` dan `{ outcome: 'no_verdict', stage, ... }`.
+- Un rechazo de la SUNAT llega como `{ outcome: 'api_error', stage, http_status, general_error, code, message, errors }`.
+- Con 98, vuelve a consultar con el mismo ticket; nunca reenvíes la guía por eso. Desde el navegador depende de que la
+  SUNAT acepte peticiones de otro origen (CORS), que no se ha probado.
+
 ## API
 
 Todas las funciones reciben y devuelven texto JSON, y lanzan un `Error` con el motivo cuando la entrada no sirve.
@@ -123,7 +160,8 @@ En Node 18, donde `globalThis.crypto` no existe sin una opción de arranque, `lo
 En cada cambio, el CI instala el paquete empaquetado en un proyecto limpio y exige, en Node 18, Node 22 y Chrome, el
 `DigestValue` y el `SignatureValue` exactos de los 38 vectores de prueba del repositorio: las mismas firmas que la beta de la SUNAT aceptó el
 16/10/2026, enviadas con la CLI. La carga con el módulo ya compilado se prueba en Node; en Cloudflare Workers y con
-bundlers no se ha probado. El envío desde JavaScript se prueba sin red, con respuestas escritas a mano, y desde el
+bundlers no se ha probado. El envío desde JavaScript se prueba sin red, con respuestas escritas a mano (la GRE, con las
+respuestas grabadas del núcleo), y desde el
 navegador depende de que la SUNAT acepte peticiones de otro origen (CORS), que no se ha probado.
 
 ## Licencia

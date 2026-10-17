@@ -89,6 +89,55 @@ fn validity_timeout(stage: &str, seconds: u32) -> PyResult<String> {
     api::validity_timeout_json(stage, seconds).map_err(raise)
 }
 
+/// GRE token request (`grant_type=password`) as `{"method", "url", "headers", "body"}`; no default base.
+#[pyfunction]
+fn gre_token_request(client_id: &str, client_secret: &str, user: &str, password: &str, token_base: &str) -> PyResult<String> {
+    api::gre_token_request_json(client_id, client_secret, user, password, token_base).map_err(raise)
+}
+
+/// The GRE token answer and the Unix seconds when it arrived -> `token`, `api_error` or `no_verdict`.
+#[pyfunction]
+fn gre_token_response(http_status: u16, body: &[u8], received_at: u64) -> PyResult<String> {
+    api::gre_token_response_json(http_status, body, received_at).map_err(raise)
+}
+
+/// Whether a `token` outcome (JSON text) is still usable at `now` (Unix seconds).
+#[pyfunction]
+fn gre_token_usable(token_json: &str, now: u64) -> PyResult<bool> {
+    api::gre_token_usable_json(token_json, now).map_err(raise)
+}
+
+/// The send of the signed guide as `{"method", "url", "headers", "body", "zip_name", "hash_zip"}`.
+#[pyfunction]
+fn gre_send_request(py: Python<'_>, input_json: &str, access_token: &str, api_base: &str) -> PyResult<String> {
+    py.detach(|| api::gre_send_request_json(input_json, access_token, api_base)).map_err(raise)
+}
+
+/// The send answer -> `ticket` or `api_error`; raised when it is not GRE-M's.
+#[pyfunction]
+fn gre_send_response(http_status: u16, body: &[u8]) -> PyResult<String> {
+    api::gre_send_response_json(http_status, body).map_err(raise)
+}
+
+/// The ticket query (a GET) as `{"method", "url", "headers", "body"}`.
+#[pyfunction]
+fn gre_ticket_request(ticket: &str, access_token: &str, api_base: &str) -> PyResult<String> {
+    api::gre_ticket_request_json(ticket, access_token, api_base).map_err(raise)
+}
+
+/// The ticket answer -> `ticket_status`, `api_error` or `no_verdict`, all with `ticket`.
+#[pyfunction]
+fn gre_ticket_response(py: Python<'_>, http_status: u16, body: &[u8], ticket: &str) -> PyResult<String> {
+    py.detach(|| api::gre_ticket_response_json(http_status, body, ticket)).map_err(raise)
+}
+
+/// No answer within `seconds` for `stage` -> `no_verdict` (token, ticket); raised for send.
+#[pyfunction]
+#[pyo3(signature = (stage, seconds, ticket=None))]
+fn gre_timeout(stage: &str, seconds: u32, ticket: Option<&str>) -> PyResult<String> {
+    api::gre_timeout_json(stage, seconds, ticket).map_err(raise)
+}
+
 #[pymodule]
 fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("SunatSdkError", m.py().get_type::<SunatSdkError>())?;
@@ -104,5 +153,13 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(validity_request, m)?)?;
     m.add_function(wrap_pyfunction!(validity_response, m)?)?;
     m.add_function(wrap_pyfunction!(validity_timeout, m)?)?;
+    m.add_function(wrap_pyfunction!(gre_token_request, m)?)?;
+    m.add_function(wrap_pyfunction!(gre_token_response, m)?)?;
+    m.add_function(wrap_pyfunction!(gre_token_usable, m)?)?;
+    m.add_function(wrap_pyfunction!(gre_send_request, m)?)?;
+    m.add_function(wrap_pyfunction!(gre_send_response, m)?)?;
+    m.add_function(wrap_pyfunction!(gre_ticket_request, m)?)?;
+    m.add_function(wrap_pyfunction!(gre_ticket_response, m)?)?;
+    m.add_function(wrap_pyfunction!(gre_timeout, m)?)?;
     Ok(())
 }

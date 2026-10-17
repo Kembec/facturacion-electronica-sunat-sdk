@@ -61,6 +61,51 @@ if (reported.state !== 'accepted' || refused.outcome !== 'no_verdict' || refused
   throw new Error(`validityResponse: ${JSON.stringify([reported, refused])}`);
 }
 console.log('ok node validity: token, query, 401 -> no_verdict');
+// GRE: token, send and ticket through the caller's fetch, replaying the core's recorded exchanges
+// (crates/sunat-sdk/tests/data/gre, none accepted by SUNAT: there is no test environment).
+const gre = (name) => new Uint8Array(readFileSync(join(root, `crates/sunat-sdk/tests/data/gre/${name}.json`)));
+const greTokenCall = JSON.parse(sdk.greTokenRequest('abc-123', 's/e=c', '20000000001MODUSER', 'p&ss', 'https://auth.test/v1/clientessol'));
+if (greTokenCall.url !== 'https://auth.test/v1/clientessol/abc-123/oauth2/token/' || !greTokenCall.body.startsWith('grant_type=password&')) {
+  throw new Error(`greTokenRequest: ${greTokenCall.url}`);
+}
+const greToken = JSON.parse(sdk.greTokenResponse(200, gre('derived-token-200'), 1000));
+if (greToken.expires_at !== 4600 || !sdk.greTokenUsable(JSON.stringify(greToken), 3999) || sdk.greTokenUsable(JSON.stringify(greToken), 4000)) {
+  throw new Error(`greTokenResponse: ${JSON.stringify(greToken.expires_at)}`);
+}
+let millis;
+try {
+  sdk.greTokenResponse(200, gre('derived-token-200'), Date.now());
+} catch (error) {
+  millis = error.message;
+}
+if (!millis?.includes('Unix seconds')) throw new Error(`greTokenResponse with milliseconds: ${millis}`);
+const guide = JSON.stringify({ name: '20000000001-09-T001-1', xml: '<DespatchAdvice/>' });
+const greSendCall = JSON.parse(sdk.greSendRequest(guide, greToken.access_token, 'https://api.test/v1'));
+const archivo = JSON.parse(greSendCall.body).archivo;
+if (greSendCall.headers.Authorization !== 'Bearer fake.token.for-tests' || archivo.hashZip !== greSendCall.hash_zip || archivo.nomArchivo !== '20000000001-09-T001-1.zip') {
+  throw new Error(`greSendRequest: ${greSendCall.url}`);
+}
+const greTicket = JSON.parse(sdk.greSendResponse(200, gre('fork-send-200')));
+const greRejected = JSON.parse(sdk.greSendResponse(422, gre('fork-send-422')));
+if (greTicket.ticket !== 'a.b.c' || greRejected.outcome !== 'api_error' || greRejected.errors[0].code !== '501') {
+  throw new Error(`greSendResponse: ${JSON.stringify([greTicket, greRejected])}`);
+}
+const greQuery = JSON.parse(sdk.greTicketRequest(greTicket.ticket, greToken.access_token, 'https://api.test/v1'));
+if (greQuery.method !== 'GET' || greQuery.url !== 'https://api.test/v1/contribuyente/gem/comprobantes/envios/a.b.c') throw new Error(`greTicketRequest: ${greQuery.url}`);
+const states = ['0', '98', '99'].map((code) => JSON.parse(sdk.greTicketResponse(200, gre(`fork-ticket-${code}`), 'a.b.c')));
+const [processed, inProcess, withErrors] = states;
+if (processed.state !== 'processed' || processed.cdr?.reference_id !== 'T001-1' || processed.cdr.class !== 'observed') throw new Error(`ticket 0: ${processed.state}`);
+if (inProcess.state !== 'in_process' || inProcess.cdr_generated !== false || 'cdr' in inProcess) throw new Error(`ticket 98: ${JSON.stringify(inProcess)}`);
+if (withErrors.state !== 'processed_with_errors' || withErrors.error?.code !== '1345' || withErrors.error.class !== 'exception') throw new Error(`ticket 99: ${JSON.stringify(withErrors)}`);
+const greLate = JSON.parse(sdk.greTimeout('ticket', 30, 'a.b.c'));
+let sendLost;
+try {
+  sdk.greSendResponse(502, encoder.encode('<html/>'));
+} catch (error) {
+  sendLost = error.message;
+}
+if (greLate.outcome !== 'no_verdict' || greLate.ticket !== 'a.b.c' || !sendLost?.includes('may have arrived')) throw new Error(`gre silence: ${sendLost}`);
+console.log('ok node gre: token, send, ticket 0/98/99, 422 -> api_error, silence');
 console.log(`ok node ${process.version} ${fromSource ? 'load(WebAssembly.Module)' : 'load()'} via ${resolve(PACKAGE)}`);
 
 if (!fromSource) {

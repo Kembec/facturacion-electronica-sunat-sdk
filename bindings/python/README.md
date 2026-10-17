@@ -74,6 +74,33 @@ sent = sunat_sdk.exchange(
 # {"outcome": "cdr", "cdr": {...}, "cdr_zip_base64": "..."} o {"outcome": "fault", "code", "message", "class"}
 ```
 
+## Guía de remisión remitente (09) por la API REST
+
+```python
+sent = sunat_sdk.gre_send(
+    {"name": built["file_name"], "xml": signed["xml"]},  # RUC-09-SERIE-NUMERO, ya firmada
+    client_id, client_secret,                            # el par de GRE de «Credenciales de API SUNAT»
+    sol_user, sol_password,                              # sol_user: RUC + usuario SOL
+    token_base, api_base,                                # sin valor por defecto
+)
+# {"outcome": "ticket", "ticket", "received_at", "zip_name", "hash_zip"}: guarda el ticket antes que nada
+status = sunat_sdk.gre_ticket(sent["ticket"], client_id, client_secret, sol_user, sol_password, token_base, api_base)
+# state: "processed" (0, con la CDR leída), "in_process" (98) o "processed_with_errors" (99, con su error)
+```
+
+**La SUNAT no tiene ambiente de pruebas para la GRE**: estas funciones se prueban sin red, contra respuestas del manual
+de la SUNAT y de un cliente de terceros, y ninguna guía de este SDK figura como aceptada por la SUNAT. Las URL base
+siempre las pasas tú (las del manual: `https://api-seguridad.sunat.gob.pe/v1/clientessol` para el token y
+`https://api-cpe.sunat.gob.pe/v1` para la API). Cada llamada pide su propio token y `timeout` cubre las dos.
+
+- Con 98, vuelve a consultar con el mismo ticket; nunca reenvíes la guía por eso.
+- Si el envío no recibe respuesta, `gre_send` lanza `SunatSdkError`: la guía pudo haber llegado, así que se reenvía el
+  mismo archivo, nunca la operación con otro número. Un token o una consulta sin respuesta dan
+  `{"outcome": "no_verdict", "stage", ...}`, y un rechazo de la SUNAT, `{"outcome": "api_error", "stage", "errors", ...}`.
+- `gre_token_request`, `gre_token_response`, `gre_token_usable`, `gre_send_request`, `gre_send_response`,
+  `gre_ticket_request`, `gre_ticket_response` y `gre_timeout` son las mismas piezas sin red, para quien usa su propio
+  cliente HTTP o reutiliza el token hasta diez minutos antes de que venza.
+
 ## API
 
 `build` arma XML UBL 2.1 (comprobantes) o UBL 2.0 (resúmenes y bajas), y `sign` lo firma con XML-DSig.
@@ -99,8 +126,8 @@ sent = sunat_sdk.exchange(
 
 En cada cambio, el CI instala el paquete en un entorno limpio y exige, para los 38 vectores de prueba del repositorio, el
 XML sin firmar igual al del vector en C14N y el `DigestValue` y el `SignatureValue` exactos: las mismas firmas que dieron
-código 0 en la beta de la SUNAT el 16/10/2026, enviadas con la CLI. `exchange` se prueba contra un servidor local, sin
-red.
+código 0 en la beta de la SUNAT el 16/10/2026, enviadas con la CLI. `exchange`, `gre_send` y `gre_ticket` se prueban
+contra un servidor local, sin red.
 
 ## Licencia
 

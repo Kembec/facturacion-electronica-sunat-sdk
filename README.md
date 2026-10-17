@@ -21,7 +21,7 @@ cualquiera de ellos. Guías y ejemplos: **https://fe.kembec.com**
 | Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) | crates, sin red |
 | Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` | binario estático |
 
-La versión publicada es la 0.1.0-beta.5. Qué trae, en [Versiones](#versiones).
+La versión publicada es la 0.1.0-beta.6. Qué trae, en [Versiones](#versiones).
 
 ## Tu primer comprobante firmado
 
@@ -29,7 +29,7 @@ Baja a una carpeta vacía una factura de ejemplo y el certificado de prueba del 
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.5
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.6
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -107,9 +107,9 @@ del tag, con la clave corta para que el código diga `sunat_model::…`. `sunat-
 
 ```toml
 [dependencies]
-sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.5" }
-sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.5" }
-sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.5" }
+sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.6" }
+sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.6" }
+sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.6" }
 ```
 
 ```rust
@@ -136,7 +136,7 @@ tú. Lo que expone cada crate está en la [arquitectura](docs/architecture.md).
 En Linux x86_64, el binario estático del release:
 
 ```bash
-url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.5
+url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.6
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl"
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl.sha256"
 sha256sum -c sunat-sdk-x86_64-unknown-linux-musl.sha256
@@ -241,7 +241,15 @@ está en el [modelo de entrada](docs/input-model.md).
 
 ## Versiones
 
-La 0.1.0-beta.5, publicada en npm, PyPI, Packagist y GitHub, suma frente a la 0.1.0-beta.4:
+La 0.1.0-beta.6 suma frente a la 0.1.0-beta.5:
+
+- el comprobante de retención (20): armado, firma y validación con los códigos de la SUNAT, y envío por la CLI a la beta
+  de la SUNAT, donde se aceptaron los tres vectores válidos;
+- descuentos y cargos del catálogo 53 en facturas y boletas, por línea y globales;
+- en el modelo de Rust, `Line`, `Invoice` y `Totals` ganan campos; el JSON de entrada no cambia sin descuentos ni cargos
+  ([CHANGELOG](CHANGELOG.md)).
+
+La 0.1.0-beta.5, publicada en npm, PyPI, Packagist y GitHub, había sumado frente a la 0.1.0-beta.4:
 
 - el envío de la guía de remisión remitente (09) por la API REST de la SUNAT, en la CLI, PHP, Python y JavaScript;
 - en PHP, los resúmenes diarios y las comunicaciones de baja (`summary`, `ticket`);

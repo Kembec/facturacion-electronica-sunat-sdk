@@ -1,6 +1,8 @@
 //! sunat-model: the input (`docs/input-model.md`), its JSON form and its scope
 //! checks.
 
+mod allowance_totals;
+mod allowances;
 mod daily;
 mod datetime;
 mod decimal;
@@ -26,7 +28,7 @@ pub use error::ModelError;
 pub use retention::{ExchangeRate, RetainedDocument, Retention, RetentionAmounts, RetentionLine, RetentionPayment, RetentionSupplier};
 pub use scope::is_xml_text;
 pub use types::{
-    Address, Client, Company, DespatchReference, Detraction, DocumentType, IgvRetention, Installment, Invoice, Legend, Line, LineDiscount, Note, NoteReference, PaymentTerms,
+    Address, AllowanceCharge, Client, Company, DespatchReference, Detraction, DocumentType, IgvRetention, Installment, Invoice, Legend, Line, LineDiscount, Note, NoteReference, PaymentTerms,
     Totals, Voucher,
 };
 

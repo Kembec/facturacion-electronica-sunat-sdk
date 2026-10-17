@@ -85,7 +85,7 @@ fn detraction_goes_with_its_operation_types() {
 }
 
 #[test]
-fn line_discounts_take_code_00_with_sunat_formats() {
+fn line_discounts_take_codes_00_and_01_with_sunat_formats() {
     const RECEIPT: &str = include_str!("../../../fixtures/03-receipt-line-discount.json");
     let discount = |edit: fn(&mut serde_json::Value)| edited(RECEIPT, |v| edit(&mut v["lines"][0]["discounts"][0]));
     let receipt = Document::from_json(RECEIPT).unwrap();
@@ -93,10 +93,9 @@ fn line_discounts_take_code_00_with_sunat_formats() {
     assert_eq!((line.discounts[0].code.as_str(), line.discounts[0].factor.as_str()), ("00", "0.10"));
     assert!(discount(|d| d["factor"] = serde_json::json!("0.100000")).is_ok(), "trailing zeros do not count");
 
-    match discount(|d| d["code"] = serde_json::json!("01")) {
-        Err(ModelError::OutOfScope { feature, .. }) => assert_eq!(feature, "line discounts other than catalog 53 code 00"),
-        other => panic!("code 01: {other:?}"),
-    }
+    // 01 does not reduce the line's base: the receipt has to carry it in allowance_total (4307).
+    assert_eq!(discount(|d| d["code"] = serde_json::json!("01")).unwrap_err().sunat_code(), Some("4307"));
+    assert_eq!(discount(|d| d["code"] = serde_json::json!("02")).unwrap_err().sunat_code(), Some("4268"));
     let rejected: [fn(&mut serde_json::Value); 6] = [
         |d| d["factor"] = serde_json::json!("0.123456"),
         |d| d["factor"] = serde_json::json!("1000"),

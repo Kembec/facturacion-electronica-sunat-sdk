@@ -44,7 +44,6 @@ const LINE_KEYS: &[(&str, &str)] = &[
     ("other_tax", "other taxes"),
     ("other_tax_base", "other taxes"),
     ("other_tax_rate", "other taxes"),
-    ("charges", "line charges"),
 ];
 
 pub(crate) fn check(root: &Value) -> Result<(), ModelError> {

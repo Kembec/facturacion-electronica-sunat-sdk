@@ -4,7 +4,7 @@ build-backend = "maturin"
 
 [project]
 name = "facturacion-electronica-sunat-sdk"
-# From the Cargo workspace version (0.1.0-beta.5 -> 0.1.0b5); scripts/check_version.py fails if they differ.
+# From the Cargo workspace version (0.1.0-beta.6 -> 0.1.0b6); scripts/check_version.py fails if they differ.
 dynamic = ["version"]
 description = "SUNAT (Peru) electronic invoicing: builds the UBL XML of invoices, receipts, credit and debit notes, daily summaries and void communications, signs it, zips it and reads SUNAT's answers."
 readme = "README.md"

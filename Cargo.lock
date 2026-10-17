@@ -395,7 +395,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "kembec-sunat-model"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 dependencies = [
  "serde",
  "serde_json",
@@ -403,7 +403,7 @@ dependencies = [
 
 [[package]]
 name = "kembec-sunat-sdk"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 dependencies = [
  "base64",
  "kembec-sunat-transport",
@@ -413,7 +413,7 @@ dependencies = [
 
 [[package]]
 name = "kembec-sunat-transport"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 dependencies = [
  "base64",
  "quick-xml",
@@ -422,7 +422,7 @@ dependencies = [
 
 [[package]]
 name = "kembec-sunat-ubl"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 dependencies = [
  "kembec-sunat-model",
  "kembec-sunat-xmldsig",
@@ -431,7 +431,7 @@ dependencies = [
 
 [[package]]
 name = "kembec-sunat-xmldsig"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 dependencies = [
  "base64",
  "crypto-bigint",
@@ -798,7 +798,7 @@ checksum = "13c2bddecc57b384dee18652358fb23172facb8a2c51ccc10d74c157bdea3292"
 
 [[package]]
 name = "sunat-sdk-cli"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 dependencies = [
  "base64",
  "kembec-sunat-model",
@@ -811,7 +811,7 @@ dependencies = [
 
 [[package]]
 name = "sunat-sdk-ffi"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 dependencies = [
  "kembec-sunat-xmldsig",
  "serde",
@@ -821,7 +821,7 @@ dependencies = [
 
 [[package]]
 name = "sunat-sdk-python"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 dependencies = [
  "pyo3",
  "sunat-sdk-wasm",
@@ -829,7 +829,7 @@ dependencies = [
 
 [[package]]
 name = "sunat-sdk-wasm"
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 dependencies = [
  "base64",
  "kembec-sunat-model",

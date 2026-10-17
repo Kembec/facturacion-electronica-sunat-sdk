@@ -55,6 +55,7 @@ fn invoice_body(w: &mut XmlWriter, invoice: &Invoice, options: &Options) {
     if let Some(terms) = &v.payment_terms {
         totals::payment_terms(w, terms, &v.currency);
     }
+    totals::global_adjustments(w, &invoice.global_adjustments, &v.currency);
     if let Some(retention) = &v.igv_retention {
         totals::igv_retention(w, retention, &v.currency);
     }

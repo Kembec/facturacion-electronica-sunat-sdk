@@ -10,6 +10,8 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+## [0.1.0-beta.6] - 2026-10-17
+
 ### Added
 
 - Which input field a SUNAT code points at: `sunat_sdk::diagnose(document_type, code, message)` gives the node and value
@@ -23,8 +25,29 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 - Retention voucher (20): `kind: "retention"`, UBL 2.0 `Retention` built, signed and zipped (`RUC-20-R###-N.zip`)
   through the core and the CLI; SUNAT's «Retenciones1_0» rules that read only the document are checked before
   sending, each with its code (2619 rate of the regime, 2623 amounts and exchange rate, 2626 payment number, 2628 and
-  2629 totals, among others). The send term (2600) is a parameter of `Retention::check_send_deadline`. Not sent to
-  SUNAT beta yet; sending by `otroscpe` comes next (#51).
+  2629 totals, among others). The send term (2600) is a parameter of `Retention::check_send_deadline` (#51). Sent by
+  the CLI to SUNAT beta (`otroscpe`): the three valid vectors accepted with code 0; 2619 and 2626 answered as the SDK
+  predicts; a line that breaks both the exchange rate and its amounts is now reported as 2715 before 2623, as the beta
+  answers ([`docs/input-model.md`](docs/input-model.md), `fixtures/retention/beta/`).
+
+### Changed
+
+- **Breaking** — Rust only: `Line` gains `charges`, `Invoice` gains `global_adjustments` and `Totals` gains
+  `allowance_total` and `charge_total`, so code that builds them with a struct literal no longer compiles. Migration:
+  add `charges: vec![]`, `global_adjustments: vec![]`, `allowance_total: None` and `charge_total: None` (or
+  `..Default::default()` in `Totals`). `LineDiscount` stays, as another name for `AllowanceCharge`. The JSON input,
+  the CLI and the other bindings do not change (#54).
+- Catalog 53 discounts and charges in invoices and receipts, which the SDK used to reject: line discount `01` and
+  line charges `47` and `48` (`lines[].charges`), and global discounts `02`, `03` and charges `45`, `46`, `49`, `50`
+  (`global_adjustments`), rendered as `cac:AllowanceCharge` with `ChargeIndicator` derived from the code;
+  `totals.allowance_total` and `totals.charge_total` render as `cbc:AllowanceTotalAmount` and
+  `cbc:ChargeTotalAmount`. A document with any discount or charge has its arithmetic checked before sending, each rule
+  with SUNAT's code (3290 and 3307 `amount` = `base_amount` × `factor`, 3271 line value, 3277 net IGV base, 3291 IGV,
+  3278, 3279, 3280, 3300, 3301); a receipt gets the observation code. The FISE (45) stays outside the IGV base. Not
+  sent to SUNAT beta yet ([`docs/input-model.md`](docs/input-model.md#discounts-and-charges)).
+- `sunat_model::LineDiscount` is now an alias of `AllowanceCharge`; `Line` gains `charges`, `Invoice` gains
+  `global_adjustments` and `Totals` gains `allowance_total` and `charge_total`: Rust code that builds these structs
+  field by field adds them (empty or `None`). JSON input is unchanged for documents without discounts or charges.
 
 ## [0.1.0-beta.5] - 2026-10-17
 
@@ -136,7 +159,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.5...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.6...HEAD
+[0.1.0-beta.6]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.5...v0.1.0-beta.6
 [0.1.0-beta.5]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.4...v0.1.0-beta.5
 [0.1.0-beta.4]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.3...v0.1.0-beta.4
 [0.1.0-beta.3]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.2...v0.1.0-beta.3

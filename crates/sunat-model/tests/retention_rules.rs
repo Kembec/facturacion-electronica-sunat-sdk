@@ -54,16 +54,13 @@ fn v4_rate_6_with_regime_01_is_2619() {
     expect_code(Document::from_json(V4), "2619");
 }
 
-/// V5 breaks 2623 (dato 46) and 2715 (dato 52): the first in the sheet's order is reported.
+/// V5 breaks 2623 (dato 46) and 2715 (dato 52): the SUNAT beta answered 2715 (17/10/2026), so the
+/// exchange rate is checked first; with the target currency fixed, 2623.
 #[test]
-fn v5_usd_as_syma_sends_it_is_2623_then_2715() {
-    expect_code(Document::from_json(V5), "2623");
-    let fixed = with(V5, |v| {
-        v["lines"][0]["retention"] = json!({"date": "2026-10-15", "amount": "112.50", "net_paid": "3637.50"});
-        v["total_retained"] = json!("112.50");
-        v["total_paid"] = json!("3637.50");
-    });
-    expect_code(fixed, "2715");
+fn v5_usd_as_syma_sends_it_is_2715_then_2623() {
+    expect_code(Document::from_json(V5), "2715");
+    let fixed = with(V5, |v| v["lines"][0]["exchange_rate"]["target_currency"] = json!("PEN"));
+    expect_code(fixed, "2623");
 }
 
 /// V6 breaks 2628 and 2629: the first is reported; with the retained total right, 2629.

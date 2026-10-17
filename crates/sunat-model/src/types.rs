@@ -87,6 +87,12 @@ pub struct Totals {
     pub total_taxes: Option<Decimal>,
     pub sale_value: Option<Decimal>,
     pub subtotal: Option<Decimal>,
+    /// `cbc:AllowanceTotalAmount`: line discounts `01` plus global discounts `03`, the ones that do not
+    /// reduce the IGV base (SUNAT 3300).
+    pub allowance_total: Option<Decimal>,
+    /// `cbc:ChargeTotalAmount`: line charges `48` plus global charges `45`, `46` and `50`, the ones that
+    /// do not raise the IGV base (SUNAT 3301).
+    pub charge_total: Option<Decimal>,
     pub rounding: Option<Decimal>,
     pub payable: Option<Decimal>,
 }
@@ -109,24 +115,39 @@ pub struct Line {
     pub unit_price: Option<Decimal>,
     pub line_value: Decimal,
     pub free_unit_value: Option<Decimal>,
-    /// Discounts that reduce the IGV base of this line (catalog 53 code `00`), invoice and receipt
-    /// only. `line_value` already has them subtracted: SUNAT checks `unit_value` × `quantity` minus
-    /// these amounts against it, within 1.
+    /// Line discounts, invoice and receipt only: catalog 53 code `00` reduces the IGV base and
+    /// `line_value` already has it subtracted (SUNAT 3271); `01` does not.
     #[serde(default)]
-    pub discounts: Vec<LineDiscount>,
+    pub discounts: Vec<AllowanceCharge>,
+    /// Line charges, invoice and receipt only: catalog 53 code `47` raises the IGV base and
+    /// `line_value` already has it added (SUNAT 3271); `48` does not.
+    #[serde(default)]
+    pub charges: Vec<AllowanceCharge>,
 }
 
-/// One `cac:AllowanceCharge` of a line with `ChargeIndicator` false. SUNAT checks `amount` against
-/// `base_amount` × `factor`, within 1.
+/// One `cac:AllowanceCharge`, of a line or of the document. `ChargeIndicator` is not an input: it
+/// follows from the code (`AllowanceCharge::is_charge`), so SUNAT's 3114 cannot be built. SUNAT
+/// checks `amount` against `base_amount` × `factor`, within 1 (3290 line, 3307 global).
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct LineDiscount {
-    /// Catalog 53; only `"00"`.
+pub struct AllowanceCharge {
+    /// Catalog 53: `00`, `01` (line discount), `47`, `48` (line charge), `02`, `03` (global discount),
+    /// `45`, `46`, `49`, `50` (global charge).
     pub code: String,
     /// Positive, up to 3 integer digits and 5 decimals (`"0.15"`).
     pub factor: Decimal,
     pub amount: Decimal,
     pub base_amount: Decimal,
+}
+
+/// The name the line discount had when code `00` was the only one: same type.
+pub type LineDiscount = AllowanceCharge;
+
+impl AllowanceCharge {
+    /// `ChargeIndicator`: true for the charges of catalog 53 (45 to 50), false for the discounts.
+    pub fn is_charge(&self) -> bool {
+        matches!(self.code.as_str(), "45" | "46" | "47" | "48" | "49" | "50")
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
@@ -242,6 +263,9 @@ pub struct Invoice {
     pub operation_type: String,
     pub due_date: Option<DateTime>,
     pub detraction: Option<Detraction>,
+    /// Global discounts and charges (catalog 53 `02`, `03`, `45`, `46`, `49`, `50`). `02` and `49`
+    /// change the IGV base and the totals already carry them; see `docs/input-model.md`.
+    pub global_adjustments: Vec<AllowanceCharge>,
 }
 
 /// Credit (07) or debit (08) note.

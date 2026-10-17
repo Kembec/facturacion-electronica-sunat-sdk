@@ -1,4 +1,4 @@
-use crate::{Company, Decimal, Detraction, Document, DocumentType, IgvRetention, Invoice, Line, LineDiscount, ModelError, Summary, SummaryLine, Voided, Voucher};
+use crate::{Company, Decimal, Detraction, Document, DocumentType, IgvRetention, Invoice, Line, ModelError, Summary, SummaryLine, Voided, Voucher};
 
 /// Catalog 07 codes the SDK renders.
 const AFFECTATIONS: &[&str] = &[
@@ -14,13 +14,23 @@ impl Document {
                 check_voucher(&invoice.voucher, &[DocumentType::Invoice, DocumentType::Receipt])?;
                 require_text("$.operation_type", &invoice.operation_type)?;
                 check_detraction(invoice)?;
-                require(invoice.voucher.totals.sale_value.is_some(), "$.totals.sale_value")
+                require(invoice.voucher.totals.sale_value.is_some(), "$.totals.sale_value")?;
+                crate::allowances::check(invoice)
             }
             Document::Note(note) => {
                 check_voucher(&note.voucher, &[DocumentType::CreditNote, DocumentType::DebitNote])?;
                 if let Some(index) = note.voucher.lines.iter().position(|line| !line.discounts.is_empty()) {
                     let path = format!("$.lines[{index}].discounts");
                     return Err(ModelError::OutOfScope { path, feature: "line discounts in credit and debit notes" });
+                }
+                if let Some(index) = note.voucher.lines.iter().position(|line| !line.charges.is_empty()) {
+                    let path = format!("$.lines[{index}].charges");
+                    return Err(ModelError::OutOfScope { path, feature: "line charges in credit and debit notes" });
+                }
+                let totals = &note.voucher.totals;
+                if totals.allowance_total.is_some() || totals.charge_total.is_some() {
+                    let feature = "discount and charge totals in credit and debit notes";
+                    return Err(ModelError::OutOfScope { path: "$.totals".into(), feature });
                 }
                 let reference = &note.reference;
                 crate::ivap::check_note(&note.voucher, &reference.reason_code)?;
@@ -67,25 +77,7 @@ fn check_line(index: usize, line: &Line) -> Result<(), ModelError> {
         return Err(ModelError::invalid(path, "not a catalog 07 code"));
     }
     require_text(&format!("$.lines[{index}].unit"), &line.unit)?;
-    require_text(&format!("$.lines[{index}].description"), &line.description)?;
-    line.discounts.iter().enumerate().try_for_each(|(n, discount)| check_discount(&format!("$.lines[{index}].discounts[{n}]"), discount))
-}
-
-/// The formats SUNAT rejects otherwise (errors 3052, 2955 and 3053); the arithmetic it checks
-/// (3290, 3271) stays with the caller, like every other amount.
-fn check_discount(path: &str, discount: &LineDiscount) -> Result<(), ModelError> {
-    if discount.code != "00" {
-        let path = format!("{path}.code");
-        return Err(ModelError::OutOfScope { path, feature: "line discounts other than catalog 53 code 00" });
-    }
-    let positive = |field: &str, value: &Decimal, int_max: usize, frac_max: usize| {
-        let ok = !value.is_negative() && !value.is_zero() && fits(value, int_max, frac_max);
-        let expected = format!("a positive amount with up to {int_max} integer digits and {frac_max} decimals");
-        check_format(&format!("{path}.{field}"), value.as_str(), &expected, |_| ok)
-    };
-    positive("factor", &discount.factor, 3, 5)?;
-    positive("amount", &discount.amount, 12, 2)?;
-    positive("base_amount", &discount.base_amount, 12, 2)
+    require_text(&format!("$.lines[{index}].description"), &line.description)
 }
 
 /// What SUNAT rejects in the IGV retention without reading its registers: the formats (3025, 2968,
@@ -155,7 +147,7 @@ fn check_detraction_fields(detraction: &Detraction, operation: &str) -> Result<(
 }
 
 /// At most `int_max` integer digits and `frac_max` decimals, as rendered (no leading or trailing zeros).
-fn fits(value: &Decimal, int_max: usize, frac_max: usize) -> bool {
+pub(crate) fn fits(value: &Decimal, int_max: usize, frac_max: usize) -> bool {
     let unsigned = value.as_str().trim_start_matches('-');
     let (int, frac) = unsigned.split_once('.').unwrap_or((unsigned, ""));
     int.trim_start_matches('0').len() <= int_max && frac.trim_end_matches('0').len() <= frac_max
@@ -268,7 +260,7 @@ fn currency(text: &str) -> bool {
     text.len() == 3 && text.bytes().all(|b| b.is_ascii_uppercase())
 }
 
-fn check_format(path: &str, value: &str, expected: &str, ok: impl Fn(&str) -> bool) -> Result<(), ModelError> {
+pub(crate) fn check_format(path: &str, value: &str, expected: &str, ok: impl Fn(&str) -> bool) -> Result<(), ModelError> {
     if ok(value) {
         return Ok(());
     }

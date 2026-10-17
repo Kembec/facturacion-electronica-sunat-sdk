@@ -6,9 +6,9 @@ compute taxes.
 
 Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV (affectations
 10-16, 20, 21, 30-37, 40) and IVAP (affectation 17, see IVAP). Not supported, rejected with an
-explicit error: ISC, ICBPER, other taxes, global discounts or charges, line charges, line
-discounts other than catalog 53 code `00` or in notes, advances, detraction on operation types 1002 and
-1004, perception.
+explicit error: ISC, ICBPER, other taxes, catalog 53 codes other than those of Discounts and
+charges, discounts and charges in notes, advances, detraction on operation types 1002 and 1004,
+perception.
 
 The daily summary (RC), the void communication (RA), the sender's despatch advice (09) and the
 retention voucher (20) have their own sections below.
@@ -37,6 +37,7 @@ retention voucher (20) have their own sections below.
 | `order_reference` | optional, the purchase or service order number, see Related documents |
 | `despatch_references` | optional, `[{ "document_type": "09", "number": "T001-45" }]`, see Related documents |
 | `igv_retention` | optional, 01/03/07/08, see IGV retention |
+| `global_adjustments` | optional, invoice and receipt only, see Discounts and charges |
 
 ## Related documents
 
@@ -104,7 +105,10 @@ issuer's), `email`, `telephone`.
 ## Totals
 
 `taxed`, `unaffected`, `exempt`, `export`, `free`, `free_igv`, `igv`, `ivap_base`, `ivap`,
-`total_taxes`, `sale_value`, `subtotal`, `rounding`, `payable`. An absent total is not rendered.
+`total_taxes`, `sale_value`, `subtotal`, `allowance_total`, `charge_total`, `rounding`, `payable`. An
+absent total is not rendered. `allowance_total` and `charge_total` (`cbc:AllowanceTotalAmount`,
+`cbc:ChargeTotalAmount`) carry the discounts and charges that do not change the IGV base, see
+Discounts and charges.
 
 ## IVAP
 
@@ -125,17 +129,56 @@ and 10 (3230: beta rejected a credit note with type 07 and a debit note with typ
 
 `unit` (catalog 03, `"NIU"`, `"ZZ"`), `quantity`, `product_code`, `sunat_product_code`, `description`,
 `unit_value`, `igv_base`, `igv_rate` (`"18.00"`), `igv`, `affectation` (catalog 07), `total_taxes`,
-`unit_price`, `line_value`, `free_unit_value` (free lines), `discounts` (invoice and receipt only).
+`unit_price`, `line_value`, `free_unit_value` (free lines), `discounts` and `charges` (invoice and
+receipt only, see Discounts and charges).
 
-`discounts`: `[{ "code": "00", "factor": "0.15", "amount": "12.71", "base_amount": "84.74" }]`, discounts
-that reduce the line's IGV base (catalog 53 code `00`), each rendered as a `cac:AllowanceCharge` with
-`ChargeIndicator` false. `factor` is positive with up to 3 integer digits and 5 decimals; `amount` and
-`base_amount` are positive with up to 2 decimals; trailing zeros do not count and the three print in
-their shortest form (`0.10` → `0.1`). The arithmetic stays with the caller, as for every amount: SUNAT
-rejects an `amount` that differs from `base_amount` × `factor` by more than 1 (error 3290) and a
-`line_value` that differs from `unit_value` × `quantity` minus the discounts by more than 1 (3271).
-So `unit_value` is the value before the discount: SUNAT beta rejected an invoice whose `unit_value` was
-already net of the declared discount (3271) and accepted the same receipt with observation 4288.
+## Discounts and charges
+
+Catalog 53, invoice and receipt only. Each one is `{ "code": "00", "factor": "0.15", "amount": "12.71",
+"base_amount": "84.74" }` and renders as one `cac:AllowanceCharge`; `ChargeIndicator` is not an input,
+it follows from the code (so SUNAT's 3114 cannot happen).
+
+| Where | Code | IGV base | Goes to |
+|---|---|---|---|
+| `lines[].discounts` | `00` | reduces the line's | `line_value` (minus) |
+| `lines[].discounts` | `01` | no | `totals.allowance_total` |
+| `lines[].charges` | `47` | raises the line's | `line_value` (plus) |
+| `lines[].charges` | `48` | no | `totals.charge_total` |
+| `global_adjustments` | `02` discount | reduces the document's | `taxed`, `sale_value`, `igv` (minus) |
+| `global_adjustments` | `49` charge | raises the document's | `taxed`, `sale_value`, `igv` (plus) |
+| `global_adjustments` | `03` discount | no | `totals.allowance_total` |
+| `global_adjustments` | `45` FISE, `46` recargo al consumo, `50` other | no | `totals.charge_total` |
+
+The FISE (45) stays outside the IGV base, as SUNAT's rules have it (3301); whether it belongs in the
+base under article 14 of the IGV law is the issuer's decision with its adviser.
+
+The caller gives every amount; the SDK checks them, with SUNAT's tolerance of 1, only in a document that
+has a discount or a charge (a document without them is checked as before). In the order of SUNAT's
+sheet, each with the code an invoice gets (a receipt gets the observation in brackets, and the SDK
+rejects it too):
+
+- codes: required (3072 global, 3073 line); a line code at document level 3071 (4291); a global code on
+  a line 4268; outside catalog 53, 3071 or 2954; codes `04` to `07`, `20`, `51` to `54` and `61` to
+  `64` are out of scope, and `62` goes in `igv_retention`;
+- formats: `factor` positive with up to 3 integer digits and 5 decimals, `amount` and `base_amount`
+  positive with up to 2 decimals, trailing zeros not counted (global 3025, 2968, 3016; line 3052, 2955,
+  3053); the FISE needs `base_amount` (3092) and `amount` (3074) above zero; `allowance_total` and
+  `charge_total` up to 2 decimals (2065, 2064);
+- `amount` = `base_amount` × `factor`, rounded half up to the cent: 3290 (4289) line, 3307 (4322) global;
+- invoice line: `line_value` = `unit_value` × `quantity` − discounts `00` + charges `47` (3271), so
+  `unit_value` is the value before them: beta rejected an invoice whose `unit_value` was already net of
+  the declared discount (3271) and accepted the same receipt with observation 4288;
+- `allowance_total` = line `01` + global `03` (3300, 4307); `charge_total` = line `48` + global `45`, `46`,
+  `50` (3301, 4308); `payable` = `subtotal` + `charge_total` − `allowance_total` + `rounding` (3280, 4312);
+- `taxed` = Σ `line_value` of the lines with affectation 10 − global `02` + global `49` (3277, 4299);
+  `igv` = the lines' rate × that base (3291, 4290); `sale_value` = Σ `line_value` of the lines with
+  affectation 10, 17, 20, 30 or 40 − `02` + `49` (3278, 4309); `subtotal` = `sale_value` + `total_taxes`
+  (3279, 4310).
+
+A global `02` or `49` with lines at two IGV rates (18 and 10.5) is out of scope: the sheet does not say
+how it splits between them. Each line keeps its own IGV over its own base; only the document's IGV is net
+of `02` and `49`. Vectors: `fixtures/allowances/` (`inv-01` to `inv-06` valid, `inv-R1` to `inv-R3`
+rejected with 3277, 3307 and 3290). Not sent to SUNAT beta yet.
 
 ## Note (07, 08)
 
@@ -203,8 +246,10 @@ dates are `YYYY-MM-DD`.
 
 The sender's despatch advice (guía de remisión remitente): UBL 2.1 `DespatchAdvice`, SUNAT
 customization 2.0. `build` renders it with `file_name` `RUC-09-SERIES-NUMBER` and `sign` signs it like
-any other document. Sending it is not covered: SUNAT receives despatch advices only through its REST
-service, not through `sendBill`.
+any other document. SUNAT receives despatch advices only through its REST service, not through `sendBill`: the CLI sends
+the signed guide with `gre-send` and reads its ticket with `gre-ticket` ([`cli.md`](cli.md)), and PHP and Python wrap the same two calls (JavaScript gives the
+requests and reads the answers, without the network). SUNAT has no test environment for them, so none of it
+has been accepted by SUNAT.
 
 Not supported, rejected with an explicit error: transfer reasons `08`, `09` and `18` (imports, exports,
 itinerant issuer: ports, airports, containers and customs data), related documents `49` and `80`
@@ -276,8 +321,7 @@ documents were issued.
 
 The comprobante de retención electrónico: UBL 2.0 `Retention`, SUNAT customization 1.0. `build`
 renders it with `file_name` `RUC-20-SERIES-NUMBER` and `sign` signs it like any other document; `zip`
-gives `RUC-20-SERIES-NUMBER.zip`. Sending it (`sendBill` of SUNAT's `otroscpe` service) is not
-covered yet.
+gives `RUC-20-SERIES-NUMBER.zip`. The CLI sends it with `send` to SUNAT's `otroscpe` service (`sendBill`).
 
 As everywhere else, the caller gives every amount and the SDK reconciles them: it does not compute
 the retention, it checks it. All amounts of the voucher itself are in PEN.
@@ -316,15 +360,19 @@ them but they carry no payment and stay out of the totals) and the reversal summ
 ## What is checked, and what is not
 
 The SUNAT validation rules of sheet «Retenciones1_0» that read only the document are checked in the
-sheet's order, each rejected with the code SUNAT would answer (`{"error": "$.rate: must be the
+sheet's order, except that a line's exchange rate goes before the amounts it converts (the beta answered 2715, not
+2623, to a line that breaks both), each rejected with the code SUNAT would answer (`{"error": "$.rate: must be the
 regime's rate (01: 3.00, 02: 6.00) (SUNAT ERR-2619)"}`); one test per code in
 `crates/sunat-model/tests/retention_rules.rs`. The vectors are `fixtures/retention/`: `v1` to `v3`
 (PEN, several documents and payments, USD) build, sign and pass the independent verifier
 (`crates/sunat-ubl/tests/retention.rs`); `v4` (6 % with regime 01), `v5` (USD amounts without the
 exchange rate, target currency USD) and `v6` (totals summed before rounding the lines) are rejected
-with 2619, 2623 then 2715, and 2628 then 2629. These vectors were written by this SDK and have not
-been sent to SUNAT beta yet: they guard the rules, they do not prove acceptance. There is no SUNAT
-schema for `Retention` in the repository.
+with 2619, 2715 then 2623, and 2628 then 2629. On 17/10/2026 the SUNAT beta (`otroscpe`) accepted `v1` to `v3`
+with code 0 and no notes, rejected `v4` with 2619, `v5` with 2715 and a payment number repeated for the same
+document with 2626, and accepted `v6` with code 0 although its totals differ by 0.01 from the sum of the lines: the beta does not apply 2628 and 2629, and the SDK keeps rejecting that locally because SUNAT's validation sheet allows no difference. An
+identical resend of an accepted voucher got code 0 again, not 1033: the beta keeps no record, so what production
+answers to a resend is still unproven. The signed XML sent, the CLI's answer and the CDR of each are in
+`fixtures/retention/beta/`. There is no SUNAT schema for `Retention` in the repository.
 
 The send term (2600) is not part of `validate`, which has no clock: `Retention::check_send_deadline(now,
 max_days)` checks it with the term as a parameter. Note: RS 274-2015 art. 41 gives 7 calendar days

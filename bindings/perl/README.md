@@ -44,10 +44,11 @@ instalarse copia solo el de tu máquina. No llama a ningún programa externo ni 
 | macOS Intel / Apple Silicon | el del sistema o el tuyo, 5.26 o posterior |
 | Windows de 64 bits | Strawberry Perl de 64 bits |
 
-`0.000999_004` es la versión 0.1.0-beta.4 del SDK escrita como la ordena CPAN: una beta es una versión de prueba
-(*trial*), y cuando salga 0.1.0 será `0.001000`. Corre en Perl 5.26 o posterior y su única dependencia que no viene con
-Perl es [FFI::Platypus](https://metacpan.org/pod/FFI::Platypus), que `cpanm` instala solo; para compilarla hace falta
-un compilador de C (en Linux, `build-essential` o `gcc`; en macOS, las Command Line Tools; Strawberry Perl ya lo trae).
+`0.000999_004` es la 0.1.0-beta.4 del SDK en la numeración de CPAN, una versión *trial*; 0.1.0 será `0.001000`. Corre
+en Perl 5.26 o posterior (probado en 5.40, 5.42 y 5.44 en Linux y macOS, en 5.26 en Linux x64 y en Strawberry Perl 5.40
+y 5.42 en Windows x64). Su única dependencia que no viene con Perl es
+[FFI::Platypus](https://metacpan.org/pod/FFI::Platypus), que `cpanm` instala y compila con el compilador de C de tu
+sistema (Strawberry Perl ya lo trae).
 En otra plataforma, `KEMBEC_SUNAT_SDK_LIBRARY` apunta a una biblioteca compilada desde
 [`bindings/ffi`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/bindings/ffi); sin ella, la
 instalación se detiene con «OS unsupported».
@@ -204,8 +205,7 @@ Lo mismo que el SDK en cualquier lenguaje: la lista completa está en el
 [alcance del SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk#alcance) y cada campo, en el
 [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md). Lo que
 el SDK no cubre lo rechaza con un error explícito en vez de armar un XML que la SUNAT rechazaría. No hay biblioteca
-para Alpine (musl), Windows ARM64 ni Windows de 32 bits: Strawberry Perl dejó de publicarse en 32 bits después de la
-5.38.
+para Alpine (musl), Windows ARM64 ni Windows de 32 bits: Strawberry Perl no publica 32 bits después de la 5.38.2.
 
 ## Pruebas
 
@@ -214,13 +214,13 @@ Lo que aceptó la SUNAT y cómo se comprueba cada versión está en
 aceptó 36 de los 38 documentos de ejemplo; las 2 guías de remisión no tienen beta.
 
 Para esta distribución, el CI compila el núcleo para las cinco plataformas, arma la distribución, la instala con
-`cpanm` como lo harías tú (eso corre también sus pruebas de `t/`) y corre la batería en Perl 5.40, 5.42 y 5.44 (en
-Windows, Strawberry Perl 5.40 y 5.42, la última que publica) y en 5.26, la mínima, en Linux x64: cada uno de los 38
+`cpanm` como lo harías tú (eso corre también sus pruebas de `t/`) y corre la batería en Perl 5.40, 5.42 y 5.44 en Linux
+y macOS, en 5.26, la mínima, en Linux x64, y en Strawberry Perl 5.40 y 5.42 en Windows x64: cada uno de los 38
 documentos de [fixtures](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/fixtures) tiene que
 dar, con `build` y `sign`, el XML y la firma exactos de
 [tests/vectors](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/tests/vectors), y falla si el
 módulo no es el instalado o la biblioteca no es la de su plataforma. Además, ocho procesos hijos y ocho hilos firman a
-la vez. `status`, `validity` y `gre_ticket` se prueban sin respuesta contra un servidor local mudo, y `read_cdr` contra
+la vez (en Windows, donde `fork` lo emula Perl con hilos, solo los hilos). `status`, `validity` y `gre_ticket` se prueban sin respuesta contra un servidor local mudo, y `read_cdr` contra
 una CDR grabada; no envía nada a la SUNAT.
 
 ## Licencia

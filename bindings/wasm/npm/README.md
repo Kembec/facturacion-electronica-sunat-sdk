@@ -2,9 +2,13 @@
 
 Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **JavaScript y TypeScript**, con la misma API en Node
 18 o posterior y en el navegador. Con los datos de una factura (01), una boleta (03), una nota de crédito (07) o de
-débito (08), un resumen diario de boletas (RC) o una comunicación de baja (RA), arma el archivo XML que pide la SUNAT,
-lo firma con tu certificado digital y lo comprime. El envío lo haces con tu propio `fetch`: el paquete te da la
-petición lista y lee la respuesta de la SUNAT, que dice si lo aceptó. Es la versión para JavaScript y TypeScript del
+débito (08), un resumen diario de boletas (RC) o una comunicación de baja (RA):
+
+- arma el archivo XML que pide la SUNAT, lo firma con tu certificado digital y lo comprime;
+- te da la petición a la SUNAT lista para tu propio `fetch`, y lee la respuesta, que dice si lo aceptó;
+- arma la consulta del estado de un comprobante ya enviado en la Consulta Integrada de la SUNAT (`validity`).
+
+Es la versión para JavaScript y TypeScript del
 [SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en PHP, Python, Rust y la
 línea de comandos: los mismos datos dan el mismo comprobante firmado en todos.
 
@@ -45,9 +49,8 @@ const signed = JSON.parse(sdk.sign(xml, read('test-cert.pem'), read('test-key.pe
 console.log(file_name, signed.digest_value); // 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
 ```
 
-`+te61a2ub5MlTFf8tKTPNGWEXKI=` es el `DigestValue` del vector
-[`01-invoice-taxed-cash`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/tests/vectors/01-invoice-taxed-cash.signed.xml):
-el mismo que dan la CLI, PHP, Python y Rust. Tus documentos llevan la forma del
+Si imprime `20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=` (el nombre del archivo y la huella de la firma), el
+paquete funciona: es la misma salida que dan la CLI, PHP, Python y Rust. Tus propios documentos siguen la forma del
 [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
 
 ## Enviar a la SUNAT
@@ -73,7 +76,35 @@ const sent = await exchange('send', JSON.stringify({ name: file_name, xml: signe
 // { outcome: 'cdr', cdr, cdr_zip_base64 } o { outcome: 'fault', code, message, class }
 ```
 
+## Consultar el estado de un comprobante (Consulta Integrada)
+
+`validityRequest` pregunta a la Consulta Integrada de la SUNAT si una factura, boleta o nota (01, 03, 07, 08) existe y
+en qué estado está. Usa las «Credenciales de API SUNAT» que se crean en SOL para esta consulta: no el usuario SOL ni el
+par de la GRE. Son dos llamadas, y las dos van con tu `fetch`:
+
+```js
+const read = async (res) => new Uint8Array(await res.arrayBuffer());
+const tokenCall = JSON.parse(sdk.validityTokenRequest(clientId, clientSecret));
+const tokenRes = await fetch(tokenCall.url, tokenCall);
+const token = JSON.parse(sdk.validityTokenResponse(tokenRes.status, await read(tokenRes)));
+if (token.outcome !== 'token') throw new Error(token.message); // no_verdict: vuelve a intentar
+const input = { ruc: '20123456789', document_type: '01', series: 'F001', number: 123, issue_date: '2026-10-16', total: '118.00' };
+const queryCall = JSON.parse(sdk.validityRequest(JSON.stringify(input), token.access_token));
+const queryRes = await fetch(queryCall.url, queryCall);
+const check = JSON.parse(sdk.validityResponse(queryRes.status, await read(queryRes)));
+// { outcome: 'validity', state: 'accepted' | 'voided' | 'not_reported' | ..., observations } · query_error · no_verdict
+```
+
+- **No hay ambiente de pruebas**: por defecto la consulta va a producción; el último argumento opcional de
+  `validityTokenRequest` y `validityRequest` reemplaza la URL base. El token es un secreto: no lo guardes en logs.
+- Ningún resultado es motivo para emitir la operación con otro número: `not_reported` no prueba que el comprobante no
+  llegó (el ticket de un resumen puede seguir en proceso), así que antes se concilia con `ticket` o `status`.
+- Sin respuesta (un 401 incluido) o al acabarse la espera (`validityTimeout(stage, seconds)`), el resultado es
+  `{ outcome: 'no_verdict', stage, ... }`: vuelve a consultar con los mismos datos.
+
 ## Guía de remisión remitente (09) por la API REST
+
+Estas funciones están en la rama `main` y todavía no en un release: la 0.1.0-beta.4 de npm no las trae.
 
 La guía no va por SOAP: un token con la clave SOL, el envío del zip y la consulta del ticket. El paquete arma cada
 llamada (con su `url`) y lee cada respuesta; el `fetch` es tuyo, como con `soapRequest`.
@@ -95,20 +126,18 @@ const ticketRes = await fetch(ticketCall.url, { method: 'GET', headers: ticketCa
 const status = JSON.parse(sdk.greTicketResponse(ticketRes.status, await read(ticketRes), sent.ticket));
 ```
 
-**La SUNAT no tiene ambiente de pruebas para la GRE**: estas funciones se prueban sin red, contra respuestas del manual
-de la SUNAT y de un cliente de terceros, y ninguna guía de este SDK figura como aceptada por la SUNAT. Las URL base no
-tienen valor por defecto (las del manual: `https://api-seguridad.sunat.gob.pe/v1/clientessol` para el token y
+**La SUNAT no tiene ambiente de pruebas para la GRE**, y ninguna guía de este SDK figura como aceptada por la SUNAT. Las
+URL base no tienen valor por defecto (las del manual: `https://api-seguridad.sunat.gob.pe/v1/clientessol` para el token y
 `https://api-cpe.sunat.gob.pe/v1` para la API).
 
-- `greTokenResponse` pide la hora de llegada en segundos Unix y devuelve `expires_at`; `greTokenUsable(tokenJson, now)`
-  dice si el token sirve todavía (se renueva diez minutos antes de vencer). El token y el cuerpo del pedido de token son
-  secretos: no los guardes en logs.
+- `greTokenResponse` pide la hora de llegada en segundos Unix y devuelve `expires_at`. `greTokenUsable(tokenJson, now)`
+  dice si el token sirve todavía; se renueva diez minutos antes de vencer.
+- El token y el cuerpo del pedido de token son secretos: no los guardes en logs.
 - Si el envío no recibe respuesta, o recibe una que no es de la SUNAT, `greSendResponse` y `greTimeout('send', s)` lanzan
   un `Error`: la guía pudo haber llegado, así que se reenvía el mismo archivo, nunca la operación con otro número.
   `greTimeout('token', s)` y `greTimeout('ticket', s, ticket)` dan `{ outcome: 'no_verdict', stage, ... }`.
 - Un rechazo de la SUNAT llega como `{ outcome: 'api_error', stage, http_status, general_error, code, message, errors }`.
-- Con 98, vuelve a consultar con el mismo ticket; nunca reenvíes la guía por eso. Desde el navegador depende de que la
-  SUNAT acepte peticiones de otro origen (CORS), que no se ha probado.
+- Con 98, vuelve a consultar con el mismo ticket; nunca reenvíes la guía por eso.
 
 ## API
 
@@ -131,10 +160,12 @@ Todas las funciones reciben y devuelven texto JSON, y lanzan un `Error` con el m
   ([contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md)). Un error SOAP
   de la SUNAT no lanza: llega como `{ outcome: 'fault', ... }`.
 - `soapTimeout(exchange, inputJson, seconds)`: el resultado cuando no llegó respuesta en `seconds` segundos.
-- Si `ticket` o `status` no reciben respuesta (un estado HTTP distinto de 200 y 500, o se acabó la espera), el
-  resultado es `{ outcome: 'no_verdict', reason, http_status, message }` (`ticket` agrega el mismo `ticket`): no dice
-  nada del documento, así que se vuelve a consultar y nunca se reenvía. En `send` y `summary`, ese mismo caso lanza un
-  `Error`, porque el documento pudo haber llegado.
+- Si `ticket` o `status` no reciben respuesta, el resultado es `{ outcome: 'no_verdict', reason, http_status, message }`
+  (`ticket` agrega el mismo `ticket`). Cuenta como sin respuesta un estado HTTP distinto de 200 y 500, o que se acabe la
+  espera. No dice nada del documento: vuelve a consultar y nunca lo reenvíes.
+- En `send` y `summary`, ese mismo caso lanza un `Error`, porque el documento pudo haber llegado.
+- `validityTokenRequest`, `validityTokenResponse`, `validityRequest`, `validityResponse` y `validityTimeout`: la
+  Consulta Integrada, [arriba](#consultar-el-estado-de-un-comprobante-consulta-integrada).
 - El certificado, la llave y las credenciales SOL los pasa quien llama: el paquete no los busca en archivos ni en el entorno.
 
 ## Dónde se carga el WebAssembly
@@ -155,15 +186,15 @@ const sdk = await load(wasm);
 En Node 18, donde `globalThis.crypto` no existe sin una opción de arranque, `load` lo define con
 `webcrypto` de `node:crypto`: la firma lo necesita. Si ya existe, no lo toca.
 
-## Cómo se comprueba
+## Límites y pruebas
 
-En cada cambio, el CI instala el paquete empaquetado en un proyecto limpio y exige, en Node 18, Node 22 y Chrome, el
-`DigestValue` y el `SignatureValue` exactos de los 38 vectores de prueba del repositorio. La beta de la SUNAT aceptó el
-16/10/2026 36 de esas firmas, enviadas con la CLI: los 29 comprobantes y los 7 resúmenes y bajas. Las 2 guías de
-remisión no pasan por la beta: la SUNAT no tiene ambiente de pruebas para la GRE. La carga con el módulo ya compilado se prueba en Node; en Cloudflare Workers y con
-bundlers no se ha probado. El envío desde JavaScript se prueba sin red, con respuestas escritas a mano (la GRE, con las
-respuestas grabadas del núcleo), y desde el
-navegador depende de que la SUNAT acepte peticiones de otro origen (CORS), que no se ha probado.
+- El envío desde el navegador depende de que la SUNAT acepte peticiones de otro origen (CORS), y eso no se ha probado.
+- La carga con el módulo ya compilado se prueba en Node; en Cloudflare Workers y con bundlers, no.
+- Lo que aceptó la SUNAT y cómo se comprueba cada versión está en
+  [Cómo se comprueba](https://github.com/Kembec/facturacion-electronica-sunat-sdk#cómo-se-comprueba): la beta de la
+  SUNAT aceptó 36 de los 38 documentos de ejemplo; las 2 guías de remisión no tienen beta. Para este paquete, el CI lo
+  instala en un proyecto limpio y exige la firma exacta de los 38 en Node 18, Node 22 y Chrome; el envío se prueba sin
+  red, con respuestas escritas a mano (la GRE, con las respuestas grabadas del núcleo).
 
 ## Licencia
 

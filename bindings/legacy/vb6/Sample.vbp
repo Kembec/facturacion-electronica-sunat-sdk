@@ -1,0 +1,13 @@
+Type=Exe
+Module=SunatSdk; SunatSdk.bas
+Module=SunatJson; SunatJson.bas
+Module=Sample; Sample.bas
+Startup="Sub Main"
+Command32=""
+Name="SunatSdkSample"
+ExeName32="SunatSdkSample.exe"
+Title="SunatSdkSample"
+MajorVer=1
+MinorVer=0
+RevisionVer=0
+CompatibleMode="0"

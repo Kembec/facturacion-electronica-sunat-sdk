@@ -1,0 +1,54 @@
+$PBExportHeader$f_sunat_sdk_sample.srf
+$PBExportComments$Builds and signs the test invoice of the zip; returns the file name and the DigestValue
+global type f_sunat_sdk_sample from function_object
+end type
+
+forward prototypes
+global function string f_sunat_sdk_sample (string as_root)
+end prototypes
+
+global function string f_sunat_sdk_sample (string as_root);// as_root: the folder where the zip was unpacked, ending in "\", for example "C:\sunat-sdk\".
+// Signs with the self-generated test certificate (valid for no taxpayer). Expected result:
+// 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
+n_sunat_sdk lnv_sdk
+JSONParser lnv_built, lnv_signed
+JSONGenerator lnv_request
+environment lenv
+blob lb_document
+string ls_arch, ls_built, ls_signed
+long ll_file, ll_root, ll_flags, ll_input
+
+GetEnvironment(lenv)
+if lenv.ProcessBitness = 64 then
+	ls_arch = "x64"
+else
+	ls_arch = "x86"
+end if
+lnv_sdk = create n_sunat_sdk
+lnv_sdk.of_load(as_root + "dll\" + ls_arch + "\sunat_sdk_ffi.dll")
+
+// Read as bytes and decoded as UTF-8: the document is UTF-8 without a BOM.
+ll_file = FileOpen(as_root + "sample\01-invoice-taxed-cash.json", StreamMode!, Read!, Shared!)
+FileReadEx(ll_file, lb_document)
+FileClose(ll_file)
+ls_built = lnv_sdk.of_call('{"command":"build","input":' + String(lb_document, EncodingUTF8!) + '}')
+
+lnv_built = create JSONParser
+lnv_built.LoadString(ls_built)
+
+// JSONGenerator escapes the XML and the paths as JSON strings.
+lnv_request = create JSONGenerator
+ll_root = lnv_request.CreateJsonObject()
+lnv_request.AddItemString(ll_root, "command", "sign")
+ll_flags = lnv_request.AddItemObject(ll_root, "flags")
+lnv_request.AddItemString(ll_flags, "cert", as_root + "sample\test-cert.pem")
+lnv_request.AddItemString(ll_flags, "key", as_root + "sample\test-key.pem")
+ll_input = lnv_request.AddItemObject(ll_root, "input")
+lnv_request.AddItemString(ll_input, "xml", lnv_built.GetItemString(lnv_built.GetRootItem(), "xml"))
+ls_signed = lnv_sdk.of_call(lnv_request.GetJsonString())
+
+lnv_signed = create JSONParser
+lnv_signed.LoadString(ls_signed)
+return lnv_built.GetItemString(lnv_built.GetRootItem(), "file_name") + " " + &
+	lnv_signed.GetItemString(lnv_signed.GetRootItem(), "digest_value")
+end function

@@ -11,6 +11,9 @@ mod error;
 mod ivap;
 mod raw;
 mod references;
+mod retention;
+mod retention_lines;
+mod retention_rules;
 mod scope;
 mod types;
 mod validate;
@@ -20,6 +23,7 @@ pub use datetime::{Date, DateTime, LimaDateTime};
 pub use decimal::Decimal;
 pub use despatch::{Carrier, Despatch, DespatchLine, DespatchParty, Driver, Place, RelatedDocument, Shipment, Vehicle};
 pub use error::ModelError;
+pub use retention::{ExchangeRate, RetainedDocument, Retention, RetentionAmounts, RetentionLine, RetentionPayment, RetentionSupplier};
 pub use scope::is_xml_text;
 pub use types::{
     Address, Client, Company, DespatchReference, Detraction, DocumentType, IgvRetention, Installment, Invoice, Legend, Line, LineDiscount, Note, NoteReference, PaymentTerms,
@@ -28,6 +32,7 @@ pub use types::{
 
 /// Documents: invoice or receipt (`Invoice`), credit or debit note (`Note`). Summaries: daily summary
 /// (`Summary`, RC) and void communication (`Voided`, RA). Despatch: sender's despatch advice (`Despatch`, 09).
+/// Retention: retention voucher (`Retention`, 20).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Document {
     Invoice(Invoice),
@@ -35,6 +40,7 @@ pub enum Document {
     Summary(Summary),
     Voided(Voided),
     Despatch(Despatch),
+    Retention(Retention),
 }
 
 impl Document {
@@ -50,12 +56,13 @@ impl Document {
         match self {
             Document::Invoice(invoice) => Some(&invoice.voucher),
             Document::Note(note) => Some(&note.voucher),
-            Document::Summary(_) | Document::Voided(_) | Document::Despatch(_) => None,
+            Document::Summary(_) | Document::Voided(_) | Document::Despatch(_) | Document::Retention(_) => None,
         }
     }
 
     /// The name SUNAT expects for the XML and its zip: `RUC-TYPE-SERIES-NUMBER`, or
-    /// `RUC-RC-YYYYMMDD-N` and `RUC-RA-YYYYMMDD-N`; a despatch advice is `RUC-09-SERIES-NUMBER`.
+    /// `RUC-RC-YYYYMMDD-N` and `RUC-RA-YYYYMMDD-N`; a despatch advice is `RUC-09-SERIES-NUMBER` and a
+    /// retention voucher `RUC-20-SERIES-NUMBER`.
     pub fn file_name(&self) -> String {
         match self {
             Document::Invoice(Invoice { voucher, .. }) | Document::Note(Note { voucher, .. }) => format!(
@@ -68,6 +75,7 @@ impl Document {
             Document::Summary(summary) => format!("{}-{}", summary.issuer.ruc, summary.identifier()),
             Document::Voided(voided) => format!("{}-{}", voided.issuer.ruc, voided.identifier()),
             Document::Despatch(despatch) => format!("{}-09-{}", despatch.issuer.ruc, despatch.identifier()),
+            Document::Retention(retention) => format!("{}-20-{}", retention.issuer.ruc, retention.identifier()),
         }
     }
 }

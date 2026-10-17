@@ -44,13 +44,13 @@ extern "C" {
 // # Safety
 // `request` is null or points to a NUL-terminated string; `response` is null or points to
 // writable storage for one pointer.
-SUNAT_SDK_CALL int32_t sunat_sdk_call(const char *request, char **response);
+int32_t SUNAT_SDK_CALL sunat_sdk_call(const char *request, char **response);
 
 // Releases a response of `sunat_sdk_call`. Null is ignored.
 //
 // # Safety
 // `response` is null or a pointer stored by `sunat_sdk_call` and not yet released.
-SUNAT_SDK_CALL void sunat_sdk_free(char *response);
+void SUNAT_SDK_CALL sunat_sdk_free(char *response);
 
 // Length in bytes of a response, without the terminating NUL; 0 for null. For callers that
 // cannot read through a pointer (VB6, Visual FoxPro, PowerBuilder): size a buffer with this,
@@ -58,7 +58,7 @@ SUNAT_SDK_CALL void sunat_sdk_free(char *response);
 //
 // # Safety
 // `response` is null or a live pointer stored by `sunat_sdk_call`.
-SUNAT_SDK_CALL size_t sunat_sdk_response_len(const char *response);
+size_t SUNAT_SDK_CALL sunat_sdk_response_len(const char *response);
 
 // Copies a response's bytes into `buffer`, followed by a NUL when there is room for it.
 // Returns `SUNAT_SDK_OK`, or `SUNAT_SDK_BUFFER_TOO_SMALL` (nothing written) when `capacity` is
@@ -68,13 +68,13 @@ SUNAT_SDK_CALL size_t sunat_sdk_response_len(const char *response);
 // # Safety
 // `response` is a live pointer stored by `sunat_sdk_call`; `buffer` points to `capacity`
 // writable bytes.
-SUNAT_SDK_CALL int32_t sunat_sdk_response_copy(const char *response, char *buffer, size_t capacity);
+int32_t SUNAT_SDK_CALL sunat_sdk_response_copy(const char *response, char *buffer, size_t capacity);
 
 // The SDK version (`Cargo.toml`), a static NUL-terminated string: never released.
-SUNAT_SDK_CALL const char *sunat_sdk_version(void);
+const char *SUNAT_SDK_CALL sunat_sdk_version(void);
 
 // `SUNAT_SDK_ABI_VERSION` of the loaded library, so a wrapper can refuse one it was not built for.
-SUNAT_SDK_CALL uint32_t sunat_sdk_abi_version(void);
+uint32_t SUNAT_SDK_CALL sunat_sdk_abi_version(void);
 
 #ifdef __cplusplus
 }  // extern "C"

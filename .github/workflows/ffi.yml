@@ -96,7 +96,7 @@ jobs:
         run: |
           set -euo pipefail
           # The native libraries a C program needs to link the static library, as rustc reports them.
-          cargo rustc -p sunat-sdk-ffi --lib --release --target "${{ matrix.target }}" --locked --crate-type staticlib \
+          cargo --color never rustc -p sunat-sdk-ffi --lib --release --target "${{ matrix.target }}" --locked --crate-type staticlib \
             -- --print native-static-libs 2> "$RUNNER_TEMP/rustc.txt" || { cat "$RUNNER_TEMP/rustc.txt"; exit 1; }
           sed -n 's/.*native-static-libs: //p' "$RUNNER_TEMP/rustc.txt" | tail -1 > "$RUNNER_TEMP/native-libs.txt"
           cargo build -p sunat-sdk-ffi --release --target "${{ matrix.target }}" --locked

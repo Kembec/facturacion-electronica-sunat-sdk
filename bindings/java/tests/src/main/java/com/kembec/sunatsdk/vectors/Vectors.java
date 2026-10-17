@@ -20,6 +20,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -41,6 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.crypto.spec.SecretKeySpec;
+import javax.xml.crypto.Data;
 import javax.xml.crypto.OctetStreamData;
 import javax.xml.crypto.dsig.CanonicalizationMethod;
 import javax.xml.crypto.dsig.Transform;
@@ -265,8 +267,14 @@ public final class Vectors {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         DOMValidateContext context = new DOMValidateContext(new SecretKeySpec(new byte[] {1}, "HmacSHA1"), factory.newDocumentBuilder().newDocument());
+        // transform(data, context) and not the OutputStream overload, which needs the transform marshalled in a signature.
+        Data result = c14n.transform(new OctetStreamData(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))), context);
+        InputStream in = ((OctetStreamData) result).getOctetStream();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        c14n.transform(new OctetStreamData(new ByteArrayInputStream(xml.getBytes(StandardCharsets.UTF_8))), context, out);
+        byte[] chunk = new byte[8192];
+        for (int n = in.read(chunk); n >= 0; n = in.read(chunk)) {
+            out.write(chunk, 0, n);
+        }
         return new String(out.toByteArray(), StandardCharsets.UTF_8);
     }
 

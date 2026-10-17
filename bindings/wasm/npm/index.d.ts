@@ -52,7 +52,9 @@ export interface FaultOutcome {
 
 /**
  * `ticket` or `status` without an answer (an HTTP status other than 200/500, or the wait ran out).
- * It says nothing about the document: ask again with the same data, never send again because of it.
+ * It says nothing about the document: ask again with the same data. After `ticket`, never send the summary
+ * again; if `status` keeps giving no verdict, resend the same signed XML with the same number while the
+ * deadline is open (SUNAT does not register it twice; docs/cli.md).
  */
 export interface NoVerdictOutcome {
   outcome: 'no_verdict';

@@ -41,6 +41,10 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ### Changed
 
+- **Breaking** — Rust only: `SummaryLine` gains `free_taxed`, `free_exempt`, `free_unaffected`, `free_export` and
+  `free_igv`, `Line` gains `icbper` and `icbper_factor`, and `Totals` and `SummaryLine` gain `icbper`, so code that
+  builds them with a struct literal no longer compiles. Migration: add the new fields as `None`. The JSON input, the
+  CLI and the other bindings do not change for documents without ICBPER or free sales split by code.
 - **Breaking** — Despatch advice (09) in public transport carries the day the goods are handed to the carrier, which
   SUNAT requires since 2026-06-01 (field 39-A of RS 108-2026): `shipment.carrier_handover_date`, rendered as
   `cac:LoadingTransportEvent/cbc:OccurrenceDate`. Without it the SDK answers 3617 locally, before sending; a date before
@@ -54,10 +58,6 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   3238, 2949, 3292, 3294, 3306, 3279, 3280; a receipt gets the observation code), and the observations 4318 (amount
   ≠ rate × bags) and 4237 (rate not the one in force) are rejected too. PEN only. Not sent to SUNAT beta yet
   (#55, [`docs/input-model.md`](docs/input-model.md#icbper)).
-- `SummaryLine` gains `free_taxed`, `free_exempt`, `free_unaffected`, `free_export` and `free_igv`: Rust code that builds it
-  field by field adds them (`None`).
-- `Line` gains `icbper` and `icbper_factor`, `Totals` and `SummaryLine` gain `icbper`: Rust code that builds these
-  structs field by field adds them (`None`). JSON input is unchanged for documents without ICBPER.
 
 ## [0.1.0-beta.6] - 2026-10-17
 

@@ -32,6 +32,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ### Changed
 
+- **Breaking** — Rust only: `Line` gains `charges`, `Invoice` gains `global_adjustments` and `Totals` gains
+  `allowance_total` and `charge_total`, so code that builds them with a struct literal no longer compiles. Migration:
+  add `charges: vec![]`, `global_adjustments: vec![]`, `allowance_total: None` and `charge_total: None` (or
+  `..Default::default()` in `Totals`). `LineDiscount` stays, as another name for `AllowanceCharge`. The JSON input,
+  the CLI and the other bindings do not change (#54).
 - Catalog 53 discounts and charges in invoices and receipts, which the SDK used to reject: line discount `01` and
   line charges `47` and `48` (`lines[].charges`), and global discounts `02`, `03` and charges `45`, `46`, `49`, `50`
   (`global_adjustments`), rendered as `cac:AllowanceCharge` with `ChargeIndicator` derived from the code;

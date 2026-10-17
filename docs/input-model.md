@@ -246,8 +246,10 @@ dates are `YYYY-MM-DD`.
 
 The sender's despatch advice (guía de remisión remitente): UBL 2.1 `DespatchAdvice`, SUNAT
 customization 2.0. `build` renders it with `file_name` `RUC-09-SERIES-NUMBER` and `sign` signs it like
-any other document. Sending it is not covered: SUNAT receives despatch advices only through its REST
-service, not through `sendBill`.
+any other document. SUNAT receives despatch advices only through its REST service, not through `sendBill`: the CLI sends
+the signed guide with `gre-send` and reads its ticket with `gre-ticket` ([`cli.md`](cli.md)), and PHP and Python wrap the same two calls (JavaScript gives the
+requests and reads the answers, without the network). SUNAT has no test environment for them, so none of it
+has been accepted by SUNAT.
 
 Not supported, rejected with an explicit error: transfer reasons `08`, `09` and `18` (imports, exports,
 itinerant issuer: ports, airports, containers and customs data), related documents `49` and `80`
@@ -319,8 +321,7 @@ documents were issued.
 
 The comprobante de retención electrónico: UBL 2.0 `Retention`, SUNAT customization 1.0. `build`
 renders it with `file_name` `RUC-20-SERIES-NUMBER` and `sign` signs it like any other document; `zip`
-gives `RUC-20-SERIES-NUMBER.zip`. Sending it (`sendBill` of SUNAT's `otroscpe` service) is not
-covered yet.
+gives `RUC-20-SERIES-NUMBER.zip`. The CLI sends it with `send` to SUNAT's `otroscpe` service (`sendBill`).
 
 As everywhere else, the caller gives every amount and the SDK reconciles them: it does not compute
 the retention, it checks it. All amounts of the voucher itself are in PEN.
@@ -368,7 +369,7 @@ regime's rate (01: 3.00, 02: 6.00) (SUNAT ERR-2619)"}`); one test per code in
 exchange rate, target currency USD) and `v6` (totals summed before rounding the lines) are rejected
 with 2619, 2715 then 2623, and 2628 then 2629. On 17/10/2026 the SUNAT beta (`otroscpe`) accepted `v1` to `v3`
 with code 0 and no notes, rejected `v4` with 2619, `v5` with 2715 and a payment number repeated for the same
-document with 2626, and accepted `v6` with code 0: the beta does not apply 2628 and 2629, the SDK still does. An
+document with 2626, and accepted `v6` with code 0 although its totals differ by 0.01 from the sum of the lines: the beta does not apply 2628 and 2629, and the SDK keeps rejecting that locally because SUNAT's validation sheet allows no difference. An
 identical resend of an accepted voucher got code 0 again, not 1033: the beta keeps no record, so what production
 answers to a resend is still unproven. The signed XML sent, the CLI's answer and the CDR of each are in
 `fixtures/retention/beta/`. There is no SUNAT schema for `Retention` in the repository.

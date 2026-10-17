@@ -1,5 +1,8 @@
 Revision history for Kembec-SunatSdk
 
+0.000999_006  (SDK 0.1.0-beta.6, not released to CPAN)
+    - Version bump with the SDK; no change to the binding.
+
 0.000999_005  (SDK 0.1.0-beta.5, not released to CPAN)
     - First version: every command of the SDK's contract over its C ABI with FFI::Platypus, with the native library
       for Linux x64 and ARM64 (glibc 2.17+), macOS Intel and Apple Silicon, and 64-bit Windows inside.

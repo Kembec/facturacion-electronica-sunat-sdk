@@ -13,7 +13,7 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0-beta.5"
+version = "0.1.0-beta.6"
 edition = "2021"
 # The oldest toolchain that builds the published crates with the locked dependencies (zopfli, under
 # zip's deflate, asks for 1.88); the crates workflow checks it.
@@ -27,8 +27,8 @@ keywords = ["sunat", "peru", "facturacion", "e-invoicing", "xmldsig"]
 # released together, and a mixed set (a sunat-ubl built against another sunat-model) would not be the
 # one that passed the vectors. The crates workflow fails if these drift from `version` above.
 [workspace.dependencies]
-sunat-model = { package = "kembec-sunat-model", path = "crates/sunat-model", version = "=0.1.0-beta.5" }
-sunat-ubl = { package = "kembec-sunat-ubl", path = "crates/sunat-ubl", version = "=0.1.0-beta.5" }
-sunat-xmldsig = { package = "kembec-sunat-xmldsig", path = "crates/sunat-xmldsig", version = "=0.1.0-beta.5" }
-sunat-transport = { package = "kembec-sunat-transport", path = "crates/sunat-transport", version = "=0.1.0-beta.5" }
-sunat-sdk = { package = "kembec-sunat-sdk", path = "crates/sunat-sdk", version = "=0.1.0-beta.5" }
+sunat-model = { package = "kembec-sunat-model", path = "crates/sunat-model", version = "=0.1.0-beta.6" }
+sunat-ubl = { package = "kembec-sunat-ubl", path = "crates/sunat-ubl", version = "=0.1.0-beta.6" }
+sunat-xmldsig = { package = "kembec-sunat-xmldsig", path = "crates/sunat-xmldsig", version = "=0.1.0-beta.6" }
+sunat-transport = { package = "kembec-sunat-transport", path = "crates/sunat-transport", version = "=0.1.0-beta.6" }
+sunat-sdk = { package = "kembec-sunat-sdk", path = "crates/sunat-sdk", version = "=0.1.0-beta.6" }

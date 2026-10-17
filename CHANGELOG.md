@@ -28,6 +28,20 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   predicts; a line that breaks both the exchange rate and its amounts is now reported as 2715 before 2623, as the beta
   answers ([`docs/input-model.md`](docs/input-model.md), `fixtures/retention/beta/`).
 
+### Changed
+
+- Catalog 53 discounts and charges in invoices and receipts, which the SDK used to reject: line discount `01` and
+  line charges `47` and `48` (`lines[].charges`), and global discounts `02`, `03` and charges `45`, `46`, `49`, `50`
+  (`global_adjustments`), rendered as `cac:AllowanceCharge` with `ChargeIndicator` derived from the code;
+  `totals.allowance_total` and `totals.charge_total` render as `cbc:AllowanceTotalAmount` and
+  `cbc:ChargeTotalAmount`. A document with any discount or charge has its arithmetic checked before sending, each rule
+  with SUNAT's code (3290 and 3307 `amount` = `base_amount` × `factor`, 3271 line value, 3277 net IGV base, 3291 IGV,
+  3278, 3279, 3280, 3300, 3301); a receipt gets the observation code. The FISE (45) stays outside the IGV base. Not
+  sent to SUNAT beta yet ([`docs/input-model.md`](docs/input-model.md#discounts-and-charges)).
+- `sunat_model::LineDiscount` is now an alias of `AllowanceCharge`; `Line` gains `charges`, `Invoice` gains
+  `global_adjustments` and `Totals` gains `allowance_total` and `charge_total`: Rust code that builds these structs
+  field by field adds them (empty or `None`). JSON input is unchanged for documents without discounts or charges.
+
 ## [0.1.0-beta.5] - 2026-10-17
 
 ### Added

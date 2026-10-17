@@ -1,7 +1,7 @@
 //! Document-level sections: payment terms («Forma de pago»), the tax total with one subtotal per
 //! scheme («Total de tributos») and the monetary totals («Totales del comprobante»).
 
-use sunat_model::{Decimal, Detraction, IgvRetention, PaymentTerms, Totals};
+use sunat_model::{AllowanceCharge, Decimal, Detraction, IgvRetention, PaymentTerms, Totals};
 
 use crate::amount::{shortest, two_decimals};
 use crate::lines::{factor_text, tax_scheme};
@@ -71,6 +71,21 @@ pub(crate) fn igv_retention(w: &mut XmlWriter, retention: &IgvRetention, currenc
     w.close();
 }
 
+/// Global discounts and charges (catalog 53 02, 03, 45, 46, 49, 50), before the IGV retention and
+/// the tax total; `ChargeIndicator` follows from the code.
+pub(crate) fn global_adjustments(w: &mut XmlWriter, adjustments: &[AllowanceCharge], currency: &str) {
+    let money = [("currencyID", currency)];
+    for entry in adjustments {
+        w.open("cac:AllowanceCharge", &[]);
+        w.text("cbc:ChargeIndicator", if entry.is_charge() { "true" } else { "false" });
+        w.text("cbc:AllowanceChargeReasonCode", &entry.code);
+        w.text("cbc:MultiplierFactorNumeric", &factor_text(&entry.factor));
+        w.leaf("cbc:Amount", &money, &two_decimals(&entry.amount));
+        w.leaf("cbc:BaseAmount", &money, &two_decimals(&entry.base_amount));
+        w.close();
+    }
+}
+
 /// `cac:TaxTotal`: the total of taxes, then one subtotal per scheme with a non-zero base, in
 /// descending catalog 05 order (IGV 1000, INA 9998, EXO 9997, GRA 9996, EXP 9995).
 pub(crate) fn tax_total(w: &mut XmlWriter, totals: &Totals, currency: &str) {
@@ -118,6 +133,8 @@ pub(crate) fn monetary_total(w: &mut XmlWriter, kind: MonetaryTotal, totals: &To
     if let MonetaryTotal::Full(_) = kind {
         amount_opt(w, "cbc:LineExtensionAmount", totals.sale_value.as_ref(), &money);
         amount_opt(w, "cbc:TaxInclusiveAmount", totals.subtotal.as_ref(), &money);
+        amount_opt(w, "cbc:AllowanceTotalAmount", totals.allowance_total.as_ref(), &money);
+        amount_opt(w, "cbc:ChargeTotalAmount", totals.charge_total.as_ref(), &money);
     }
     if let Some(rounding) = totals.rounding.as_ref().filter(|r| !r.is_zero()) {
         w.leaf("cbc:PayableRoundingAmount", &money, &two_decimals(rounding));

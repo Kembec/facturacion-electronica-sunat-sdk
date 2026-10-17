@@ -6,9 +6,9 @@ compute taxes.
 
 Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV (affectations
 10-16, 20, 21, 30-37, 40) and IVAP (affectation 17, see IVAP). Not supported, rejected with an
-explicit error: ISC, ICBPER, other taxes, global discounts or charges, line charges, line
-discounts other than catalog 53 code `00` or in notes, advances, detraction on operation types 1002 and
-1004, perception.
+explicit error: ISC, ICBPER, other taxes, catalog 53 codes other than those of Discounts and
+charges, discounts and charges in notes, advances, detraction on operation types 1002 and 1004,
+perception.
 
 The daily summary (RC), the void communication (RA), the sender's despatch advice (09) and the
 retention voucher (20) have their own sections below.
@@ -37,6 +37,7 @@ retention voucher (20) have their own sections below.
 | `order_reference` | optional, the purchase or service order number, see Related documents |
 | `despatch_references` | optional, `[{ "document_type": "09", "number": "T001-45" }]`, see Related documents |
 | `igv_retention` | optional, 01/03/07/08, see IGV retention |
+| `global_adjustments` | optional, invoice and receipt only, see Discounts and charges |
 
 ## Related documents
 
@@ -104,7 +105,10 @@ issuer's), `email`, `telephone`.
 ## Totals
 
 `taxed`, `unaffected`, `exempt`, `export`, `free`, `free_igv`, `igv`, `ivap_base`, `ivap`,
-`total_taxes`, `sale_value`, `subtotal`, `rounding`, `payable`. An absent total is not rendered.
+`total_taxes`, `sale_value`, `subtotal`, `allowance_total`, `charge_total`, `rounding`, `payable`. An
+absent total is not rendered. `allowance_total` and `charge_total` (`cbc:AllowanceTotalAmount`,
+`cbc:ChargeTotalAmount`) carry the discounts and charges that do not change the IGV base, see
+Discounts and charges.
 
 ## IVAP
 
@@ -125,17 +129,56 @@ and 10 (3230: beta rejected a credit note with type 07 and a debit note with typ
 
 `unit` (catalog 03, `"NIU"`, `"ZZ"`), `quantity`, `product_code`, `sunat_product_code`, `description`,
 `unit_value`, `igv_base`, `igv_rate` (`"18.00"`), `igv`, `affectation` (catalog 07), `total_taxes`,
-`unit_price`, `line_value`, `free_unit_value` (free lines), `discounts` (invoice and receipt only).
+`unit_price`, `line_value`, `free_unit_value` (free lines), `discounts` and `charges` (invoice and
+receipt only, see Discounts and charges).
 
-`discounts`: `[{ "code": "00", "factor": "0.15", "amount": "12.71", "base_amount": "84.74" }]`, discounts
-that reduce the line's IGV base (catalog 53 code `00`), each rendered as a `cac:AllowanceCharge` with
-`ChargeIndicator` false. `factor` is positive with up to 3 integer digits and 5 decimals; `amount` and
-`base_amount` are positive with up to 2 decimals; trailing zeros do not count and the three print in
-their shortest form (`0.10` → `0.1`). The arithmetic stays with the caller, as for every amount: SUNAT
-rejects an `amount` that differs from `base_amount` × `factor` by more than 1 (error 3290) and a
-`line_value` that differs from `unit_value` × `quantity` minus the discounts by more than 1 (3271).
-So `unit_value` is the value before the discount: SUNAT beta rejected an invoice whose `unit_value` was
-already net of the declared discount (3271) and accepted the same receipt with observation 4288.
+## Discounts and charges
+
+Catalog 53, invoice and receipt only. Each one is `{ "code": "00", "factor": "0.15", "amount": "12.71",
+"base_amount": "84.74" }` and renders as one `cac:AllowanceCharge`; `ChargeIndicator` is not an input,
+it follows from the code (so SUNAT's 3114 cannot happen).
+
+| Where | Code | IGV base | Goes to |
+|---|---|---|---|
+| `lines[].discounts` | `00` | reduces the line's | `line_value` (minus) |
+| `lines[].discounts` | `01` | no | `totals.allowance_total` |
+| `lines[].charges` | `47` | raises the line's | `line_value` (plus) |
+| `lines[].charges` | `48` | no | `totals.charge_total` |
+| `global_adjustments` | `02` discount | reduces the document's | `taxed`, `sale_value`, `igv` (minus) |
+| `global_adjustments` | `49` charge | raises the document's | `taxed`, `sale_value`, `igv` (plus) |
+| `global_adjustments` | `03` discount | no | `totals.allowance_total` |
+| `global_adjustments` | `45` FISE, `46` recargo al consumo, `50` other | no | `totals.charge_total` |
+
+The FISE (45) stays outside the IGV base, as SUNAT's rules have it (3301); whether it belongs in the
+base under article 14 of the IGV law is the issuer's decision with its adviser.
+
+The caller gives every amount; the SDK checks them, with SUNAT's tolerance of 1, only in a document that
+has a discount or a charge (a document without them is checked as before). In the order of SUNAT's
+sheet, each with the code an invoice gets (a receipt gets the observation in brackets, and the SDK
+rejects it too):
+
+- codes: required (3072 global, 3073 line); a line code at document level 3071 (4291); a global code on
+  a line 4268; outside catalog 53, 3071 or 2954; codes `04` to `07`, `20`, `51` to `54` and `61` to
+  `64` are out of scope, and `62` goes in `igv_retention`;
+- formats: `factor` positive with up to 3 integer digits and 5 decimals, `amount` and `base_amount`
+  positive with up to 2 decimals, trailing zeros not counted (global 3025, 2968, 3016; line 3052, 2955,
+  3053); the FISE needs `base_amount` (3092) and `amount` (3074) above zero; `allowance_total` and
+  `charge_total` up to 2 decimals (2065, 2064);
+- `amount` = `base_amount` × `factor`, rounded half up to the cent: 3290 (4289) line, 3307 (4322) global;
+- invoice line: `line_value` = `unit_value` × `quantity` − discounts `00` + charges `47` (3271), so
+  `unit_value` is the value before them: beta rejected an invoice whose `unit_value` was already net of
+  the declared discount (3271) and accepted the same receipt with observation 4288;
+- `allowance_total` = line `01` + global `03` (3300, 4307); `charge_total` = line `48` + global `45`, `46`,
+  `50` (3301, 4308); `payable` = `subtotal` + `charge_total` − `allowance_total` + `rounding` (3280, 4312);
+- `taxed` = Σ `line_value` of the lines with affectation 10 − global `02` + global `49` (3277, 4299);
+  `igv` = the lines' rate × that base (3291, 4290); `sale_value` = Σ `line_value` of the lines with
+  affectation 10, 17, 20, 30 or 40 − `02` + `49` (3278, 4309); `subtotal` = `sale_value` + `total_taxes`
+  (3279, 4310).
+
+A global `02` or `49` with lines at two IGV rates (18 and 10.5) is out of scope: the sheet does not say
+how it splits between them. Each line keeps its own IGV over its own base; only the document's IGV is net
+of `02` and `49`. Vectors: `fixtures/allowances/` (`inv-01` to `inv-06` valid, `inv-R1` to `inv-R3`
+rejected with 3277, 3307 and 3290). Not sent to SUNAT beta yet.
 
 ## Note (07, 08)
 

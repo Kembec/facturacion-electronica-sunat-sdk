@@ -60,17 +60,18 @@ fn pricing_reference(w: &mut XmlWriter, line: &Line, currency: &str) {
     w.close();
 }
 
-/// Discounts that reduce the IGV base (catalog 53 code 00). Factor, amount and base print in the
-/// shortest form, as the compatibility vectors carry them (`0.10` -> `0.1`, `10.00` -> `10`).
+/// Line discounts (catalog 53 00, 01), then line charges (47, 48); `ChargeIndicator` follows from
+/// the code. Factor, amount and base print in the shortest form, as the compatibility vectors carry
+/// them (`0.10` -> `0.1`, `10.00` -> `10`).
 fn discounts(w: &mut XmlWriter, line: &Line, currency: &str) {
     let money = [("currencyID", currency)];
-    for discount in &line.discounts {
+    for entry in line.discounts.iter().chain(&line.charges) {
         w.open("cac:AllowanceCharge", &[]);
-        w.text("cbc:ChargeIndicator", "false");
-        w.text("cbc:AllowanceChargeReasonCode", &discount.code);
-        w.text("cbc:MultiplierFactorNumeric", &factor_text(&discount.factor));
-        w.leaf("cbc:Amount", &money, &shortest(&discount.amount));
-        w.leaf("cbc:BaseAmount", &money, &shortest(&discount.base_amount));
+        w.text("cbc:ChargeIndicator", if entry.is_charge() { "true" } else { "false" });
+        w.text("cbc:AllowanceChargeReasonCode", &entry.code);
+        w.text("cbc:MultiplierFactorNumeric", &factor_text(&entry.factor));
+        w.leaf("cbc:Amount", &money, &shortest(&entry.amount));
+        w.leaf("cbc:BaseAmount", &money, &shortest(&entry.base_amount));
         w.close();
     }
 }

@@ -7,7 +7,7 @@ use crate::amount::two_decimals;
 use crate::document::root;
 use crate::lines::tax_scheme;
 use crate::parties::{signature_reference, RUC_SCHEME};
-use crate::tax::IGV;
+use crate::tax::{ICBPER, IGV};
 use crate::writer::XmlWriter;
 use crate::Options;
 
@@ -95,6 +95,24 @@ fn summary_line(w: &mut XmlWriter, line_id: usize, line: &SummaryLine, currency:
         w.close();
     }
     igv_total(w, line.igv.as_ref(), line.igv_rate.as_ref(), &money);
+    if let Some(icbper) = &line.icbper {
+        icbper_total(w, icbper, &money);
+    }
+    w.close();
+}
+
+/// ICBPER as its own `cac:TaxTotal` after the IGV one, one per tax code (SUNAT 2355), with the same
+/// amount in its subtotal (2344).
+fn icbper_total(w: &mut XmlWriter, icbper: &Decimal, money: &[(&str, &str)]) {
+    let amount = two_decimals(icbper);
+    w.open("cac:TaxTotal", &[]);
+    w.leaf("cbc:TaxAmount", money, &amount);
+    w.open("cac:TaxSubtotal", &[]);
+    w.leaf("cbc:TaxAmount", money, &amount);
+    w.open("cac:TaxCategory", &[]);
+    tax_scheme(w, ICBPER);
+    w.close();
+    w.close();
     w.close();
 }
 

@@ -193,7 +193,7 @@ En Node 18, donde `globalThis.crypto` no existe sin una opción de arranque, `lo
 
 ## Límites y pruebas
 
-- El envío desde el navegador depende de que la SUNAT acepte peticiones de otro origen (CORS), y eso no se ha probado.
+- El envío desde el navegador depende de que la SUNAT permita CORS, y eso no se ha probado.
 - La carga con el módulo ya compilado se prueba en Node; en Cloudflare Workers y con bundlers, no.
 - Lo que aceptó la SUNAT y cómo se comprueba cada versión está en
   [Cómo se comprueba](https://github.com/Kembec/facturacion-electronica-sunat-sdk#cómo-se-comprueba): la beta de la

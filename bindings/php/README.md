@@ -9,7 +9,7 @@ de una empresa. Con los datos de una factura (01), una boleta (03) o una nota de
   (`validity`: aceptado, anulado o no informado).
 
 También arma y firma resúmenes diarios de boletas (RC), comunicaciones de baja (RA) y guías de remisión remitente (09).
-Los resúmenes y las bajas se envían con el programa de línea de comandos `sunat-sdk`; las guías, solo desde la rama
+Los resúmenes y las bajas se envían con la CLI `sunat-sdk`; las guías, solo desde la rama
 `main` ([abajo](#guía-de-remisión-remitente-09-por-la-api-rest)). Es la versión para PHP del
 [SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y TypeScript,
 Python y Rust: los mismos datos dan el mismo comprobante firmado en todos.
@@ -26,7 +26,7 @@ composer require kembec/facturacion-electronica-sunat-sdk:^0.1@beta
 export "$(vendor/bin/sunat-sdk-install)"     # opcional: --dir=<directorio>
 ```
 
-Las versiones publicadas son beta, por eso la restricción `^0.1@beta`.
+Las versiones publicadas son beta.
 
 El trabajo lo hace el binario `sunat-sdk`, el núcleo en Rust del SDK: este paquete es su cliente y lo ejecuta una vez
 por llamada. El contrato de cada comando está en el

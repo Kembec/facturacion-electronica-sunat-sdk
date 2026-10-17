@@ -21,7 +21,7 @@ ejemplos: https://fe.kembec.com
 
 ## Instalación
 
-La versión publicada es una beta, y `pip` la instala solo si se le pide:
+La versión publicada es una beta:
 
 ```bash
 pip install --pre facturacion-electronica-sunat-sdk
@@ -29,9 +29,9 @@ pip install --pre facturacion-electronica-sunat-sdk
 
 El paquete trae el núcleo en Rust del SDK ya compilado (wheels abi3), así que no llama a ningún binario externo. Hay
 wheels para CPython 3.10 o posterior en Linux (x86_64 y aarch64, glibc), macOS (arm64 y x86_64) y Windows (x86_64). En
-otra plataforma, pip lo compila desde el código fuente (el sdist) y necesita Rust.
+otra plataforma, pip lo compila desde el sdist y necesita Rust.
 
-Para instalar la versión en desarrollo (la rama `main`) desde el repositorio hace falta Rust:
+Para instalar `main` desde el repositorio hace falta Rust:
 
 ```bash
 git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git

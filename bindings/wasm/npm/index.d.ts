@@ -135,6 +135,85 @@ export type ValidityOutcome =
   | { outcome: 'query_error'; http_status: number; error_code: string | null; message: string }
   | ValidityNoVerdict;
 
+/**
+ * GRE (despatch advice, 09) by SUNAT's REST API. SUNAT offers no test environment for GRE: nothing
+ * here has been accepted by SUNAT. Which call an outcome comes from.
+ */
+export type GreStage = 'token' | 'send' | 'ticket';
+
+/** A GRE call as `fetch(url, options)` takes it. The token body carries the secret and the SOL password; the others carry the token in `Authorization`: never log them. */
+export interface GreRequest {
+  method: 'POST' | 'GET';
+  url: string;
+  headers: Record<string, string>;
+  /** Empty for the ticket query (a GET): leave it out of `fetch`, which refuses a body on a GET. */
+  body: string;
+}
+
+/** `greSendRequest`: the POST plus what to keep with the ticket. */
+export interface GreSendRequest extends GreRequest {
+  method: 'POST';
+  /** `<name>.zip`. */
+  zip_name: string;
+  /** SHA-256 of the zip, lowercase hex: the `hashZip` sent. */
+  hash_zip: string;
+}
+
+/** Input of `greSendRequest`: the signed guide. */
+export type GreSendInput = { name: string; xml: string } | { name: string; xml_base64: string };
+
+/** SUNAT answered GRE-M's error body (annex I, or 422 with the validation `errors`). */
+export interface GreApiError {
+  outcome: 'api_error';
+  stage: GreStage;
+  http_status: number;
+  /** Annex I's name for the status, `null` for one outside it. */
+  general_error: 'bad_request' | 'unauthorized' | 'forbidden' | 'not_found' | 'not_allowed' | 'not_acceptable' | 'unsupported_media_type' | 'unprocessable_entity' | 'internal_server_error' | 'service_unavailable' | null;
+  code: string | null;
+  message: string;
+  errors: { code: string | null; description: string }[];
+  /** The ticket asked, for the ticket stage. */
+  ticket?: string;
+}
+
+/** No answer, or a body that is not GRE-M's, for the token or the ticket call: ask again. */
+export interface GreNoVerdict {
+  outcome: 'no_verdict';
+  stage: 'token' | 'ticket';
+  reason: 'http_status' | 'timeout';
+  http_status: number | null;
+  message: string;
+  ticket?: string;
+}
+
+/** `greTokenResponse`: the token (a secret) and when it expires, from the clock you passed. */
+export type GreTokenOutcome =
+  | { outcome: 'token'; access_token: string; token_type: string | null; expires_in: number | null; expires_at: number | null }
+  | GreApiError
+  | GreNoVerdict;
+
+/** `greSendResponse`: the ticket, the only handle on the outcome (store it first), or the refusal. */
+export type GreSendOutcome = { outcome: 'ticket'; ticket: string; received_at: string | null } | GreApiError;
+
+/**
+ * `greTicketResponse`: `state` is `processed` (0), `in_process` (98: ask again with the same ticket,
+ * never send again) or `processed_with_errors` (99); `null` for another code.
+ */
+export type GreTicketOutcome =
+  | {
+      outcome: 'ticket_status';
+      ticket: string;
+      status_code: string;
+      state: 'processed' | 'in_process' | 'processed_with_errors' | null;
+      cdr_generated: boolean;
+      /** `numError` and `desError`, with the class of the code. */
+      error?: { code: string | null; description: string; class: Cdr['class'] };
+      cdr?: Cdr;
+      cdr_zip_base64?: string;
+    }
+  | GreApiError
+  | GreNoVerdict;
+
 export interface Sdk {
   /**
    * Renders the unsigned XML of a document (`docs/input-model.md` of the repository).
@@ -197,6 +276,42 @@ export interface Sdk {
   validityResponse(httpStatus: number, body: Uint8Array): string;
   /** No answer within `seconds`. @returns JSON text of a {@link ValidityNoVerdict}. */
   validityTimeout(stage: 'token' | 'query', seconds: number): string;
+  /**
+   * GRE, step 1: the OAuth token request (`grant_type=password`, the GRE pair of «Credenciales de API SUNAT»).
+   * @param user the RUC followed by the SOL user.
+   * @param tokenBase no default (GRE-M: `https://api-seguridad.sunat.gob.pe/v1/clientessol`).
+   * @returns JSON text of a {@link GreRequest}.
+   */
+  greTokenRequest(clientId: string, clientSecret: string, user: string, password: string, tokenBase: string): string;
+  /**
+   * @param receivedAt your clock when the answer arrived, in whole Unix seconds (`Math.floor(Date.now() / 1000)`).
+   * @returns JSON text of a {@link GreTokenOutcome}.
+   */
+  greTokenResponse(httpStatus: number, body: Uint8Array, receivedAt: number): string;
+  /** Whether a `token` outcome (JSON text) is still usable at `now` (Unix seconds): renewed ten minutes before `expires_at`. */
+  greTokenUsable(tokenJson: string, now: number): boolean;
+  /**
+   * Step 2: the send of the signed guide ({@link GreSendInput} as JSON text), zipped, with its `hashZip`.
+   * @param apiBase no default (`https://api-cpe.sunat.gob.pe/v1`).
+   * @returns JSON text of a {@link GreSendRequest}.
+   * @throws Error when `name` is not `RUC-09-SERIE-NUMERO`.
+   */
+  greSendRequest(inputJson: string, accessToken: string, apiBase: string): string;
+  /**
+   * @returns JSON text of a {@link GreSendOutcome}.
+   * @throws Error when the answer is not GRE-M's: the guide may have arrived, so send the same file again.
+   */
+  greSendResponse(httpStatus: number, body: Uint8Array): string;
+  /** Step 3: the ticket query, a GET. @returns JSON text of a {@link GreRequest}. */
+  greTicketRequest(ticket: string, accessToken: string, apiBase: string): string;
+  /** @returns JSON text of a {@link GreTicketOutcome}, with the CDR read when SUNAT attaches it. */
+  greTicketResponse(httpStatus: number, body: Uint8Array, ticket: string): string;
+  /**
+   * No answer within `seconds`.
+   * @returns JSON text of a {@link GreNoVerdict} for `token`, and for `ticket` (pass the ticket).
+   * @throws Error for `send`: the guide may have arrived.
+   */
+  greTimeout(stage: GreStage, seconds: number, ticket?: string): string;
 }
 
 /** Where to read the .wasm from when the default location does not apply (e.g. Cloudflare Workers). */

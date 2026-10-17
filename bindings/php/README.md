@@ -99,9 +99,37 @@ $sdk->cdr($cdrZipOrXmlBytes);                                 // Cdr
 - `build` y `sign` también arman y firman resúmenes diarios (RC) y comunicaciones de baja (RA). Este cliente no los
   envía ni consulta su ticket: para eso están los comandos `summary` y `ticket` de la CLI.
 
-Secretos: las credenciales SOL, los endpoints y las rutas de las llaves llegan al binario solo por su entorno, nunca
+### Guía de remisión remitente (09) por la API REST
+
+```php
+use Kembec\SunatSdk\ApiCredentials;
+
+$api = new ApiCredentials($greClientId, $greClientSecret);    // el par de GRE de «Credenciales de API SUNAT»
+$sol = new SolCredentials($rucAndSolUser, $solPassword);
+$sent = $sdk->greSend($built->getFileName(), $signed->getXml(), $api, $sol, $tokenEndpoint, $greEndpoint);
+
+if ($sent->hasTicket()) {
+    $ticket = $sent->getTicket();                             // guárdalo antes que nada: es lo único que lleva al resultado
+    $status = $sdk->greTicket($ticket, $api, $sol, $tokenEndpoint, $greEndpoint);
+    $status->isInProcess();                                   // 98: vuelve a consultar con el mismo ticket
+    $status->getCdr();                                        // 0: la CDR leída, como cdr()
+    $status->getError();                                      // 99: código, descripción y clase
+} elseif ($sent->isApiError()) {
+    $sent->getApiError()->getErrors();                        // lo que la SUNAT rechazó, en sus palabras
+}
+```
+
+- **La SUNAT no tiene ambiente de pruebas para la GRE**: este cliente se prueba con respuestas del manual de la SUNAT y
+  de un cliente de terceros, sin red, y ninguna guía de este SDK figura como aceptada por la SUNAT.
+- Los endpoints no tienen valor por defecto y solo se aceptan `https://` (los del manual:
+  `https://api-seguridad.sunat.gob.pe/v1/clientessol` para el token y `https://api-cpe.sunat.gob.pe/v1` para la API).
+  Cada llamada pide su propio token, dentro de la misma espera HTTP que `send`.
+- Si el envío no recibe respuesta, `greSend` lanza `SdkErrorException`: la guía pudo haber llegado, así que se reenvía el
+  mismo archivo, nunca la operación con otro número. Un token o una consulta sin respuesta dan `isNoVerdict()`.
+
+Secretos: las credenciales SOL y de API, los endpoints y las rutas de las llaves llegan al binario solo por su entorno, nunca
 por sus argumentos. El proceso hijo no hereda el entorno del padre, y cualquier valor que se le pasa se reemplaza por
-`[redacted]` en los mensajes de error. `SolCredentials` y `SigningKey` ocultan sus valores en `var_dump` y `print_r`.
+`[redacted]` en los mensajes de error. `SolCredentials`, `ApiCredentials` y `SigningKey` ocultan sus valores en `var_dump` y `print_r`.
 
 Errores, todos subclases de `Exception\SunatSdkException`:
 

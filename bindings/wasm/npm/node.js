@@ -6,6 +6,7 @@ import { pathToFileURL } from 'node:url';
 import {
   initSync, build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout,
   validityTokenRequest, validityTokenResponse, validityRequest, validityResponse, validityTimeout,
+  greTokenRequest, greTokenResponse, greTokenUsable, greSendRequest, greSendResponse, greTicketRequest, greTicketResponse, greTimeout,
 } from './wasm/sunat_sdk_wasm.js';
 
 const DEFAULT_WASM = new URL('./wasm/sunat_sdk_wasm_bg.wasm', import.meta.url);
@@ -39,6 +40,7 @@ export function load(source) {
       return Object.freeze({
         build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout,
         validityTokenRequest, validityTokenResponse, validityRequest, validityResponse, validityTimeout,
+        greTokenRequest, greTokenResponse, greTokenUsable, greSendRequest, greSendResponse, greTicketRequest, greTicketResponse, greTimeout,
       });
     })
     .catch((error) => {

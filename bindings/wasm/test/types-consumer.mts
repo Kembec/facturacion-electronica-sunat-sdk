@@ -1,6 +1,6 @@
 // Type-checked (never run) from the clean consumer: the declarations resolve through `exports`
 // and describe the API that node-consumer.mjs and browser-page.mjs exercise.
-import { load, type BuildOutput, type Cdr, type Sdk, type SignOutput, type SoapRequest, type TicketOutcome, type ZipOutput, type RestRequest, type TokenOutcome, type ValidityOutcome } from '@kembec/facturacion-electronica-sunat-sdk';
+import { load, type BuildOutput, type Cdr, type Sdk, type SignOutput, type SoapRequest, type TicketOutcome, type ZipOutput, type RestRequest, type TokenOutcome, type ValidityOutcome, type GreRequest, type GreSendRequest, type GreTokenOutcome, type GreSendOutcome, type GreTicketOutcome } from '@kembec/facturacion-electronica-sunat-sdk';
 import wasm from '@kembec/facturacion-electronica-sunat-sdk/wasm';
 
 const sdk: Sdk = await load();
@@ -21,6 +21,15 @@ const queryCall: RestRequest = JSON.parse(sdk.validityRequest('{}', 'token', 'ht
 const validity: ValidityOutcome = JSON.parse(sdk.validityResponse(200, new Uint8Array()));
 const stateless: ValidityOutcome = JSON.parse(sdk.validityTimeout('query', 30));
 const decided: boolean = validity.outcome === 'validity' && validity.state === 'not_reported' && token.outcome === 'token' && stateless.outcome === 'no_verdict';
+const greTokenCall: GreRequest = JSON.parse(sdk.greTokenRequest('id', 'secret', '20000000001USER', 'pass', 'https://auth.test'));
+const greToken: GreTokenOutcome = JSON.parse(sdk.greTokenResponse(200, new Uint8Array(), 1760620000));
+const reusable: boolean = sdk.greTokenUsable(JSON.stringify(greToken), 1760620000);
+const greSendCall: GreSendRequest = JSON.parse(sdk.greSendRequest('{}', 'token', 'https://api.test'));
+const greTicket: GreSendOutcome = JSON.parse(sdk.greSendResponse(200, new Uint8Array()));
+const greStatus: GreTicketOutcome = JSON.parse(sdk.greTicketResponse(200, new Uint8Array(), 'a.b.c'));
+const greLate: GreTicketOutcome = JSON.parse(sdk.greTimeout('ticket', 30, 'a.b.c'));
+const askAgain: boolean = greStatus.outcome === 'ticket_status' && greStatus.state === 'in_process' && greTicket.outcome === 'ticket' && greLate.outcome === 'no_verdict';
+export const greUsed = [greTokenCall.url, greSendCall.hash_zip, reusable, askAgain, sdk.greTicketRequest('a.b.c', 'token', 'https://api.test')];
 export const used = [tokenCall.url, queryCall.headers, decided, fromUrl, signed.digest_value, signed.signature_value, built.file_name, named, zipped, read, post.body, again];
 
 // @ts-expect-error signatureId is a string
@@ -31,3 +40,7 @@ sdk.send();
 sdk.soapRequest('zip', '{}', 'user', 'password');
 // @ts-expect-error a validity timeout belongs to the token or the query call
 sdk.validityTimeout('send', 30);
+// @ts-expect-error a GRE timeout belongs to the token, send or ticket call
+sdk.greTimeout('query', 30);
+// @ts-expect-error the token base has no default: GRE has no test environment
+sdk.greTokenRequest('id', 'secret', '20000000001USER', 'pass');

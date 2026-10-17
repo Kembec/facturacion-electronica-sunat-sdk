@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace Kembec\SunatSdk;
 
 /**
- * Client id and secret of «Credenciales de API SUNAT» (SOL), for the Consulta Integrada (`validity`).
- * They are not the SOL user and password, and not the GRE ones. They reach the binary only through its
+ * Client id and secret of «Credenciales de API SUNAT» (SOL): the Consulta Integrada pair for `validity`,
+ * or the GRE pair for greSend() and greTicket(). They are not the SOL user and password. They reach the binary only through its
  * environment, and never appear in var_dump, print_r or exception traces of this object.
  */
 final class ApiCredentials

@@ -25,6 +25,8 @@ env:
   # Must equal maturin in bindings/python/pyproject.toml [build-system].
   MATURIN_VERSION: "v1.15.0"
   TWINE_VERSION: "7.0.0"
+  # In dependency order; the same list as crates.yml, where check-publish.sh holds it to the workspace.
+  CRATES: "sunat-model sunat-transport sunat-sdk sunat-xmldsig sunat-ubl"
 
 jobs:
   cli-linux-musl:
@@ -292,3 +294,59 @@ jobs:
         with:
           packages-dir: dist/
           password: ${{ secrets.PYPI_API_TOKEN }}
+
+  # The crates as crates.io gets them, the same checks as crates.yml: a dry-run publish of each one in dependency order
+  # (on a tag it also reports a version already on crates.io) and the vector battery compiled from the .crate files.
+  crates:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+          rustup default "$RUST_TOOLCHAIN"
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+      - name: Independent verifier venv
+        run: |
+          python -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install lxml==6.0.2 cryptography==46.0.3
+          echo "SUNAT_XMLDSIG_PYTHON=$RUNNER_TEMP/venv/bin/python" >> "$GITHUB_ENV"
+      - name: The published set, its metadata and its exact internal versions
+        run: crates/scripts/check-publish.sh $CRATES
+      - name: Version equals the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version="$(cargo metadata --no-deps --locked --format-version 1 | jq -r '.packages[] | select(.name == "sunat-model") | .version')"
+          test "v$version" = "$GITHUB_REF_NAME"
+      - name: cargo publish --dry-run, each crate in dependency order
+        run: cargo publish --dry-run --locked $(printf -- '-p %s ' $CRATES)
+      - name: Package
+        run: cargo package --no-verify --locked $(printf -- '-p %s ' $CRATES)
+      - name: The battery from the .crate files
+        run: crates/scripts/test-package.sh target/package $CRATES
+
+  # Publishes the five crates to crates.io in dependency order, from the tagged tree the crates job tested.
+  # OFF (`if: false`) until two things exist: a crates.io account for the owner (sign in with GitHub; it owns the
+  # crates after the first upload), and its first API token, scoped to publish-new and publish-update, stored as
+  # CARGO_REGISTRY_TOKEN in the `release` environment. Then drop `false &&`. After the first upload, Trusted
+  # Publishing can replace the token (docs/releasing.md).
+  publish-crates:
+    needs: crates
+    if: false && startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    # The environment allows only v* tags and waits for the owner's approval.
+    environment: release
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
+          rustup default "$RUST_TOOLCHAIN"
+      - name: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+        run: cargo publish --locked $(printf -- '-p %s ' $CRATES)

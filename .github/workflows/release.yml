@@ -348,14 +348,12 @@ jobs:
       - name: The battery from the .crate files
         run: crates/scripts/test-package.sh target/package $CRATES
 
-  # Publishes the five crates to crates.io in dependency order, from the tagged tree the crates job tested.
-  # OFF (`if: false`) until two things exist: a crates.io account for the owner (sign in with GitHub; it owns the
-  # crates after the first upload), and its first API token, scoped to publish-new and publish-update, stored as
-  # CARGO_REGISTRY_TOKEN in the `release` environment. Then drop `false &&`. After the first upload, Trusted
-  # Publishing can replace the token (docs/releasing.md).
+  # Publishes the five crates to crates.io in dependency order, from the tagged tree the crates job tested, with the
+  # owner's CARGO_REGISTRY_TOKEN (publish-new and publish-update, `kembec-sunat-*`) from the `release` environment.
+  # After the first upload, Trusted Publishing can replace the token (docs/releasing.md).
   publish-crates:
     needs: [changelog, crates]
-    if: false && startsWith(github.ref, 'refs/tags/v')
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-24.04
     # The environment allows only v* tags and waits for the owner's approval.
     environment: release

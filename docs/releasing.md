@@ -1,8 +1,7 @@
 # Releasing
 
 One tag publishes every artifact: the CLI binary on the GitHub release, the npm package, the Python package on
-PyPI, and the PHP package on Packagist. The five library crates are ready for crates.io, but their publish job is
-off until the owner has a crates.io account and token ([below](#cratesio)).
+PyPI, the PHP package on Packagist, and the five library crates on crates.io ([below](#cratesio)).
 
 1. Set `version` in `[workspace.package]` of `Cargo.toml`. CI fails if `SunatSdk::VERSION` (PHP) or
    `bindings/wasm/npm/package.json` differ from it. The Python package takes it from there as PEP 440
@@ -43,7 +42,7 @@ request; one line per change, not per commit.
 | npm (`@kembec/facturacion-electronica-sunat-sdk`) | `publish-npm` job, Trusted Publishing (OIDC) bound to `release.yml` and the `release` environment | none |
 | PyPI (`facturacion-electronica-sunat-sdk`) | `publish-pypi` job | `PYPI_API_TOKEN` in the `release` environment |
 | Packagist (`kembec/facturacion-electronica-sunat-sdk`) | reads the tag through the repository's GitHub webhook | none in the workflow |
-| crates.io (`kembec-sunat-model`, `kembec-sunat-transport`, `kembec-sunat-sdk`, `kembec-sunat-xmldsig`, `kembec-sunat-ubl`) | `publish-crates` job, off | `CARGO_REGISTRY_TOKEN` in the `release` environment, not created yet |
+| crates.io (`kembec-sunat-model`, `kembec-sunat-transport`, `kembec-sunat-sdk`, `kembec-sunat-xmldsig`, `kembec-sunat-ubl`) | `publish-crates` job | `CARGO_REGISTRY_TOKEN` in the `release` environment |
 
 If npm rejects the OIDC exchange, check the trusted publisher on npmjs.com (package settings): owner `Kembec`,
 repository `facturacion-electronica-sunat-sdk`, workflow `release.yml`, environment `release`.
@@ -61,13 +60,9 @@ the library, its tests' code, README, `LICENSE` and `NOTICE`; the data the tests
 `kembec-sunat-*`, and the workspace and the bindings depend on them with `package = "kembec-sunat-…"` under the short key.
 The library names follow the package: `kembec_sunat_sdk`, and so on.
 
-To turn the publish on:
-
-1. The owner signs in to crates.io with GitHub and creates an API token with the `publish-new` and `publish-update`
-   scopes, limited to the crate pattern `kembec-sunat-*`.
-2. Store it as `CARGO_REGISTRY_TOKEN` in the `release` environment and drop `false &&` from the `if` of
-   `publish-crates`. The next `v*` tag publishes the five crates in dependency order; `v0.1.0-beta.4` was tagged
-   before they were ready.
+`publish-crates` uploads the five crates in dependency order with `CARGO_REGISTRY_TOKEN`, an API token of the owner's
+crates.io account with the `publish-new` and `publish-update` scopes, limited to the crate pattern `kembec-sunat-*`,
+stored in the `release` environment. `v0.1.0-beta.5` is the first tag that publishes them.
 
 Once the crates exist, Trusted Publishing can replace the token: on each crate's settings on crates.io add owner
 `Kembec`, repository `facturacion-electronica-sunat-sdk`, workflow `release.yml`, environment `release`; give

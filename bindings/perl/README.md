@@ -107,8 +107,9 @@ else {                                                # 'cdr'
 - `outcome` es el texto del contrato (`'cdr'`, `'fault'`, `'no_verdict'`…), y también `state` y `response_class`.
 - Un error SOAP de la SUNAT es un resultado (`'fault'`), no una excepción. Un envío sin respuesta lanza
   `Kembec::SunatSdk::Error`, porque pudo haber llegado: se reenvía el mismo XML firmado con el mismo número, nunca otro.
-- `is_accepted` es verdadero solo con código 0 y sin observaciones; con código 0 y una nota de 4000 o más, la CDR
-  queda `'observed'` y `is_valid_document` es verdadero en los dos casos.
+- `is_accepted` es verdadero solo con código 0 y sin notas. Con código 0 y cualquier nota, sea cual sea su código, la
+  CDR queda `'observed'` y `is_valid_document` es verdadero en los dos casos. El 2404 (una nota que modifica un
+  comprobante físico) es observación aunque esté por debajo de 4000.
 - `summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `ticket` y `status`
   sin respuesta dan `'no_verdict'`: se vuelve a consultar, nunca a enviar.
 - Cada resultado guarda en `raw_json` la respuesta tal como la da el

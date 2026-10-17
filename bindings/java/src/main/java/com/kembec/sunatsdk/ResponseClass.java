@@ -6,7 +6,7 @@ public enum ResponseClass {
     UNKNOWN(null),
     /** Code 0 without observations. */
     ACCEPTED("accepted"),
-    /** 4000 and above, or code 0 with a note of 4000 or above: accepted, with observations. */
+    /** 4000 and above, or code 0 with any note: accepted, with observations. */
     OBSERVED("observed"),
     /** 100 to 1999 but 1032 and 1033: the file was not processed and the document counts as not received. */
     EXCEPTION("exception"),

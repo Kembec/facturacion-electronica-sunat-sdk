@@ -112,8 +112,9 @@ else
   los llames desde el hilo de una ventana. El cliente no guarda estado y se puede compartir entre hilos.
 - Un error SOAP de la SUNAT es un resultado (`Outcome.Fault`), no una excepción. Un envío sin respuesta lanza
   `SunatSdkException`, porque pudo haber llegado: se reenvía el mismo XML firmado con el mismo número, nunca otro.
-- `IsAccepted` es verdadero solo con código 0 y sin observaciones; con código 0 y una nota de 4000 o más, la CDR queda
-  `Observed` e `IsValidDocument` es verdadero en los dos casos.
+- `IsAccepted` es verdadero solo con código 0 y sin notas. Con código 0 y cualquier nota, sea cual sea su código, la CDR
+  queda `Observed` e `IsValidDocument` es verdadero en los dos casos. El 2404 (una nota que modifica un comprobante
+  físico) es observación aunque esté por debajo de 4000.
 - `Summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `Ticket` y `Status`
   sin respuesta dan `Outcome.NoVerdict`: se vuelve a consultar, nunca a enviar.
 - Cada resultado guarda en `RawJson` la respuesta tal como la da el

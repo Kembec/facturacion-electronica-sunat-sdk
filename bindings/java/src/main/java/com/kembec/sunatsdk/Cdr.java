@@ -54,7 +54,7 @@ public final class Cdr extends SdkResult {
     }
 
     /**
-     * The notes; a code of 4000 or above is an observation.
+     * The notes; with code 0, every note is an observation.
      *
      * @return each {@code "code - text"}; empty if none
      */

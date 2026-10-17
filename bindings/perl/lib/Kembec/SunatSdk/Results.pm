@@ -95,9 +95,9 @@ use warnings;
 our @ISA = ('Kembec::SunatSdk::Result');
 
 # reference_id: the voucher it answers ("F001-1"); response_code: SUNAT's code ("0", "2047"...); notes: an array
-# reference, each "code - text", a code of 4000 or above is an observation; response_class: how the SDK classifies the
-# code and the notes, "accepted", "observed", "exception", "already_registered", "number_voided_or_rejected",
-# "rejected", "void_already_reported" or "unknown".
+# reference, each "code - text", with code 0 every note is an observation; response_class: how the SDK
+# classifies the code and the notes, "accepted", "observed", "exception", "already_registered",
+# "number_voided_or_rejected", "rejected", "void_already_reported" or "unknown".
 Kembec::SunatSdk::Result::fields(qw(reference_id response_code description notes response_class));
 
 sub from {

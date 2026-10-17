@@ -47,7 +47,7 @@ public struct CDR: Codable, Sendable, Hashable, RawJSONCarrying {
     /// `0`, `2047`...
     public let responseCode: String
     public let description: String
-    /// Each `code - text`; a code of 4000 or above is an observation.
+    /// Each `code - text`; with code 0, every note is an observation.
     public let notes: [String]
     public let responseClass: ResponseClass
     public internal(set) var rawJSON: String = ""

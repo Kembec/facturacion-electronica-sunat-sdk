@@ -98,8 +98,9 @@ $sdk->zip($fileName, $xml);                                   // ZipResult
 $sdk->cdr($cdrZipOrXmlBytes);                                 // Cdr
 ```
 
-- `isAccepted()` es verdadero solo con código 0 y sin observaciones. Con código 0 y una nota de 4000 o más, la CDR
-  queda `observed`; `isValidDocument()` es verdadero en los dos casos.
+- `isAccepted()` es verdadero solo con código 0 y sin notas. Con código 0 y cualquier nota, sea cual sea su código, la
+  CDR queda `observed`; `isValidDocument()` es verdadero en los dos casos. El 2404 (una nota que modifica un comprobante
+  físico) es observación aunque esté por debajo de 4000.
 - `send` y `status` esperan a la SUNAT 90 segundos, o el tiempo máximo por llamada menos 5 si es más corto. El tercer
   argumento opcional del constructor cambia esa espera, en segundos enteros, y tiene que dejar esos 5 de margen.
 - Los resúmenes diarios (RC) y las comunicaciones de baja (RA) se arman y firman con `build` y `sign`, pero este

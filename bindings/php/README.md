@@ -93,6 +93,12 @@ if ($result->isFault()) {
     $result->getCdr()->isAccepted();                          // código de respuesta, notas, clase
 }
 
+foreach ($result->getDiagnosis() as $diagnosis) {             // un elemento por código de la respuesta
+    $diagnosis->getCode();                                    // "2800"
+    $diagnosis->getDetail();                                  // nodo y valor que nombra la SUNAT: cbc:ID/schemeID = "1"
+    $diagnosis->getFields()[0]->getInputPath();               // el campo de tu JSON: "customer.document_type"
+}
+
 $sdk->status($ruc, '01', 'F001', 123, $credentials, $statusEndpoint);
 $sdk->zip($fileName, $xml);                                   // ZipResult
 $sdk->cdr($cdrZipOrXmlBytes);                                 // Cdr
@@ -101,6 +107,11 @@ $sdk->cdr($cdrZipOrXmlBytes);                                 // Cdr
 - `isAccepted()` es verdadero solo con código 0 y sin notas. Con código 0 y cualquier nota, sea cual sea su código, la
   CDR queda `observed`; `isValidDocument()` es verdadero en los dos casos. El 2404 (una nota que modifica un comprobante
   físico) es observación aunque esté por debajo de 4000.
+- `getDiagnosis()` (en `send`, `summary`, `ticket` y `status`) dice qué campo de tu entrada causó cada código: el del
+  error SOAP, el de la CDR si no es 0 y el de cada nota que empieza con un código (`"4287 - ..."`). Sale de las reglas
+  de validación de la SUNAT del 26.08.2026 para 01, 03, 07 y 08; `getCertainty()` es `fuente` cuando la regla apunta a
+  un solo campo e `inferido` cuando calcula sobre varios. Es una lista vacía sin veredicto y con un binario anterior
+  ([detalle](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md#diagnosis)).
 - `send`, `summary`, `ticket` y `status` esperan a la SUNAT 90 segundos, o el tiempo máximo por llamada menos 5 si es
   más corto. El tercer argumento opcional del constructor cambia esa espera, en segundos enteros, y tiene que dejar esos
   5 de margen.

@@ -120,3 +120,59 @@ fn validity_steps_are_fetch_options_and_outcomes_like_the_cli() {
     assert!(validity_timeout_json("send", 30).is_err());
     assert!(validity_request_json(r#"{"ruc":"1"}"#, "t0k", None).is_err());
 }
+
+/// The 2800 the beta answered on 17/10/2026 to a boleta (`test/data/beta-2800-fault.xml`, HTTP 200).
+fn beta_2800() -> Vec<u8> {
+    std::fs::read(root().join("bindings/wasm/test/data/beta-2800-fault.xml")).unwrap()
+}
+
+/// getStatusCdr with the manual's observed CDR (annex C.1), its first note turned into a 4287.
+fn status_observed_4287() -> Vec<u8> {
+    let cdr = read("crates/sunat-transport/tests/data/R-20150147718-01-FA01-981.xml")
+        .replace("4031 - Debe indicar el nombre comercial", "4287 - El precio unitario de la operacion que se informa difiere de los calculos realizados en base a la cantidad, valor unitario y descuentos");
+    let content = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, cdr.as_bytes());
+    format!("<S:Envelope xmlns:S=\"s\"><S:Body><n:getStatusCdrResponse xmlns:n=\"n\"><statusCdr><statusCode>0004</statusCode><content>{content}</content><statusMessage>La constancia existe</statusMessage></statusCdr></n:getStatusCdrResponse></S:Body></S:Envelope>").into_bytes()
+}
+
+const BOLETA: &str = r#"{"name": "20100066603-03-B001-1", "xml": "<Invoice/>"}"#;
+const BOLETA_STATUS: &str = r#"{"ruc": "20100066603", "document_type": "03", "series": "B001", "number": 1}"#;
+
+#[test]
+fn soap_response_diagnoses_the_beta_2800_on_the_customer_document_type() {
+    let sent = parse(&soap_response_json("send", BOLETA, 200, &beta_2800()).unwrap());
+    assert_eq!((sent["outcome"].as_str(), sent["code"].as_str()), (Some("fault"), Some("2800")));
+    let expected = serde_json::json!([{
+        "code": "2800",
+        "detail": { "node": "cbc:ID/schemeID", "value": "1" },
+        "fields": [{
+            "input_path": "customer.document_type",
+            "xpath": "/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID@schemeID",
+            "certainty": "fuente"
+        }]
+    }]);
+    assert_eq!(sent["diagnosis"], expected);
+    let alone = parse(&diagnose_json("03", "2800", sent["message"].as_str().unwrap()));
+    assert_eq!(alone, expected[0]);
+}
+
+#[test]
+fn soap_response_diagnoses_each_note_and_leaves_answers_without_codes_alone() {
+    let observed = parse(&soap_response_json("status", BOLETA_STATUS, 200, &status_observed_4287()).unwrap());
+    assert_eq!(observed["cdr"]["class"], "observed");
+    assert_eq!(observed["diagnosis"][0]["code"], "4287");
+    assert_eq!(observed["diagnosis"][0]["fields"][0]["input_path"], "lines[].unit_price");
+    assert_eq!(observed["diagnosis"][1], serde_json::json!({ "code": "4001", "detail": null, "fields": [] }));
+
+    let unauthorized = parse(&soap_response_json("ticket", r#"{"ticket": "1"}"#, 401, b"").unwrap());
+    assert!(unauthorized.get("diagnosis").is_none());
+    assert!(parse(&soap_timeout_json("status", BOLETA_STATUS, 45).unwrap()).get("diagnosis").is_none());
+    assert_eq!(parse(&diagnose_json("01", "9999", "x")), serde_json::json!({ "code": "9999", "detail": null, "fields": [] }));
+}
+
+/// The PHP binding's tests feed these files as the CLI's output: they must be what the core gives.
+#[test]
+fn php_fixtures_are_the_cli_output_for_the_same_answers() {
+    let fixture = |name: &str| parse(&read(&format!("bindings/php/tests/data/{name}.json")));
+    assert_eq!(fixture("send-beta-2800"), parse(&soap_response_json("send", BOLETA, 200, &beta_2800()).unwrap()));
+    assert_eq!(fixture("status-observed-4287"), parse(&soap_response_json("status", BOLETA_STATUS, 200, &status_observed_4287()).unwrap()));
+}

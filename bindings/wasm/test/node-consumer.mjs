@@ -45,6 +45,18 @@ try {
 }
 if (!sendTimeout?.includes('the outcome is unknown')) throw new Error(`soapTimeout send: ${sendTimeout}`);
 console.log(`ok node exchange: soapRequest, soapResponse 401 -> no_verdict, soapTimeout send throws`);
+// The 2800 the beta answered to a boleta: the outcome names the input field, and diagnose() alone agrees.
+const boleta = JSON.stringify({ name: '20100066603-03-B001-1', xml: '<Invoice/>' });
+const rejected = JSON.parse(sdk.soapResponse('send', boleta, 200, new Uint8Array(readFileSync(join(root, 'bindings/wasm/test/data/beta-2800-fault.xml')))));
+const [found] = rejected.diagnosis ?? [];
+if (rejected.code !== '2800' || rejected.diagnosis.length !== 1 || found.detail?.node !== 'cbc:ID/schemeID' || found.detail.value !== '1' || found.fields[0]?.input_path !== 'customer.document_type') {
+  throw new Error(`soapResponse 2800: ${JSON.stringify(rejected.diagnosis)}`);
+}
+if (JSON.stringify(JSON.parse(sdk.diagnose('03', '2800', rejected.message))) !== JSON.stringify(found)) {
+  throw new Error(`diagnose 2800: ${sdk.diagnose('03', '2800', rejected.message)}`);
+}
+if ('diagnosis' in unauthorized) throw new Error('no verdict has no diagnosis');
+console.log('ok node diagnosis: beta 2800 -> customer.document_type (cbc:ID/schemeID = 1)');
 // Consulta Integrada: token, then query, both through the caller's fetch; a 401 is no verdict.
 const tokenCall = JSON.parse(sdk.validityTokenRequest('c04864ce-f454-48e1-b41d-8730e575b905', 'OpzHz4pn8D1frRrv5iDklA=='));
 if (!tokenCall.url.endsWith('/c04864ce-f454-48e1-b41d-8730e575b905/oauth2/token/') || !tokenCall.body.includes('client_secret=OpzHz4pn8D1frRrv5iDklA%3D%3D')) {

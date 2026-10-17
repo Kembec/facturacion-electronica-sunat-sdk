@@ -20,6 +20,9 @@ final class SummaryResult
     /** @var Fault|null */
     private $fault;
 
+    /** @var Diagnosis[] */
+    private $diagnosis = [];
+
     private function __construct(?string $ticket, ?Fault $fault)
     {
         $this->ticket = $ticket;
@@ -30,6 +33,17 @@ final class SummaryResult
      * @param array<string, mixed> $data
      */
     public static function fromArray(array $data): self
+    {
+        $result = self::read($data);
+        $result->diagnosis = Diagnosis::listFrom($data);
+
+        return $result;
+    }
+
+    /**
+     * @param array<string, mixed> $data
+     */
+    private static function read(array $data): self
     {
         $outcome = Fields::string($data, 'outcome');
         if ($outcome === 'fault') {
@@ -61,5 +75,17 @@ final class SummaryResult
     public function getFault(): ?Fault
     {
         return $this->fault;
+    }
+
+    /**
+     * The input field each code in the answer points at, one Diagnosis per code: the fault's, a CDR's
+     * non-zero response code and each note that starts with a code. Empty when the binary sends none
+     * (no verdict, or an answer without codes).
+     *
+     * @return Diagnosis[]
+     */
+    public function getDiagnosis(): array
+    {
+        return $this->diagnosis;
     }
 }

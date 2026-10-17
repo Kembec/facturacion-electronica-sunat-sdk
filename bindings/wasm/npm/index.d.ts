@@ -42,12 +42,45 @@ export interface SoapRequest {
   body: string;
 }
 
+/** What SUNAT's message names, as `(nodo: "<node>" valor: "<value>")`: observed in beta, not documented by SUNAT. */
+export interface DiagnosisDetail {
+  /** The last element and, if any, its attribute, as SUNAT writes it (`cbc:ID/schemeID`). */
+  node: string;
+  /** The value SUNAT read in that node. */
+  value: string;
+}
+
+/** One candidate field for a code, from SUNAT's validation rules of 26.08.2026. */
+export interface DiagnosisField {
+  /** A field of the input model (`customer.document_type`, `lines[].unit_price`), `sdk` when the SDK writes the node, or `null` when the input model has no such field. */
+  input_path: string | null;
+  /** The node the rule checks; `null` for rules on the file, the signature or the service. */
+  xpath: string | null;
+  /** `fuente` when the node is the rule's own and one field writes it, `inferido` when the rule computes over several nodes. */
+  certainty: 'fuente' | 'inferido';
+}
+
+/** A code SUNAT answered, with the input fields that may have caused it (docs/cli.md#diagnosis). */
+export interface Diagnosis {
+  code: string;
+  detail: DiagnosisDetail | null;
+  /** Empty for a code the rules do not list, for summaries, void communications and tickets. With a `detail`, only the rows on its node, unless none is. */
+  fields: DiagnosisField[];
+}
+
+/**
+ * One element per code in the answer: the fault's, a CDR's `response_code` when it is not 0, and each
+ * note that starts with a code (`"4287 - ..."`). On every fault and every answer that carries a CDR.
+ */
+export type DiagnosisList = Diagnosis[];
+
 /** A SOAP fault from SUNAT: a result, not an exception. */
 export interface FaultOutcome {
   outcome: 'fault';
   code: string;
   message: string;
   class: Cdr['class'];
+  diagnosis: DiagnosisList;
 }
 
 /**
@@ -66,17 +99,17 @@ export interface NoVerdictOutcome {
 }
 
 /** `send`: the CDR or a fault. */
-export type SendOutcome = { outcome: 'cdr'; cdr: Cdr; cdr_zip_base64: string } | FaultOutcome;
+export type SendOutcome = { outcome: 'cdr'; cdr: Cdr; cdr_zip_base64: string; diagnosis: DiagnosisList } | FaultOutcome;
 /** `summary`: the ticket, the only handle on the outcome (store it first), or a fault. */
 export type SummaryOutcome = { outcome: 'ticket'; ticket: string } | FaultOutcome;
 /** `ticket`: `state` is `processed` (0), `in_process` (98: ask again) or `processed_with_errors` (99). */
 export type TicketOutcome =
-  | { outcome: 'ticket_status'; status_code: string; state: 'processed' | 'in_process' | 'processed_with_errors' | null; cdr?: Cdr; cdr_zip_base64?: string }
+  | { outcome: 'ticket_status'; status_code: string; state: 'processed' | 'in_process' | 'processed_with_errors' | null; cdr?: Cdr; cdr_zip_base64?: string; /** With `cdr`. */ diagnosis?: DiagnosisList }
   | FaultOutcome
   | NoVerdictOutcome;
 /** `status` (getStatusCdr). */
 export type StatusOutcome =
-  | { outcome: 'status'; status_code: string; status_message: string; cdr?: Cdr; cdr_zip_base64?: string }
+  | { outcome: 'status'; status_code: string; status_message: string; cdr?: Cdr; cdr_zip_base64?: string; /** With `cdr`. */ diagnosis?: DiagnosisList }
   | FaultOutcome
   | NoVerdictOutcome;
 
@@ -248,7 +281,7 @@ export interface Sdk {
   soapRequest(exchange: Exchange, inputJson: string, user: string, password: string): string;
   /**
    * The outcome for SUNAT's HTTP status and body, with the same input given to `soapRequest`:
-   * the CLI's output for the same answer.
+   * the CLI's output for the same answer, with its `diagnosis`.
    * @returns JSON text of a {@link SendOutcome}, {@link SummaryOutcome}, {@link TicketOutcome} or {@link StatusOutcome}.
    * @throws Error for `send` or `summary` without an answer: the document may have arrived.
    */
@@ -259,6 +292,13 @@ export interface Sdk {
    * @throws Error for `send` and `summary`: the outcome is unknown and the document may have arrived.
    */
   soapTimeout(exchange: Exchange, inputJson: string, seconds: number): string;
+  /**
+   * The input fields a SUNAT code points at, as one element of an outcome's `diagnosis`.
+   * @param documentType `01`, `03`, `07` or `08`; any other type has no fields.
+   * @param message SUNAT's text for the code (fault string, CDR description or note), read for its `nodo`/`valor`.
+   * @returns JSON text of a {@link Diagnosis}.
+   */
+  diagnose(documentType: string, code: string, message: string): string;
   /**
    * Consulta Integrada, step 1: the OAuth token request (`client_credentials`, «Credenciales de API SUNAT»).
    * @param base replaces SUNAT's token base `https://api-seguridad.sunat.gob.pe/v1/clientesextranet`.

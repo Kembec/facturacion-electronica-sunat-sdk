@@ -101,8 +101,9 @@ La instalación y el envío a la SUNAT (`exchange`) están en el [README del paq
 
 ### Rust
 
-Los crates no están en crates.io: se usan como dependencia git de la versión publicada en GitHub. `sunat-model` lee y
-valida el documento, `sunat-ubl` arma el XML y `sunat-xmldsig` lo firma.
+Desde la 0.1.0-beta.5 los crates se publican en crates.io como `kembec-sunat-*`; también se usan como dependencia git
+del tag, con la clave corta para que el código diga `sunat_model::…`. `sunat-model` lee y valida el documento,
+`sunat-ubl` arma el XML y `sunat-xmldsig` lo firma.
 
 ```toml
 [dependencies]
@@ -244,8 +245,8 @@ La 0.1.0-beta.5, publicada en npm, PyPI, Packagist y GitHub, suma frente a la 0.
 
 - el envío de la guía de remisión remitente (09) por la API REST de la SUNAT, en la CLI, PHP, Python y JavaScript;
 - en PHP, los resúmenes diarios y las comunicaciones de baja (`summary`, `ticket`);
-- la ABI en C y, sobre ella, .NET, Java, Ruby, Perl, Swift, Objective-C, VB6, Visual FoxPro y PowerBuilder, que todavía
-  no están en NuGet, Maven Central, RubyGems ni CPAN;
+- la ABI en C y, sobre ella, .NET, Java, Ruby, Perl, Swift, Objective-C, VB6, Visual FoxPro y PowerBuilder; ninguno
+  está todavía en su registro (NuGet, Maven Central, RubyGems, CPAN) ni se agrega por URL con SwiftPM;
 - dos cambios que rompen compatibilidad: los crates se llaman `kembec-sunat-*`, y una CDR con código 0 y cualquier nota
   es `observed`. Cómo migrar, en el [CHANGELOG](CHANGELOG.md).
 

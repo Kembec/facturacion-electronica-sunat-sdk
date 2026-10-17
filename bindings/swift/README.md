@@ -21,8 +21,11 @@ https://fe.kembec.com
 
 ## Instalación
 
-El paquete todavía no está publicado: ningún tag del repositorio tiene `Package.swift`. Cuando uno lo tenga, se agregará
-por URL con la versión de ese tag, y SwiftPM bajará el binario del release y comprobará su checksum.
+El paquete todavía no se puede agregar por URL. El tag `v0.1.0-beta.5` ya tiene `Package.swift`, pero sin binario:
+en ese commit `release` es `nil`, y el release no adjunta `SunatSDKFFI.xcframework.zip`. SwiftPM resuelve la versión
+0.1.0-beta.5 y se detiene en `local binary target 'SunatSDKFFI' … does not contain a binary artifact`. Se podrá
+agregar por URL cuando un release adjunte ese zip y el commit de su tag nombre su URL y su checksum en `release`;
+entonces SwiftPM bajará el binario y comprobará el checksum.
 
 Hasta entonces, se usa una copia local del repositorio con el binario que arma el CI. `Package.swift` lee el
 `SunatSDKFFI.xcframework` de `bindings/swift/artifacts`, que no está en git (son 139 MB): baja el artefacto
@@ -33,7 +36,6 @@ descomprímelo ahí. Con `gh`:
 ```bash
 git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git
 cd facturacion-electronica-sunat-sdk
-git switch feat/swift   # mientras el paquete no esté en main
 run=$(gh run list -w swift -b "$(git branch --show-current)" -s success -L 1 --json databaseId -q '.[0].databaseId')
 gh run download "$run" -n SunatSDKFFI.xcframework -D bindings/swift/artifacts/SunatSDKFFI.xcframework
 ```
@@ -49,7 +51,7 @@ targets: [
 ]
 ```
 
-Es una versión beta (0.1.0-beta.4, la de `SunatSDKClient.packageVersion`). Pide Swift 5.9 o posterior y corre en:
+Es una versión beta (0.1.0-beta.5, la de `SunatSDKClient.packageVersion`). Pide Swift 5.9 o posterior y corre en:
 
 | Plataforma | Núcleo del SDK |
 |---|---|
@@ -75,7 +77,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.4
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.5
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"

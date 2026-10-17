@@ -24,8 +24,12 @@ https://fe.kembec.com
 
 ## Instalación
 
-El paquete todavía no está publicado: ningún tag del repositorio tiene `Package.swift` ni `KembecSunatSDKObjC.podspec`.
-Cuando uno los tenga, se agregará por URL con SwiftPM, o con CocoaPods desde Git:
+El paquete todavía no se puede agregar por URL. El tag `v0.1.0-beta.5` ya tiene `Package.swift` y
+`KembecSunatSDKObjC.podspec`, pero sin binario: en ese commit `release` de `Package.swift` es `nil`, y el release no
+adjunta `SunatSDKFFI.xcframework.zip`. SwiftPM se detiene en `local binary target 'SunatSDKFFI' … does not contain a
+binary artifact`, y el `prepare_command` del podspec, en «Package.swift names no released xcframework yet». Cuando un
+release adjunte ese zip y el commit de su tag nombre su URL y su checksum, se agregará por URL con SwiftPM, o con
+CocoaPods desde Git:
 
 ```ruby
 pod 'KembecSunatSDKObjC', :git => 'https://github.com/Kembec/facturacion-electronica-sunat-sdk.git', :tag => 'v…'
@@ -43,7 +47,6 @@ descomprímelo ahí. Con `gh`:
 ```bash
 git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git
 cd facturacion-electronica-sunat-sdk
-git switch feat/swift   # mientras el paquete no esté en main
 run=$(gh run list -w swift -b "$(git branch --show-current)" -s success -L 1 --json databaseId -q '.[0].databaseId')
 gh run download "$run" -n SunatSDKFFI.xcframework -D bindings/swift/artifacts/SunatSDKFFI.xcframework
 ```
@@ -65,7 +68,7 @@ o con CocoaPods, en tu `Podfile`:
 pod 'KembecSunatSDKObjC', :path => '../facturacion-electronica-sunat-sdk'
 ```
 
-Es una versión beta (0.1.0-beta.4, la de `KSSPackageVersion`). Corre en macOS 10.15 o posterior (Apple Silicon e
+Es una versión beta (0.1.0-beta.5, la de `KSSPackageVersion`). Corre en macOS 10.15 o posterior (Apple Silicon e
 Intel) y en iOS 13 o posterior, dispositivo y simulador (arm64 y x86_64); no en Linux. Está escrito para ARC y no
 compila sin él. El núcleo en Rust queda enlazado dentro de tu binario como biblioteca estática: no hay framework que
 embeber ni firmar, ni programa externo al que llamar.
@@ -76,7 +79,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.4
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.5
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"

@@ -32,7 +32,7 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 - Windows zip for VB6, Visual FoxPro and PowerBuilder over the C ABI, 32 and 64 bits (#41).
 - Swift package and Objective-C client (`KembecSunatSDKObjC`, macOS 10.15+, iOS 13+) over the C ABI, with the
   xcframework and the podspec (#43).
-- The five library crates are publishable on crates.io (publish still off until the owner's account exists) (#44).
+- The five library crates are published on crates.io, from this release on (#44, #48).
 
 ### Changed
 

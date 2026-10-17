@@ -19,7 +19,12 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 - `diagnosis` in the PHP and WebAssembly bindings: PHP's `SendResult`, `StatusResult`, `SummaryResult` and
   `TicketResult` add `getDiagnosis()`, a list of `Diagnosis` (`getCode()`, `getDetail()`, `getFields()`), empty when the
   binary sends none; wasm's `soapResponse` and `soapTimeout` add `diagnosis` as the CLI does, `diagnose(documentType,
-  code, message)` diagnoses one code, and `index.d.ts` types both.
+  code, message)` diagnoses one code, and `index.d.ts` types both (#52).
+- Retention voucher (20): `kind: "retention"`, UBL 2.0 `Retention` built, signed and zipped (`RUC-20-R###-N.zip`)
+  through the core and the CLI; SUNAT's «Retenciones1_0» rules that read only the document are checked before
+  sending, each with its code (2619 rate of the regime, 2623 amounts and exchange rate, 2626 payment number, 2628 and
+  2629 totals, among others). The send term (2600) is a parameter of `Retention::check_send_deadline`. Not sent to
+  SUNAT beta yet; sending by `otroscpe` comes next (#51).
 
 ## [0.1.0-beta.5] - 2026-10-17
 

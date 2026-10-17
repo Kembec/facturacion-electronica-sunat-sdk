@@ -1,6 +1,7 @@
 //! Root element and header of each document type, and the order of its sections, per SUNAT's
 //! UBL 2.1 guides for invoice and receipt (01, 03), credit note (07) and debit note (08). The daily
-//! summary and the void communication are in `daily`; the despatch advice (09), in `despatch`.
+//! summary and the void communication are in `daily`; the despatch advice (09), in `despatch`; the
+//! retention voucher (20), in `retention`.
 
 use sunat_model::{Document, DocumentType, Invoice, Note, Voucher};
 
@@ -9,6 +10,7 @@ use crate::despatch;
 use crate::lines::{self, CREDIT_NOTE_LINE, DEBIT_NOTE_LINE, INVOICE_LINE};
 use crate::parties;
 use crate::references;
+use crate::retention;
 use crate::totals::{self, MonetaryTotal};
 use crate::writer::XmlWriter;
 use crate::Options;
@@ -30,6 +32,7 @@ pub(crate) fn render(document: &Document, options: &Options) -> Vec<u8> {
         Document::Summary(summary) => daily::summary_body(&mut w, summary, options),
         Document::Voided(voided) => daily::voided_body(&mut w, voided, options),
         Document::Despatch(despatch) => despatch::body(&mut w, despatch, options),
+        Document::Retention(r) => retention::body(&mut w, r, options),
     }
     w.finish()
 }

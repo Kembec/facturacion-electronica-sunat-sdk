@@ -52,7 +52,7 @@ for row in "${expected[@]}"; do
   [ "$natives" = "$file" ] || { echo "$gem: native libraries [$natives], expected $file" >&2; exit 1; }
   library="$dir/data/lib/kembec/sunat_sdk/native/$file"
   kind=$(file -b "$library")
-  grep -Eq "$pattern" <<<"$kind" || { echo "$gem: $file is «$kind», expected «$pattern»" >&2; exit 1; }
+  grep -Eq "$pattern" <<<"$kind" || { echo "$gem: $file is «${kind}», expected «${pattern}»" >&2; exit 1; }
   case $platform in
     *-linux-gnu)
       glibc=$(readelf -V -W "$library" | grep -o 'GLIBC_[0-9.]*' | sed 's/GLIBC_//' | sort -uV | tail -1)

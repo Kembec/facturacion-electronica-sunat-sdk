@@ -103,3 +103,50 @@ NSArray<NSString *> *KSSExchangeStageValues(void) {
 }
 
 @end
+
+@implementation KSSDiagnosisDetail
+
+- (instancetype)initWithFields:(KSSFields *)fields {
+    if ((self = [super init])) {
+        _node = [fields string:@"node"];
+        _value = [fields string:@"value"];
+    }
+    return self;
+}
+
+@end
+
+@implementation KSSDiagnosisField
+
+- (instancetype)initWithFields:(KSSFields *)fields {
+    if ((self = [super init])) {
+        _inputPath = [fields optionalString:@"input_path"];
+        _xpath = [fields optionalString:@"xpath"];
+        _certainty = [fields enumeration:@"certainty" values:@[@"fuente", @"inferido"]];
+    }
+    return self;
+}
+
+@end
+
+@implementation KSSDiagnosis
+
+- (instancetype)initWithFields:(KSSFields *)fields {
+    if ((self = [super init])) {
+        _code = [fields string:@"code"];
+        KSSFields *detail = [fields optionalObject:@"detail"];
+        _detail = detail == nil ? nil : [[KSSDiagnosisDetail alloc] initWithFields:detail];
+        NSMutableArray *list = [NSMutableArray array];
+        for (KSSFields *field in [fields objects:@"fields"]) [list addObject:[[KSSDiagnosisField alloc] initWithFields:field]];
+        _fields = [list copy];
+    }
+    return self;
+}
+
+@end
+
+NSArray<KSSDiagnosis *> *KSSReadDiagnosis(KSSFields *fields) {
+    NSMutableArray *list = [NSMutableArray array];
+    for (KSSFields *item in [fields objects:@"diagnosis"]) [list addObject:[[KSSDiagnosis alloc] initWithFields:item]];
+    return [list copy];
+}

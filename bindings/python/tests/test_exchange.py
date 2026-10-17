@@ -9,6 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import pytest
 
 import sunat_sdk
+from conftest import ROOT
 from test_api import DOC, send_bill_answer
 
 FAULT = (
@@ -81,3 +82,18 @@ def test_no_answer_is_no_verdict_for_a_query_and_an_error_for_a_send(sunat):
     assert (outcome["outcome"], outcome["reason"]) == ("no_verdict", "timeout")
     with pytest.raises(sunat_sdk.SunatSdkError, match="outcome is unknown"):
         sunat_sdk.exchange("send", DOC, "u", "p", f"{sunat}/slow", timeout=0.5)
+
+
+def test_diagnose_points_the_beta_2800_at_the_customer_document_type():
+    message = (ROOT / "crates/sunat-sdk/tests/data/error-fields/faultstring-2800.txt").read_text(encoding="utf-8").strip()
+    found = sunat_sdk.diagnose("03", "2800", message)
+    assert found["detail"] == {"node": "cbc:ID/schemeID", "value": "1"}
+    assert found["fields"][0]["input_path"] == "customer.document_type"
+    body = (
+        '<e:Envelope xmlns:e="s"><e:Body><e:Fault><faultcode>e:Client.2800</faultcode>'
+        f"<faultstring>{message.replace('&', '&amp;').replace('<', '&lt;')}</faultstring></e:Fault></e:Body></e:Envelope>"
+    ).encode()
+    out = sunat_sdk.soap_response("send", {"name": "20100066603-03-B001-1", "xml": "<a/>"}, 500, body)
+    assert out["diagnosis"] == [found]
+    ok = sunat_sdk.soap_timeout("ticket", {"ticket": "1"}, 5)
+    assert "diagnosis" not in ok

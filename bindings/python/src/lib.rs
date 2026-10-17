@@ -57,6 +57,13 @@ fn soap_timeout(exchange: &str, input_json: &str, seconds: u32) -> PyResult<Stri
     api::soap_timeout_json(exchange, input_json, seconds).map_err(raise)
 }
 
+/// The input field a SUNAT code points at, for `document_type` (`01`, `03`, `07`, `08`), as one
+/// element of `diagnosis`: `{"code", "detail": {"node", "value"} | null, "fields": [...]}`.
+#[pyfunction]
+fn diagnose(document_type: &str, code: &str, message: &str) -> String {
+    api::diagnose_json(document_type, code, message)
+}
+
 /// Consulta Integrada token request as `{"method", "url", "headers", "body"}`.
 #[pyfunction]
 #[pyo3(signature = (client_id, client_secret, base=None))]
@@ -148,6 +155,7 @@ fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(soap_request, m)?)?;
     m.add_function(wrap_pyfunction!(soap_response, m)?)?;
     m.add_function(wrap_pyfunction!(soap_timeout, m)?)?;
+    m.add_function(wrap_pyfunction!(diagnose, m)?)?;
     m.add_function(wrap_pyfunction!(validity_token_request, m)?)?;
     m.add_function(wrap_pyfunction!(validity_token_response, m)?)?;
     m.add_function(wrap_pyfunction!(validity_request, m)?)?;

@@ -1,0 +1,58 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net462 carries the loader for .NET Framework (x86 and x64 side by side); netstandard2.0 serves .NET
+         Core 3.1 to 9, Mono and Unity; net10.0 needs no JSON package. -->
+    <TargetFrameworks>net462;netstandard2.0;net10.0</TargetFrameworks>
+    <RootNamespace>Kembec.SunatSdk</RootNamespace>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Deterministic>true</Deterministic>
+
+    <!-- Must equal [workspace.package] version in the repository's Cargo.toml (checked in CI) and the native
+         library's sunat_sdk_version() (checked by the battery). -->
+    <Version>0.1.0-beta.4</Version>
+    <PackageId>Kembec.SunatSdk</PackageId>
+    <Title>SDK de facturación electrónica SUNAT (Perú)</Title>
+    <Description>Arma, firma, envía y consulta comprobantes electrónicos de la SUNAT (Perú) desde C# y VB.NET: facturas, boletas, notas, resúmenes, bajas y guías de remisión. El núcleo en Rust del SDK, en proceso por su ABI C. SUNAT (Peru) electronic invoicing SDK for .NET.</Description>
+    <Authors>Manuel Benancio</Authors>
+    <Copyright>© 2026 Manuel Benancio</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/Kembec/facturacion-electronica-sunat-sdk</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Kembec/facturacion-electronica-sunat-sdk</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>sunat;peru;facturacion-electronica;comprobantes;ubl;xmldsig;e-invoicing</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <!-- A package without one of the six native builds would load on some machines and not on others. -->
+    <AllowMissingNatives Condition="'$(AllowMissingNatives)' == ''">false</AllowMissingNatives>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
+    <PackageReference Include="System.Text.Json" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../../README.md" Pack="true" PackagePath="/" />
+    <None Include="build/Kembec.SunatSdk.targets" Pack="true" PackagePath="build/;buildTransitive/" />
+    <None Include="runtimes/**/*" Pack="true" PackagePath="runtimes/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <NativeLibrary Include="runtimes/win-x64/native/sunat_sdk_ffi.dll" />
+    <NativeLibrary Include="runtimes/win-x86/native/sunat_sdk_ffi.dll" />
+    <NativeLibrary Include="runtimes/linux-x64/native/libsunat_sdk_ffi.so" />
+    <NativeLibrary Include="runtimes/linux-arm64/native/libsunat_sdk_ffi.so" />
+    <NativeLibrary Include="runtimes/osx-x64/native/libsunat_sdk_ffi.dylib" />
+    <NativeLibrary Include="runtimes/osx-arm64/native/libsunat_sdk_ffi.dylib" />
+  </ItemGroup>
+
+  <Target Name="RequireNativeLibraries" BeforeTargets="GenerateNuspec" Condition="'$(AllowMissingNatives)' != 'true'">
+    <Error Condition="!Exists('%(NativeLibrary.Identity)')" Text="missing native library %(NativeLibrary.Identity): stage the six builds of bindings/ffi under runtimes/&lt;rid&gt;/native/ (see .github/workflows/dotnet.yml)" />
+  </Target>
+
+</Project>

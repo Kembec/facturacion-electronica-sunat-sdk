@@ -68,7 +68,7 @@ module Kembec
       # SUNAT's response code ("0", "2047"...).
       attr_reader :response_code
       attr_reader :description
-      # The notes, each "code - text"; a code of 4000 or above is an observation.
+      # The notes, each "code - text"; with code 0, every note is an observation.
       attr_reader :notes
       # How the SDK classifies the code and the notes: :accepted, :observed, :exception, :already_registered,
       # :number_voided_or_rejected, :rejected, :void_already_reported or :unknown.

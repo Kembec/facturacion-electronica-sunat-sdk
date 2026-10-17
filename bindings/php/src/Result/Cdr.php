@@ -26,7 +26,7 @@ final class Cdr
 
     /**
      * @param string[] $notes
-     * @param string|null $class as the binary classifies the CDR (`accepted`, `observed` for code 0 with a 4xxx note, `rejected`...); null if unknown
+     * @param string|null $class as the binary classifies the CDR (`accepted`, `observed` for code 0 with any note, `rejected`...); null if unknown
      */
     public function __construct(string $referenceId, string $responseCode, string $description, array $notes, ?string $class)
     {

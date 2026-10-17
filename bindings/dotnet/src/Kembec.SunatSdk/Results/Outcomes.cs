@@ -40,7 +40,7 @@ namespace Kembec.SunatSdk
         /// <summary>Code 0 without observations.</summary>
         Accepted,
 
-        /// <summary>4000 and above, or code 0 with a note of 4000 or above: accepted, with observations.</summary>
+        /// <summary>4000 and above, or code 0 with any note: accepted, with observations.</summary>
         Observed,
 
         /// <summary>100 to 1999 but 1032 and 1033: the file was not processed and the document counts as not received.</summary>

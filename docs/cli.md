@@ -42,7 +42,8 @@ and the HTTP wait from `--timeout` or `SUNAT_HTTP_TIMEOUT_SECONDS`.
   `send` and `summary` keep those cases as errors, since a send that got no answer may have arrived. A `summary`
   with no answer leaves no ticket: check the documents with `validity`, then resend the same file under the same name;
   a duplicate is rejected (2223, 2324, 2282).
-- A CDR's `class` is `observed` for code 0 with a note of 4000 and above.
+- A CDR's `class` is `observed` for code 0 with any note, whatever its code: SUNAT's validation sheet turned 2404 (a note
+  that modifies a paper voucher) and 2988 (a summary line) into observations without renumbering them.
 
 ## `validity` (Consulta Integrada)
 

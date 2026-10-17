@@ -37,7 +37,7 @@ namespace Kembec.SunatSdk
         /// <summary>SUNAT's description of the code.</summary>
         public string Description { get; }
 
-        /// <summary>The notes, each <c>"code - text"</c>; a code of 4000 or above is an observation.</summary>
+        /// <summary>The notes, each <c>"code - text"</c>; with code 0, every note is an observation.</summary>
         public IReadOnlyList<string> Notes { get; }
 
         /// <summary>How the SDK classifies the code and the notes.</summary>

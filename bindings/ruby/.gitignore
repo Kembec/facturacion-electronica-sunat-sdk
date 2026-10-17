@@ -1,0 +1,5 @@
+# Staged by scripts/build-gems.sh: the native library per platform and the built gems; never committed.
+/lib/kembec/sunat_sdk/native/
+/stage/
+/pkg/
+/test/out/

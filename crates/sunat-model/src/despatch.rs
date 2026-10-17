@@ -71,6 +71,10 @@ pub struct Shipment {
     pub transport_mode: String,
     /// Start of the transfer, or the day the goods are handed to the carrier.
     pub start_date: Option<Date>,
+    /// Day the goods are handed to the carrier, `"2026-10-15"`: required in public transport and
+    /// not before the issue date (SUNAT 3617, 3618, 3619); private transport has no such field.
+    /// Kept as text so a malformed date answers with SUNAT's code.
+    pub carrier_handover_date: Option<String>,
     /// Gross weight of the load, up to 12 integer digits and 3 decimals.
     pub gross_weight: Option<Decimal>,
     /// `"KGM"` or `"TNE"`.

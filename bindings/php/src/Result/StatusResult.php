@@ -9,7 +9,8 @@ use Kembec\SunatSdk\Exception\InvalidOutputException;
 /**
  * Output of `status` (getStatusCdr): the status code and message, with the CDR when attached; a fault;
  * or no verdict, when SUNAT answered an HTTP status instead of a response or the wait ran out. No verdict
- * says nothing about the voucher: ask again, never send it again because of it.
+ * says nothing about the voucher: ask again. If it persists, resend the same signed XML with the same
+ * number while the deadline is open; SUNAT does not register it twice (docs/cli.md).
  */
 final class StatusResult
 {

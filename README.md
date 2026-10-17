@@ -1,11 +1,10 @@
 # SDK de facturación electrónica SUNAT (Perú)
 
-Un SDK (una biblioteca que agregas a tu programa) para emitir comprobantes electrónicos ante la SUNAT desde **Rust,
-JavaScript y TypeScript, Python y PHP**, o desde la línea de comandos. Tu sistema decide qué emitir y calcula los
-importes; el SDK convierte esos datos en el archivo XML que pide la SUNAT, lo firma con tu certificado digital, lo
-envía y te dice si la SUNAT lo aceptó. Sirve para facturas, boletas, notas de crédito y de débito, resúmenes diarios
-de boletas y comunicaciones de baja (las que anulan comprobantes ya enviados). Es para quien programa el sistema de
-facturación de una empresa.
+Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **Rust, JavaScript y TypeScript, Python y PHP**, o
+desde la línea de comandos. Tu sistema decide qué emitir y calcula los importes; el SDK convierte esos datos en el
+archivo XML que pide la SUNAT, lo firma con tu certificado digital, lo envía y te dice si la SUNAT lo aceptó. Sirve
+para facturas, boletas, notas de crédito y de débito, resúmenes diarios de boletas y comunicaciones de baja para anular
+comprobantes ya enviados. Es para quien programa el sistema de facturación de una empresa.
 
 SUNAT (Peru) electronic invoicing SDK for Rust, JavaScript/TypeScript, Python and PHP.
 
@@ -22,8 +21,7 @@ cualquiera de ellos. Guías y ejemplos: **https://fe.kembec.com**
 | Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) | crates, sin red |
 | Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` | binario estático |
 
-La versión publicada es la 0.1.0-beta.4, y por ser beta las instalaciones de arriba la piden de forma explícita
-(`@beta` en npm y Composer, `--pre` en pip). Qué trae, en [Versiones](#versiones).
+La versión publicada es la 0.1.0-beta.4. Qué trae, en [Versiones](#versiones).
 
 ## Tu primer comprobante firmado
 
@@ -183,8 +181,12 @@ La CDR es la constancia con la que la SUNAT responde a cada envío.
   la llave, RSA sin cifrar.
 - **Respuesta de la SUNAT**: el SDK lee la CDR y la clasifica (aceptada, observada, rechazada, excepción). Un error SOAP
   es un resultado, no una excepción.
-- **Sin respuesta**: si una consulta no recibe respuesta, el resultado es `no_verdict`; vuelve a consultar y nunca
-  reenvíes el documento.
+- **Sin respuesta**: si una consulta no recibe respuesta, el resultado es `no_verdict`; vuelve a consultar. Con el
+  ticket de un resumen o una baja, nunca reenvíes el archivo: el ticket prueba que llegó. Si una factura, boleta o nota
+  enviada sola sigue sin veredicto, reenvía el mismo XML firmado con el mismo número mientras el plazo de envío siga
+  abierto, porque la SUNAT lo mide al recibirlo; según sus reglas de validación, si ya lo tenía no lo registra dos
+  veces y contesta 1033, 1032 o 0140. Un `summary` sin respuesta no deja ticket: revisa los comprobantes con `validity`
+  y reenvía el mismo archivo con el mismo nombre ([contrato de la CLI](docs/cli.md)).
 - **Estado de un comprobante ya enviado** en la Consulta Integrada de la SUNAT (`validity`: aceptado, anulado o no
   informado), para facturas, boletas y notas.
 
@@ -274,8 +276,7 @@ verificador en Python que no comparte código con el núcleo acepta las firmas.
 la CLI el código que arma la petición y lee la respuesta.
 
 **Sin probar contra la SUNAT**: la consulta de la CDR (`status`), que la SUNAT solo ofrece en producción y que sigue el
-ejemplo de su manual, y el envío desde el navegador, que depende de que la SUNAT acepte peticiones de otro origen
-(CORS).
+ejemplo de su manual, y el envío desde el navegador, que depende de que la SUNAT permita CORS.
 
 ## Documentación y soporte
 

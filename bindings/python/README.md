@@ -21,7 +21,7 @@ ejemplos: https://fe.kembec.com
 
 ## Instalación
 
-La versión publicada es una beta, y `pip` la instala solo si se le pide:
+La versión publicada es una beta:
 
 ```bash
 pip install --pre facturacion-electronica-sunat-sdk
@@ -29,9 +29,9 @@ pip install --pre facturacion-electronica-sunat-sdk
 
 El paquete trae el núcleo en Rust del SDK ya compilado (wheels abi3), así que no llama a ningún binario externo. Hay
 wheels para CPython 3.10 o posterior en Linux (x86_64 y aarch64, glibc), macOS (arm64 y x86_64) y Windows (x86_64). En
-otra plataforma, pip lo compila desde el código fuente (el sdist) y necesita Rust.
+otra plataforma, pip lo compila desde el sdist y necesita Rust.
 
-Para instalar la versión en desarrollo (la rama `main`) desde el repositorio hace falta Rust:
+Para instalar `main` desde el repositorio hace falta Rust:
 
 ```bash
 git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git
@@ -156,8 +156,12 @@ URL base siempre las pasas tú (las del manual: `https://api-seguridad.sunat.gob
   la consulta dentro de `timeout`. `validity_token_request`, `validity_token_response`, `validity_request`,
   `validity_response` y `validity_timeout` son sus piezas sin red.
 - Un error SOAP de la SUNAT es un resultado (`{"outcome": "fault", ...}`), no una excepción. Si `ticket` o `status` no
-  reciben respuesta, el resultado es `{"outcome": "no_verdict", ...}`: se vuelve a consultar y nunca se reenvía. En
-  `send` y `summary`, ese caso lanza `SunatSdkError`, porque el documento pudo haber llegado.
+  reciben respuesta, el resultado es `{"outcome": "no_verdict", ...}`: se vuelve a consultar. Con `ticket`, el resumen
+  nunca se reenvía, porque el ticket prueba que llegó. Si `status` sigue sin veredicto, se reenvía el mismo XML firmado
+  con el mismo número mientras el plazo de envío siga abierto, porque la SUNAT lo mide al recibirlo; según sus reglas
+  de validación, si ya lo tenía no lo registra dos veces y contesta 1033, 1032 o 0140. En `send` y `summary`, ese caso
+  lanza `SunatSdkError`, porque el documento pudo haber llegado. Un `summary` sin respuesta no deja ticket: se revisan
+  los comprobantes con `validity` y se reenvía el mismo archivo con el mismo nombre.
 - Toda entrada inválida lanza `sunat_sdk.SunatSdkError` (subclase de `ValueError`) con el motivo.
 - El certificado, la llave y las credenciales SOL los pasa quien llama: el paquete no los busca en archivos ni en el
   entorno, y no escribe logs.

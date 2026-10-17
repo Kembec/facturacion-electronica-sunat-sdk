@@ -107,9 +107,11 @@ pub fn request(exchange: Exchange, input: &Value, user: &str, password: &str) ->
 /// The outcome of `exchange` for `reply`; `input` is the one given to `request`.
 ///
 /// A query without an answer (an HTTP status, or the wait ran out) is `no_verdict`: it says
-/// nothing about the document, so the caller asks again and never sends again because of it
-/// (SUNAT has answered 401 to a valid getStatus that succeeded when repeated). For a send the same
-/// cases are errors, since the document may have arrived.
+/// nothing about the document, so the caller asks again (SUNAT has answered 401 to a valid
+/// getStatus that succeeded when repeated). A ticket proves the summary arrived: never send it
+/// again. If `status` keeps giving no verdict, resend the same signed XML with the same number while
+/// the deadline is open; SUNAT does not register it twice (docs/cli.md). For a send the same cases
+/// are errors, since the document may have arrived.
 pub fn read(exchange: Exchange, input: &Value, reply: Reply) -> Result<Value, String> {
     let body = match reply {
         Reply::Body(body) => body,

@@ -26,5 +26,4 @@ repository `facturacion-electronica-sunat-sdk`, workflow `release.yml`, environm
 
 To move PyPI to Trusted Publishing: add a trusted publisher on pypi.org (project `facturacion-electronica-sunat-sdk`,
 owner `Kembec`, repository `facturacion-electronica-sunat-sdk`, workflow `release.yml`, environment `release`), drop the
-`password` input from `publish-pypi` and delete `PYPI_API_TOKEN`. A version with `-` is
-a PEP 440 prerelease (`0.1.0b4`), which `pip install` skips unless asked with `--pre` or `==0.1.0b4`.
+`password` input from `publish-pypi` and delete `PYPI_API_TOKEN`.

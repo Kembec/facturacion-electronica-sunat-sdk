@@ -1,0 +1,11 @@
+<Project>
+  <!-- .NET Framework does not read runtimes/<rid>/native: both Windows builds are copied next to the
+       application and the library loads the one of the process's bitness (Interop/NativeLibraryLoader.cs).
+       .NET and .NET Core resolve runtimes/<rid>/native by themselves. -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETFramework'">
+    <None Include="$(MSBuildThisFileDirectory)../runtimes/win-x86/native/sunat_sdk_ffi.dll"
+          Link="runtimes/win-x86/native/sunat_sdk_ffi.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <None Include="$(MSBuildThisFileDirectory)../runtimes/win-x64/native/sunat_sdk_ffi.dll"
+          Link="runtimes/win-x64/native/sunat_sdk_ffi.dll" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+</Project>

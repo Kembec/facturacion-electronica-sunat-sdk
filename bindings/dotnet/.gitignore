@@ -1,0 +1,5 @@
+bin/
+obj/
+/artifacts/
+# The six native builds are staged here by CI before `dotnet pack`; never committed.
+/src/Kembec.SunatSdk/runtimes/

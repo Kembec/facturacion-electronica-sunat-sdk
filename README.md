@@ -282,6 +282,7 @@ ejemplo de su manual, y el envío desde el navegador, que depende de que la SUNA
 
 - Guías y ejemplos: https://fe.kembec.com
 - Contratos: [arquitectura](docs/architecture.md), [CLI](docs/cli.md) y [modelo de entrada](docs/input-model.md).
+- Cambios de cada versión y qué rompe el contrato: [`CHANGELOG.md`](CHANGELOG.md) y la [política de versiones](docs/releasing.md#versions).
 - Errores y preguntas: [issues de GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/issues).
 
 ## Derechos y licencia

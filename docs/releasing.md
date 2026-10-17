@@ -8,11 +8,32 @@ off until the owner has a crates.io account and token ([below](#cratesio)).
    `bindings/wasm/npm/package.json` differ from it. The Python package takes it from there as PEP 440
    (`0.1.0-beta.4` is `0.1.0b4`); `bindings/python/scripts/check_version.py` fails if a wheel, the sdist or the tag
    differ. Set the same version, with `=` in front, on the five crates of `[workspace.dependencies]`:
-   `crates/scripts/check-publish.sh` fails if they differ.
+   `crates/scripts/check-publish.sh` fails if they differ. In `CHANGELOG.md`, turn `## [Unreleased]` into
+   `## [<version>] - YYYY-MM-DD` above a new empty `## [Unreleased]`, and update the compare links at the end: the
+   `changelog` job of `release.yml` fails, on the tag and on the pull requests that run `release.yml`, if the
+   version has no such section, and every publish job waits on it.
 2. Merge to `main` and push the tag `v<version>`. A version with `-` (`0.1.0-beta.4`) is a prerelease and goes to
    npm under the `beta` dist-tag.
 3. `release.yml` builds and tests the artifacts, then waits on the `release` environment (only `v*` tags, the owner
    approves).
+
+## Versions
+
+The public contract is the input model ([`input-model.md`](input-model.md)), the CLI's JSON and exit codes
+([`cli.md`](cli.md)), the public API of each binding, and the C ABI ([`c-abi.md`](c-abi.md)). Anything else (internal
+crate modules, error message wording, the repository's scripts) can change in any release.
+
+- **While the version is `0.1.0-beta.N`**, a change that breaks the contract may ship in a beta, but it goes in
+  `CHANGELOG.md` as **Breaking**, with how to migrate.
+- **The first stable version** (`1.0.0`) requires two betas in a row without a **Breaking** entry.
+- **From `1.0.0`**, semantic versioning: MAJOR breaks the contract; MINOR adds to it (a document type, an optional
+  input field, an operation); PATCH fixes without changing it.
+- Adding an error code or an output field does not break the contract; removing one, or changing what it means, does.
+  So a consumer ignores fields and codes it does not know.
+
+Every change a consumer would notice gets one line in `CHANGELOG.md` under `## [Unreleased]`
+([Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/): Added, Changed, Fixed, Removed), with its pull
+request; one line per change, not per commit.
 
 ## Where each registry gets its credentials
 

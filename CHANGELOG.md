@@ -16,6 +16,10 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   SUNAT names in the message, if any, and the candidate fields from SUNAT's validation rules of 26.08.2026 (01, 03, 07,
   08). The CLI's `send`, `summary`, `ticket` and `status` add `diagnosis` to their JSON, one element per code in the
   answer ([`docs/cli.md`](docs/cli.md#diagnosis)).
+- `diagnosis` in the PHP and WebAssembly bindings: PHP's `SendResult`, `StatusResult`, `SummaryResult` and
+  `TicketResult` add `getDiagnosis()`, a list of `Diagnosis` (`getCode()`, `getDetail()`, `getFields()`), empty when the
+  binary sends none; wasm's `soapResponse` and `soapTimeout` add `diagnosis` as the CLI does, `diagnose(documentType,
+  code, message)` diagnoses one code, and `index.d.ts` types both.
 
 ## [0.1.0-beta.5] - 2026-10-17
 

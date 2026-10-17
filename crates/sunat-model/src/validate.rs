@@ -15,7 +15,8 @@ impl Document {
                 require_text("$.operation_type", &invoice.operation_type)?;
                 check_detraction(invoice)?;
                 require(invoice.voucher.totals.sale_value.is_some(), "$.totals.sale_value")?;
-                crate::allowances::check(invoice)
+                crate::allowances::check(invoice)?;
+                crate::icbper::check(&invoice.voucher, None)
             }
             Document::Note(note) => {
                 check_voucher(&note.voucher, &[DocumentType::CreditNote, DocumentType::DebitNote])?;
@@ -37,7 +38,8 @@ impl Document {
                 require_text("$.note.reason_code", &reference.reason_code)?;
                 require_text("$.note.reason", &reference.reason)?;
                 require_text("$.note.affected_document_type", &reference.affected_document_type)?;
-                require_text("$.note.affected_document_number", &reference.affected_document_number)
+                require_text("$.note.affected_document_number", &reference.affected_document_number)?;
+                crate::icbper::check(&note.voucher, Some(&reference.affected_document_type))
             }
             Document::Summary(summary) => check_summary(summary),
             Document::Voided(voided) => check_voided(voided),
@@ -161,7 +163,10 @@ fn check_summary(summary: &Summary) -> Result<(), ModelError> {
         return Err(ModelError::invalid("$.reference_date", "must not be after generation_date"));
     }
     require(!summary.lines.is_empty(), "$.lines")?;
-    summary.lines.iter().enumerate().try_for_each(|(index, line)| check_summary_line(index, line))
+    summary.lines.iter().enumerate().try_for_each(|(index, line)| {
+        check_summary_line(index, line)?;
+        crate::icbper::check_summary_line(index, line, &summary.currency)
+    })
 }
 
 fn check_summary_line(index: usize, line: &SummaryLine) -> Result<(), ModelError> {

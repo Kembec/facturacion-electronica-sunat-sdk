@@ -84,6 +84,9 @@ pub struct Totals {
     pub ivap_base: Option<Decimal>,
     /// IVAP of those lines, 4 % of `ivap_base`.
     pub ivap: Option<Decimal>,
+    /// ICBPER (tax 7152): Σ `lines[].icbper`. Outside the IGV base, inside `total_taxes`, `subtotal`
+    /// and `payable`.
+    pub icbper: Option<Decimal>,
     pub total_taxes: Option<Decimal>,
     pub sale_value: Option<Decimal>,
     pub subtotal: Option<Decimal>,
@@ -115,6 +118,11 @@ pub struct Line {
     pub unit_price: Option<Decimal>,
     pub line_value: Decimal,
     pub free_unit_value: Option<Decimal>,
+    /// ICBPER (tax 7152) of a line of plastic bags, in PEN: `quantity` (the bags) × `icbper_factor`.
+    /// Included in `total_taxes` of an onerous line.
+    pub icbper: Option<Decimal>,
+    /// ICBPER per bag: the rate in force on the year of `issue_date` (SUNAT 4237).
+    pub icbper_factor: Option<Decimal>,
     /// Line discounts, invoice and receipt only: catalog 53 code `00` reduces the IGV base and
     /// `line_value` already has it subtracted (SUNAT 3271); `01` does not.
     #[serde(default)]

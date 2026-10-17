@@ -4,7 +4,7 @@
 use sunat_model::{Decimal, Line};
 
 use crate::amount::{shortest, two_decimals};
-use crate::tax::{scheme_for_affectation, TaxScheme};
+use crate::tax::{scheme_for_affectation, TaxScheme, ICBPER};
 use crate::writer::XmlWriter;
 
 /// Catalog 16: unit price including taxes (onerous) or referential unit value (free transfer).
@@ -99,7 +99,35 @@ fn line_tax_total(w: &mut XmlWriter, line: &Line, currency: &str) {
     tax_scheme(w, scheme_for_affectation(&line.affectation));
     w.close();
     w.close();
+    if let (Some(icbper), Some(factor)) = (&line.icbper, &line.icbper_factor) {
+        icbper_subtotal(w, line, icbper, factor, currency);
+    }
     w.close();
+}
+
+/// The bags are the line's `quantity` (`BaseUnitMeasure`, always `NIU`: SUNAT 4320 observes any
+/// other), and the rate per bag prints with at least two decimals, as SUNAT's example does.
+fn icbper_subtotal(w: &mut XmlWriter, line: &Line, icbper: &Decimal, factor: &Decimal, currency: &str) {
+    let money = [("currencyID", currency)];
+    w.open("cac:TaxSubtotal", &[]);
+    w.leaf("cbc:TaxAmount", &money, &two_decimals(icbper));
+    w.leaf("cbc:BaseUnitMeasure", &[("unitCode", "NIU")], &shortest(&line.quantity));
+    w.open("cac:TaxCategory", &[]);
+    w.leaf("cbc:PerUnitAmount", &money, &at_least_two_decimals(factor));
+    tax_scheme(w, ICBPER);
+    w.close();
+    w.close();
+}
+
+/// `0.5` -> `0.50`, `0.12345` stays: never fewer than two decimals, never a digit dropped.
+pub(crate) fn at_least_two_decimals(value: &Decimal) -> String {
+    let text = value.as_str();
+    let decimals = text.split_once('.').map_or(0, |(_, frac)| frac.trim_end_matches('0').len());
+    if decimals <= 2 {
+        return two_decimals(value);
+    }
+    let (int, frac) = text.split_once('.').expect("has decimals");
+    format!("{int}.{}", frac.trim_end_matches('0'))
 }
 
 fn item(w: &mut XmlWriter, line: &Line) {

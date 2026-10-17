@@ -7,7 +7,6 @@ use crate::ModelError;
 
 const DOCUMENT_KEYS: &[(&str, &str)] = &[
     ("isc", "ISC"),
-    ("icbper", "ICBPER"),
     ("ivap", "IVAP"),
     ("other_taxes", "other taxes"),
     ("discounts", "global discounts"),
@@ -22,7 +21,6 @@ const DOCUMENT_KEYS: &[(&str, &str)] = &[
 const TOTALS_KEYS: &[(&str, &str)] = &[
     ("isc", "ISC"),
     ("isc_base", "ISC"),
-    ("icbper", "ICBPER"),
     ("other_taxes", "other taxes"),
     ("other_taxes_base", "other taxes"),
     ("discounts", "global discounts"),
@@ -39,8 +37,6 @@ const LINE_KEYS: &[(&str, &str)] = &[
     ("isc_base", "ISC"),
     ("isc_rate", "ISC"),
     ("isc_system", "ISC"),
-    ("icbper", "ICBPER"),
-    ("icbper_factor", "ICBPER"),
     ("other_tax", "other taxes"),
     ("other_tax_base", "other taxes"),
     ("other_tax_rate", "other taxes"),

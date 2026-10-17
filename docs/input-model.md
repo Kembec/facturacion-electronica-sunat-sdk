@@ -5,8 +5,8 @@ One JSON document per voucher, snake_case English field names. Decimal amounts a
 compute taxes.
 
 Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV (affectations
-10-16, 20, 21, 30-37, 40) and IVAP (affectation 17, see IVAP). Not supported, rejected with an
-explicit error: ISC, ICBPER, other taxes, catalog 53 codes other than those of Discounts and
+10-16, 20, 21, 30-37, 40), IVAP (affectation 17, see IVAP) and ICBPER (tax 7152, see ICBPER). Not
+supported, rejected with an explicit error: ISC, other taxes, catalog 53 codes other than those of Discounts and
 charges, discounts and charges in notes, advances, detraction on operation types 1002 and 1004,
 perception.
 
@@ -104,7 +104,7 @@ issuer's), `email`, `telephone`.
 
 ## Totals
 
-`taxed`, `unaffected`, `exempt`, `export`, `free`, `free_igv`, `igv`, `ivap_base`, `ivap`,
+`taxed`, `unaffected`, `exempt`, `export`, `free`, `free_igv`, `igv`, `ivap_base`, `ivap`, `icbper`,
 `total_taxes`, `sale_value`, `subtotal`, `allowance_total`, `charge_total`, `rounding`, `payable`. An
 absent total is not rendered. `allowance_total` and `charge_total` (`cbc:AllowanceTotalAmount`,
 `cbc:ChargeTotalAmount`) carry the discounts and charges that do not change the IGV base, see
@@ -130,7 +130,44 @@ and 10 (3230: beta rejected a credit note with type 07 and a debit note with typ
 `unit` (catalog 03, `"NIU"`, `"ZZ"`), `quantity`, `product_code`, `sunat_product_code`, `description`,
 `unit_value`, `igv_base`, `igv_rate` (`"18.00"`), `igv`, `affectation` (catalog 07), `total_taxes`,
 `unit_price`, `line_value`, `free_unit_value` (free lines), `discounts` and `charges` (invoice and
-receipt only, see Discounts and charges).
+receipt only, see Discounts and charges), `icbper` and `icbper_factor` (see ICBPER).
+
+## ICBPER
+
+The tax on plastic bags (Ley 30884, art. 12; tax 7152 `ICBPER` `OTH`), in invoices, receipts and both
+notes, in PEN only: in another currency it is out of scope, because the law has it paid in soles and
+SUNAT's rules check the rate only in PEN. The bags go on their own line, sold (affectation 10) or given
+away (11 to 16, with `free_unit_value`): the tax is due either way. Whether the sale is subject to it
+(an establishment selling to the final consumer, a bag to carry what was sold) is the caller's call.
+
+| Field | Notes |
+|---|---|
+| `lines[].quantity` | the bags: a whole number from 1 to 99999 (2892); rendered as `cbc:BaseUnitMeasure` `NIU` |
+| `lines[].icbper_factor` | PEN per bag, required with `icbper` (3238): the rate in force on the date of issue (4237) |
+| `lines[].icbper` | `quantity` × `icbper_factor`, positive with up to 2 decimals (2033, 4318) |
+| `lines[].total_taxes` | the line's IGV plus its `icbper` (3292) |
+| `totals.icbper` | Σ `lines[].icbper` (3306), positive (2048) |
+| `totals.total_taxes` | `igv` + `ivap` + `icbper` (3294) |
+| `totals.subtotal`, `totals.payable` | include `icbper` (3279, 3280); `sale_value` and the IGV base do not |
+
+The rate is a dated table of the SDK, `crates/sunat-model/src/icbper_rates.rs`, read on the year of
+`issue_date` in Lima (31/12 23:30 -05:00 is still that year): S/ 0.10 from 01/08/2019, 0.20 in 2020,
+0.30 in 2021, 0.40 in 2022 and 0.50 from 2023. Its source is the schedule of Ley 30884, art. 12, and
+SUNAT's table for tax 7152 in catalog 05 of its SFS structures (June 2026); the 2023 row stays
+`verified-partial` until no later rule changing art. 12 is ruled out. Before 01/08/2019 the tax does not
+exist (2949).
+
+The line renders one more `cac:TaxSubtotal` after its IGV one, with `cbc:TaxAmount`,
+`cbc:BaseUnitMeasure` and `cbc:PerUnitAmount` (at least two decimals, `0.50`) and no `TaxableAmount` or
+`Percent`; the document's `cac:TaxTotal` gets a 7152 subtotal with only its amount.
+
+Checked only in a document with ICBPER, in the order above, each with the code an invoice and a note on
+an invoice get; a receipt or a note on another document gets the observation (4293, 4301, 4310, 4312,
+4321) and the SDK rejects it too. SUNAT only observes 4318 and 4237; the SDK rejects them, so nothing
+reaches SUNAT with a note. A free line's `total_taxes` is not checked: SUNAT's sum leaves its IGV (9996)
+out and `03-receipt-free-line.json` puts it in, and SUNAT beta has not said which it expects. Vectors:
+`fixtures/icbper/` (`v1` to `v5` valid, `n1` to `n3` rejected with 4318, 3306 and 4237). Not sent to SUNAT
+beta yet.
 
 ## Discounts and charges
 
@@ -187,7 +224,7 @@ rejected with 3277, 3307 and 3290). Not sent to SUNAT beta yet.
 
 # Daily summary (RC) and void communication (RA)
 
-Not supported, rejected with an explicit error: perception, ICBPER, ISC and IVAP in summary lines;
+Not supported, rejected with an explicit error: perception, ISC and IVAP in summary lines;
 reversal summaries (RR); despatch (GRE).
 
 ## Summary (`kind: "summary"`, RC)
@@ -207,7 +244,8 @@ Summary line: `document_type` (`"03"`, `"07"`, `"08"`), `document_number` (`"B00
 or tabs), optional `igv_rate` (`"18.00"` or `"10.50"` for a receipt; a note also takes `"10.00"`),
 optional `reference_document` (`{ "document_type": "03", "document_number":
 "B001-1" }`, required for notes and rejected on receipts), and the amounts `total` (required), `taxed`,
-`exempt`, `unaffected`, `export`, `free`, `other_charges`, `igv`. `igv` is always rendered (`0.00` when
+`exempt`, `unaffected`, `export`, `free`, `other_charges`, `igv`, `icbper` (in PEN, positive, 2048; `total`
+includes it, and it renders as its own `cac:TaxTotal` 7152 after the IGV one). `igv` is always rendered (`0.00` when
 absent); `taxed` is rendered whenever given, even `"0.00"`; `exempt`, `unaffected`, `export`, `free` and
 `other_charges` only when non-zero, so `"0.00"` there is the same as absent (the vectors' rule). Summary
 lines render `igv_rate` as the `cbc:Percent` of tax 1000 only when given, and `customer_name` as

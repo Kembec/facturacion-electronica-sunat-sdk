@@ -1,0 +1,75 @@
+{
+  "kind": "note",
+  "ubl_version": "2.1",
+  "document_type": "07",
+  "series": "FC01",
+  "number": "7101",
+  "issue_date": "2026-10-17T10:00:00-05:00",
+  "currency": "PEN",
+  "note": {
+    "reason_code": "07",
+    "reason": "DEVOLUCION DE 2 BOLSAS",
+    "affected_document_type": "01",
+    "affected_document_number": "F001-7101"
+  },
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "6",
+    "document_number": "20100066603",
+    "legal_name": "CLIENTE DE PRUEBA SAC",
+    "address": {
+      "ubigeo": "150122",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "MIRAFLORES",
+      "street": "CALLE CLIENTE 456"
+    }
+  },
+  "totals": {
+    "taxed": "0.10",
+    "igv": "0.02",
+    "icbper": "1.00",
+    "total_taxes": "1.02",
+    "sale_value": "0.10",
+    "subtotal": "1.12",
+    "payable": "1.12"
+  },
+  "lines": [
+    {
+      "unit": "NIU",
+      "quantity": "2",
+      "product_code": "BOLSA01",
+      "description": "BOLSA DE PLASTICO",
+      "icbper": "1.00",
+      "icbper_factor": "0.50",
+      "unit_value": "0.05",
+      "igv_base": "0.10",
+      "igv_rate": "18.00",
+      "igv": "0.02",
+      "affectation": "10",
+      "total_taxes": "1.02",
+      "unit_price": "0.06",
+      "line_value": "0.10"
+    }
+  ],
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON UNO CON 12/100 SOLES"
+    }
+  ]
+}

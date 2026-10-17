@@ -14,6 +14,8 @@ pub(crate) const EXEMPT: TaxScheme = TaxScheme { id: "9997", name: "EXO", type_c
 pub(crate) const FREE: TaxScheme = TaxScheme { id: "9996", name: "GRA", type_code: "FRE" };
 pub(crate) const EXPORT: TaxScheme = TaxScheme { id: "9995", name: "EXP", type_code: "FRE" };
 pub(crate) const IVAP: TaxScheme = TaxScheme { id: "1016", name: "IVAP", type_code: "VAT" };
+/// Plastic bags tax: a subtotal without `TaxableAmount` or `Percent` (SUNAT 3003, 2992).
+pub(crate) const ICBPER: TaxScheme = TaxScheme { id: "7152", name: "ICBPER", type_code: "OTH" };
 
 /// Scheme of a line by its catalog 07 affectation: onerous taxed, exempt, unaffected and export
 /// operations keep their own scheme, rice under the IVAP (17) goes under IVAP, and every free transfer

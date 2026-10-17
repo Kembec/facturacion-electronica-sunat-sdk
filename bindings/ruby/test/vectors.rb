@@ -173,6 +173,7 @@ module Vectors
     end
 
     # While a query waits 1 s on a silent server, the main thread keeps running: the call released the GVL.
+    # A held GVL gives 1 tick; released, a slow CI runner gave 19 (macOS x86_64, Ruby 3.3), so the bound is 5.
     def gvl
       silent do |base|
         client = SDK::Client.new(http_timeout: 1)
@@ -184,7 +185,7 @@ module Vectors
           sleep 0.01
         end
         check(waiting.value.outcome == :no_verdict, "gvl: the query answered #{waiting.value.raw_json}")
-        check(ticks >= 20, "gvl: the main thread ran #{ticks} times in a 1 s call")
+        check(ticks >= 5, "gvl: the main thread ran #{ticks} times in a 1 s call")
       end
     end
 

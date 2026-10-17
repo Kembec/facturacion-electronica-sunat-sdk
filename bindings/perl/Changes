@@ -1,6 +1,8 @@
 Revision history for Kembec-SunatSdk
 
 Unreleased
+
+0.000999_007  (SDK 0.1.0-beta.7, not released to CPAN)
     - send, summary, ticket and status results carry `diagnosis`: for each code of the answer, the input field that
       may have caused it (Kembec::SunatSdk::Diagnosis, DiagnosisDetail, DiagnosisField).
 

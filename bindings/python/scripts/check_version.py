@@ -1,6 +1,6 @@
 """Fails when the Python package version differs from the Cargo workspace version.
 
-maturin takes the version from Cargo.toml and writes it as PEP 440 (0.1.0-beta.6 -> 0.1.0b6). This
+maturin takes the version from Cargo.toml and writes it as PEP 440 (0.1.0-beta.7 -> 0.1.0b7). This
 checks that pyproject.toml declares no version of its own, that every built artifact in `--dist`
 carries that PEP 440 version, and, given a tag, that the tag is `v` + the workspace version.
 Usage: python bindings/python/scripts/check_version.py [--dist <dir>] [tag]

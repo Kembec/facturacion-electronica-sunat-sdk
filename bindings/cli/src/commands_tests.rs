@@ -54,7 +54,48 @@ fn send_reports_a_fault_with_its_class() {
         Ok(b"<e:Envelope xmlns:e=\"s\"><e:Body><e:Fault><faultcode>e:Client.1033</faultcode><faultstring>Registrado previamente</faultstring></e:Fault></e:Body></e:Envelope>".to_vec())
     };
     let out = send(&json!({ "name": "20100066603-01-F001-1", "xml": "<a/>" }), &conn(), &post).unwrap();
-    assert_eq!(out, json!({ "outcome": "fault", "code": "1033", "message": "Registrado previamente", "class": "already_registered" }));
+    let diagnosis = json!([{
+        "code": "1033",
+        "detail": null,
+        "fields": [{ "input_path": "series", "xpath": "/Invoice/cbc:ID", "certainty": "fuente" }]
+    }]);
+    assert_eq!(
+        out,
+        json!({ "outcome": "fault", "code": "1033", "message": "Registrado previamente", "class": "already_registered", "diagnosis": diagnosis })
+    );
+}
+
+#[test]
+fn send_diagnoses_the_beta_2800_on_the_customer_document_type() {
+    let faultstring = include_str!("../../../crates/sunat-sdk/tests/data/error-fields/faultstring-2800.txt").trim().replace('&', "&amp;").replace('<', "&lt;");
+    let body = format!("<e:Envelope xmlns:e=\"s\"><e:Body><e:Fault><faultcode>e:Client.2800</faultcode><faultstring>{faultstring}</faultstring></e:Fault></e:Body></e:Envelope>");
+    let post = |_: &str, _: &str, _: &str| -> Result<Vec<u8>, PostError> { Ok(body.clone().into_bytes()) };
+    let out = send(&json!({ "name": "20100066603-03-B001-1", "xml": "<a/>" }), &conn(), &post).unwrap();
+    assert_eq!(out["class"], "rejected");
+    assert_eq!(out["diagnosis"][0]["detail"], json!({ "node": "cbc:ID/schemeID", "value": "1" }));
+    assert_eq!(out["diagnosis"][0]["fields"][0]["input_path"], "customer.document_type");
+    assert_eq!(out["diagnosis"].as_array().unwrap().len(), 1);
+}
+
+#[test]
+fn status_diagnoses_each_note_of_a_recorded_cdr() {
+    // Annex C.1 of the programmer's manual: accepted with notes 4031 and 4001, codes of the UBL 2.0
+    // sheet that the 2026 rules no longer list, so they carry no candidate field.
+    let cdr_xml = include_bytes!("../../../crates/sunat-transport/tests/data/R-20150147718-01-FA01-981.xml");
+    let post = |_: &str, _: &str, _: &str| -> Result<Vec<u8>, PostError> {
+        Ok(format!(
+            "<S:Envelope xmlns:S=\"s\"><S:Body><n:getStatusCdrResponse xmlns:n=\"n\"><statusCdr><statusCode>0004</statusCode><content>{}</content><statusMessage>La constancia existe</statusMessage></statusCdr></n:getStatusCdrResponse></S:Body></S:Envelope>",
+            STANDARD.encode(cdr_xml)
+        )
+        .into_bytes())
+    };
+    let input = json!({ "ruc": "20150147718", "document_type": "01", "series": "FA01", "number": 981 });
+    let out = status(&input, &conn(), &post).unwrap();
+    assert_eq!(out["cdr"]["class"], "observed");
+    assert_eq!(
+        out["diagnosis"],
+        json!([{ "code": "4031", "detail": null, "fields": [] }, { "code": "4001", "detail": null, "fields": [] }])
+    );
 }
 
 #[test]

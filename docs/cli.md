@@ -45,6 +45,36 @@ and the HTTP wait from `--timeout` or `SUNAT_HTTP_TIMEOUT_SECONDS`.
 - A CDR's `class` is `observed` for code 0 with any note, whatever its code: SUNAT's validation sheet turned 2404 (a note
   that modifies a paper voucher) and 2988 (a summary line) into observations without renumbering them.
 
+### `diagnosis`
+
+`send`, `summary`, `ticket` and `status` add `diagnosis` to a fault and to an answer that carries a CDR: one element
+per code in it — the fault's code, the CDR's `response_code` when it is not 0, and each note that starts with a code
+(`"4287 - ..."`).
+
+```json
+"diagnosis": [{
+  "code": "2800",
+  "detail": { "node": "cbc:ID/schemeID", "value": "1" },
+  "fields": [{
+    "input_path": "customer.document_type",
+    "xpath": "/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID@schemeID",
+    "certainty": "fuente"
+  }]
+}]
+```
+
+- `detail` is what SUNAT names in the message as `(nodo: "<node>" valor: "<value>")`, or null. That form is observed
+  in beta answers; SUNAT does not document it.
+- `fields` are the rows of the code for the document type (`01`, `03`, `07`, `08`: from the file name for `send`, the
+  `document_type` field for `status`; summaries, void communications and `ticket` have none). With a `detail`, only the
+  rows whose node ends in it, unless none does. `input_path` is a field of [`docs/input-model.md`](input-model.md),
+  `"sdk"` when the SDK writes the node (constants, signature, file name) or null when the input model has no such
+  field. `xpath` is null for rules on the file, the signature or the service. `certainty` is `fuente` when the node is
+  the rule's own and one field writes it, `inferido` when the rule computes over several nodes.
+- The table is SUNAT's «Reglas de validación» updated 26.08.2026 (sheets of 01, 03, 07, 08, `General` and `Firma`),
+  in `crates/sunat-sdk/data/error-fields.json`; its source and how it was read are in
+  `crates/sunat-sdk/tests/data/error-fields/README.md`. A code the table does not list gives `"fields": []`.
+
 ## `validity` (Consulta Integrada)
 
 SUNAT's REST «Consulta Integrada» (manual v2.0, 22/11/2018) for 01, 03, 07 and 08: an OAuth token

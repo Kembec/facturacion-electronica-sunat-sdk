@@ -12,6 +12,10 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ### Added
 
+- Which input field a SUNAT code points at: `sunat_sdk::diagnose(document_type, code, message)` gives the node and value
+  SUNAT names in the message, if any, and the candidate fields from SUNAT's validation rules of 26.08.2026 (01, 03, 07,
+  08). The CLI's `send`, `summary`, `ticket` and `status` add `diagnosis` to their JSON, one element per code in the
+  answer ([`docs/cli.md`](docs/cli.md#diagnosis)).
 - Retention voucher (20): `kind: "retention"`, UBL 2.0 `Retention` built, signed and zipped (`RUC-20-R###-N.zip`)
   through the core and the CLI; SUNAT's «Retenciones1_0» rules that read only the document are checked before
   sending, each with its code (2619 rate of the regime, 2623 amounts and exchange rate, 2626 payment number, 2628 and

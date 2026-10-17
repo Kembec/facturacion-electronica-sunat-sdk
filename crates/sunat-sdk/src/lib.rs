@@ -2,12 +2,14 @@
 //! See docs/architecture.md.
 
 mod classify;
+pub mod diagnosis;
 pub mod exchange;
 pub mod gre;
 pub mod validity;
 mod validity_input;
 
 pub use classify::{classify, classify_cdr, classify_code, ResponseClass};
+pub use diagnosis::{diagnose, Diagnosis};
 pub use sunat_transport as transport;
 pub use sunat_transport::{
     get_status_cdr_envelope, get_status_envelope, parse_get_status_cdr_response,

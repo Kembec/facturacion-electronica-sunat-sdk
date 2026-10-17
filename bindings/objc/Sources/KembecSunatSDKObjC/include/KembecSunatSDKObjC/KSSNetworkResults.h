@@ -15,6 +15,8 @@ NS_ASSUME_NONNULL_BEGIN
 /// The CDR as it came, to store; with KSSOutcomeCDR when SUNAT attached it.
 @property (nonatomic, copy, readonly, nullable) NSData *cdrZip;
 @property (nonatomic, readonly, nullable) KSSFault *fault;
+/// The input field behind each code SUNAT answered; empty when the response carries none.
+@property (nonatomic, copy, readonly) NSArray<KSSDiagnosis *> *diagnosis;
 @property (nonatomic, copy, readonly) NSString *rawJSON;
 - (instancetype)init NS_UNAVAILABLE;
 @end
@@ -24,6 +26,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly) KSSOutcome outcome;
 @property (nonatomic, copy, readonly, nullable) NSString *ticket;
 @property (nonatomic, readonly, nullable) KSSFault *fault;
+/// The input field behind each code SUNAT answered; empty when the response carries none.
+@property (nonatomic, copy, readonly) NSArray<KSSDiagnosis *> *diagnosis;
 @property (nonatomic, copy, readonly) NSString *rawJSON;
 - (instancetype)init NS_UNAVAILABLE;
 @end
@@ -47,6 +51,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, nullable) KSSTicketStatus *ticketStatus;
 @property (nonatomic, readonly, nullable) KSSFault *fault;
 @property (nonatomic, readonly, nullable) KSSNoVerdict *noVerdict;
+/// The input field behind each code SUNAT answered; empty when the response carries none.
+@property (nonatomic, copy, readonly) NSArray<KSSDiagnosis *> *diagnosis;
 @property (nonatomic, copy, readonly) NSString *rawJSON;
 - (instancetype)init NS_UNAVAILABLE;
 @end
@@ -66,6 +72,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonatomic, readonly, nullable) KSSVoucherStatus *voucherStatus;
 @property (nonatomic, readonly, nullable) KSSFault *fault;
 @property (nonatomic, readonly, nullable) KSSNoVerdict *noVerdict;
+/// The input field behind each code SUNAT answered; empty when the response carries none.
+@property (nonatomic, copy, readonly) NSArray<KSSDiagnosis *> *diagnosis;
 @property (nonatomic, copy, readonly) NSString *rawJSON;
 - (instancetype)init NS_UNAVAILABLE;
 @end

@@ -5,7 +5,7 @@ import KembecSunatSDK
 
 /// The battery of the Swift package as a consumer links it: the 38 fixtures against their vectors (inclusive C14N,
 /// exact DigestValue and SignatureValue), the native version against the package's, zip and CDR, the errors, Codable
-/// round trips, no_verdict without an answer, concurrent calls and the async overloads.
+/// round trips, diagnosis, no_verdict without an answer, concurrent calls and the async overloads.
 public enum SwiftBattery {
     public static let expectedFixtures = 38
 
@@ -39,6 +39,7 @@ public enum SwiftBattery {
         checker.run("cdr") { try readCDR(client, repo, checker) }
         checker.run("errors") { try errors(client, key, repo, checker) }
         checker.run("no_verdict") { try SilentChecks(checker: checker).run() }
+        checker.run("diagnosis") { try DiagnosisChecks(checker: checker, repo: repo).run() }
         checker.run("threads") { try threads(client, key, repo, Array(fixtures.prefix(8)), checker) }
         return report(checker, vectors: fixtures.count)
     }

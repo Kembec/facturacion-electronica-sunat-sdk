@@ -52,6 +52,7 @@ static KSSCdr *_Nullable KSSOptionalCdr(KSSFields *fields) {
     if ((self = [super init])) {
         _outcome = outcome;
         _rawJSON = @"";
+        _diagnosis = KSSReadDiagnosis(fields);
         if (outcome == KSSOutcomeCDR) {
             _cdr = [[KSSCdr alloc] initWithFields:[fields object:@"cdr"]];
             _cdrZip = [fields optionalBase64:@"cdr_zip_base64"];
@@ -78,6 +79,7 @@ static KSSCdr *_Nullable KSSOptionalCdr(KSSFields *fields) {
     if ((self = [super init])) {
         _outcome = outcome;
         _rawJSON = @"";
+        _diagnosis = KSSReadDiagnosis(fields);
         if (outcome == KSSOutcomeTicket) {
             _ticket = [fields string:@"ticket"];
         } else {
@@ -117,6 +119,7 @@ static KSSCdr *_Nullable KSSOptionalCdr(KSSFields *fields) {
     if ((self = [super init])) {
         _outcome = outcome;
         _rawJSON = @"";
+        _diagnosis = KSSReadDiagnosis(fields);
         _ticket = [fields optionalString:@"ticket"];
         if (outcome == KSSOutcomeTicketStatus) {
             _ticketStatus = [[KSSTicketStatus alloc] initWithFields:fields];
@@ -160,6 +163,7 @@ static KSSCdr *_Nullable KSSOptionalCdr(KSSFields *fields) {
     if ((self = [super init])) {
         _outcome = outcome;
         _rawJSON = @"";
+        _diagnosis = KSSReadDiagnosis(fields);
         if (outcome == KSSOutcomeStatus) {
             _voucherStatus = [[KSSVoucherStatus alloc] initWithFields:fields];
         } else if (outcome == KSSOutcomeFault) {

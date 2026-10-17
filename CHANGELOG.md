@@ -34,6 +34,14 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   on detail `cbc:ID/schemeID` = `1`. The legacy README (VB6, Visual FoxPro, PowerBuilder) says where `diagnosis` is in
   the JSON and how to read it.
 
+### Added
+
+- `diagnosis` in the Swift and Objective-C packages: `SendResult`, `SummaryResult`, `TicketResult` and `StatusResult`
+  add `diagnosis`, a list of `Diagnosis` (`code`, `detail`, `fields` with `inputPath`, `xpath` and `certainty`), empty
+  when the response carries none; Objective-C's `KSSSendResult`, `KSSSummaryResult`, `KSSTicketResult` and
+  `KSSStatusResult` add `diagnosis` with `KSSDiagnosis`, `KSSDiagnosisDetail` and `KSSDiagnosisField`. The batteries of
+  both read the beta's 2800 and point it at `customer.document_type`.
+
 ## [0.1.0-beta.6] - 2026-10-17
 
 ### Added

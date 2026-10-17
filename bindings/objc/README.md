@@ -127,6 +127,11 @@ if (sent == nil) {
     NSLog(@"%@ %@", error.userInfo[KSSErrorCommandKey], error.localizedDescription); // sin respuesta: reenvía el mismo XML
 } else if (sent.outcome == KSSOutcomeFault) {
     NSLog(@"%@", sent.fault.code);                                           // por ejemplo, 1033, con su responseClass
+    for (KSSDiagnosis *diagnosis in sent.diagnosis) {                        // un elemento por código de la respuesta
+        NSLog(@"%@ %@ %@", diagnosis.code,                                   // 2800
+              diagnosis.detail.node,                                         // lo que nombra la SUNAT: cbc:ID/schemeID = 1
+              diagnosis.fields.firstObject.inputPath);                       // el campo de tu JSON: customer.document_type
+    }
 } else {
     [sent.cdrZip writeToFile:[built.fileName stringByAppendingString:@".cdr.zip"] atomically:YES]; // la CDR como llegó
     NSLog(@"%d", sent.cdr.isValidDocument);                                  // aceptado, con o sin observaciones
@@ -145,6 +150,13 @@ if (sent == nil) {
   comprobante físico) es observación aunque esté por debajo de 4000.
 - `sendSummaryXML:…` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada.
   `ticketStatus:…` y `statusForRUC:…` sin respuesta dan `KSSOutcomeNoVerdict`: se vuelve a consultar, nunca a enviar.
+- `diagnosis` (en `KSSSendResult`, `KSSSummaryResult`, `KSSTicketResult` y `KSSStatusResult`) dice qué campo de tu
+  entrada causó cada código: el del rechazo, o el de cada nota de una CDR observada. Cada `KSSDiagnosis` trae el `code`,
+  el `detail` (nodo y valor que nombra la SUNAT; `nil` si no nombra uno) y los `fields` candidatos, cada uno con su
+  `inputPath`, su `xpath` y su `certainty` (`KSSDiagnosisCertaintySource` si el nodo es el de la regla y un solo campo lo
+  escribe; `…Inferred` si no). `inputPath` es `nil` cuando el modelo de entrada no tiene ese campo, y `fields` queda
+  vacío si el código no está en las reglas de la SUNAT del 26.08.2026. Sin `diagnosis` en la respuesta, el arreglo es
+  vacío.
 - Cada resultado guarda en `rawJSON` la respuesta tal como la da el
   [contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md). Un valor de
   enumeración que esta versión no conoce se lee como `…Unknown`, no como error.

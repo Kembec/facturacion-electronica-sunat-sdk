@@ -2,6 +2,8 @@
 
 #import <KembecSunatSDKObjC/KembecSunatSDKObjC.h>
 
+#import "diagnosis.h"
+
 #include "battery_support.h"
 
 static const NSInteger KSSExpectedFixtures = 38;
@@ -158,6 +160,7 @@ static NSString *KSSPlatform(void) {
     [self zipAndCDR];
     [self errors];
     [self silent];
+    KSSCheckDiagnosis(_repository, ^(BOOL ok, NSString *what) { [self->_checker check:ok what:what]; });
     [self threads:[fixtures subarrayWithRange:NSMakeRange(0, MIN((NSUInteger)8, fixtures.count))]];
     return [self reportWithVectors:(NSInteger)fixtures.count];
 }

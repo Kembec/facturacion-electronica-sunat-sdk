@@ -2,9 +2,18 @@
 name = "sunat-transport"
 version.workspace = true
 edition.workspace = true
+rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 keywords.workspace = true
+description = "Sans-IO SOAP envelopes, ZIP packaging and CDR parsing for the SUNAT (Peru) e-invoicing web services"
+categories = ["finance", "network-programming", "encoding"]
+readme = "README.md"
+# The library, its tests' code and the notices. The data the tests read (fixtures/, tests/vectors/,
+# tests/xsd/ and this crate's tests/data/) stays in the repository: the crates workflow runs this
+# package's tests against it.
+include = ["/src/**/*.rs", "/tests/**/*.rs", "/tests/*.py", "/README.md", "/LICENSE", "/NOTICE"]
 
 [dependencies]
 base64 = "0.22"
@@ -13,3 +22,7 @@ zip = { version = "2", default-features = false, features = ["deflate"] }
 
 [dev-dependencies]
 zip = { version = "2", default-features = false, features = ["deflate"] }
+
+# Pure Rust with no target-specific code: one target is the whole documentation.
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]

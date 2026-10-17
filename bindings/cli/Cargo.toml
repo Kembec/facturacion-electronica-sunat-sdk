@@ -5,6 +5,8 @@ edition.workspace = true
 license.workspace = true
 repository.workspace = true
 keywords.workspace = true
+# Distributed as the release binary, npm, PyPI and Packagist, not on crates.io.
+publish = false
 
 # The dispatch lives in the library so the C ABI (`bindings/ffi`) runs the same commands.
 [lib]

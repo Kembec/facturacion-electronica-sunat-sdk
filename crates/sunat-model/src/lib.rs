@@ -71,3 +71,9 @@ impl Document {
         }
     }
 }
+
+// The README examples compile against this crate as doctests, so the page on crates.io cannot drift
+// from the API.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+struct ReadmeDoctests;

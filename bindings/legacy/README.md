@@ -39,7 +39,7 @@ de C dentro.
 | `dll\x64\sunat_sdk_ffi.dll` | la de 64 bits: PowerBuilder de 64 bits |
 | `vb6\` | `SunatSdk.bas` (las llamadas), `SunatJson.bas` (leer y escribir JSON), y `Sample.bas` con `Sample.vbp`, el ejemplo |
 | `vfp\` | `sunat_sdk.prg` (llamadas y JSON) y `sample.prg`, el ejemplo |
-| `powerbuilder\` | `n_sunat_sdk.sru` (objeto no visual) y `f_sunat_sdk_sample.srf`, el ejemplo. Usan `JSONParser` y `JSONGenerator`: PowerBuilder 2017 R3 o posterior |
+| `powerbuilder\` | `n_sunat_sdk.sru` (objeto no visual) y `f_sunat_sdk_sample.srf`, el ejemplo. Usan las clases `JSONParser` y `JSONGenerator` de PowerBuilder |
 | `sample\` | la factura de prueba, su XML firmado y el certificado de prueba, que es autogenerado y no sirve para emitir |
 
 En la raíz van este README, `LICENSE` y `NOTICE`.

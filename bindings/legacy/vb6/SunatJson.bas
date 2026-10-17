@@ -4,7 +4,7 @@ Attribute VB_Name = "SunatJson"
 ' thing to register on every client machine.
 '
 ' Values are read as raw JSON text and decoded on demand, so a nested value is read in two steps:
-'   JsonText(JsonGet(response, "cdr"), "code")
+'   JsonText(JsonGet(response, "cdr"), "response_code")
 '
 ' The CI runs this module, as VBScript, over the 38 responses of the battery and compares it with
 ' PowerShell's parser (bindings/legacy/tests/json.ps1). That is why it avoids what VBScript lacks:

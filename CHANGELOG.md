@@ -38,7 +38,7 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   (S/ 0.50 from 2023) read on the year of `issue_date`. Checked before sending with SUNAT's codes (2033, 2048, 2892,
   3238, 2949, 3292, 3294, 3306, 3279, 3280; a receipt gets the observation code), and the observations 4318 (amount
   ≠ rate × bags) and 4237 (rate not the one in force) are rejected too. PEN only. Not sent to SUNAT beta yet
-  ([`docs/input-model.md`](docs/input-model.md#icbper)).
+  (#55, [`docs/input-model.md`](docs/input-model.md#icbper)).
 - `Line` gains `icbper` and `icbper_factor`, `Totals` and `SummaryLine` gain `icbper`: Rust code that builds these
   structs field by field adds them (`None`). JSON input is unchanged for documents without ICBPER.
 - `sunat_model::LineDiscount` is now an alias of `AllowanceCharge`; `Line` gains `charges`, `Invoice` gains

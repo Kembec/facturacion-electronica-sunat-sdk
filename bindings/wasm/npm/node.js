@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { webcrypto } from 'node:crypto';
 import { pathToFileURL } from 'node:url';
 import {
-  initSync, build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout,
+  initSync, build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout, diagnose,
   validityTokenRequest, validityTokenResponse, validityRequest, validityResponse, validityTimeout,
   greTokenRequest, greTokenResponse, greTokenUsable, greSendRequest, greSendResponse, greTicketRequest, greTicketResponse, greTimeout,
 } from './wasm/sunat_sdk_wasm.js';
@@ -38,7 +38,7 @@ export function load(source) {
       }
       initSync({ module });
       return Object.freeze({
-        build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout,
+        build, sign, zip, cdr, soapRequest, soapResponse, soapTimeout, diagnose,
         validityTokenRequest, validityTokenResponse, validityRequest, validityResponse, validityTimeout,
         greTokenRequest, greTokenResponse, greTokenUsable, greSendRequest, greSendResponse, greTicketRequest, greTicketResponse, greTimeout,
       });

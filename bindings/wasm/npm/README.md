@@ -73,7 +73,8 @@ async function exchange(kind, input, url, seconds = 60) {
 }
 
 const sent = await exchange('send', JSON.stringify({ name: file_name, xml: signed.xml }), billServiceUrl);
-// { outcome: 'cdr', cdr, cdr_zip_base64 } o { outcome: 'fault', code, message, class }
+// { outcome: 'cdr', cdr, cdr_zip_base64, diagnosis } o { outcome: 'fault', code, message, class, diagnosis }
+// Con el 2800 de la beta: diagnosis[0].fields[0].input_path === 'customer.document_type'
 ```
 
 ## Consultar el estado de un comprobante (Consulta Integrada)
@@ -159,6 +160,12 @@ Todas las funciones reciben y devuelven texto JSON, y lanzan un `Error` con el m
   `Uint8Array`, devuelve lo que la CLI imprime para esa respuesta
   ([contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md)). Un error SOAP
   de la SUNAT no lanza: llega como `{ outcome: 'fault', ... }`.
+- `diagnosis`, en todo error SOAP y en toda respuesta con CDR: un elemento por código (el del error, el de la CDR si
+  no es 0 y el de cada nota que empieza con un código), con `detail` (el nodo y el valor que nombra la SUNAT, o `null`)
+  y `fields`: el campo de tu entrada (`input_path`), el nodo (`xpath`) y `certainty` (`fuente` o `inferido`), según las
+  reglas de validación de la SUNAT del 26.08.2026 para 01, 03, 07 y 08
+  ([detalle](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md#diagnosis)).
+- `diagnose(documentType, code, message)`: lo mismo para un código suelto → `{ code, detail, fields }`.
 - `soapTimeout(exchange, inputJson, seconds)`: el resultado cuando no llegó respuesta en `seconds` segundos.
 - Si `ticket` o `status` no reciben respuesta, el resultado es `{ outcome: 'no_verdict', reason, http_status, message }`
   (`ticket` agrega el mismo `ticket`). Cuenta como sin respuesta un estado HTTP distinto de 200 y 500, o que se acabe la

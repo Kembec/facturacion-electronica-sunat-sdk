@@ -2,6 +2,7 @@
 
 use serde_json::{json, Value};
 use sunat_model::Document;
+use sunat_sdk::diagnosis;
 use sunat_sdk::exchange::{self, Exchange, Reply};
 use sunat_sdk::validity::{self, Answer, Stage};
 use sunat_xmldsig::DEFAULT_SIGNATURE_ID;
@@ -43,17 +44,44 @@ pub fn soap_request_json(exchange_name: &str, input_json: &str, user: &str, pass
     Ok(json!({ "method": "POST", "headers": headers, "body": envelope }).to_string())
 }
 
-/// The outcome for an HTTP response to that POST: the CLI's output for the same answer.
+/// The outcome for an HTTP response to that POST: the CLI's output for the same answer, `diagnosis`
+/// included.
 pub fn soap_response_json(exchange_name: &str, input_json: &str, http_status: u16, body: &[u8]) -> Result<String, String> {
-    let kind = Exchange::from_name(exchange_name)?;
-    Ok(exchange::read(kind, &parse(input_json)?, Reply::from_http(http_status, body))?.to_string())
+    outcome(exchange_name, input_json, |kind, input| exchange::read(kind, input, Reply::from_http(http_status, body)))
 }
 
 /// The outcome when the wait ran out after `seconds`: `no_verdict` for ticket and status, an
 /// error for send and summary, whose document may have arrived.
 pub fn soap_timeout_json(exchange_name: &str, input_json: &str, seconds: u32) -> Result<String, String> {
+    outcome(exchange_name, input_json, |kind, input| exchange::read(kind, input, Reply::Timeout(u64::from(seconds))))
+}
+
+/// The input field a SUNAT code points at, for `document_type` (`01`, `03`, `07`, `08`), as one
+/// element of the CLI's `diagnosis`: `{"code", "detail": {"node", "value"} | null, "fields": [...]}`.
+pub fn diagnose_json(document_type: &str, code: &str, message: &str) -> String {
+    diagnosis::diagnose(document_type, code, message).to_json().to_string()
+}
+
+/// Reads an answer and adds `diagnosis` as the CLI does (`bindings/cli/src/commands.rs`).
+fn outcome(exchange_name: &str, input_json: &str, read: impl FnOnce(Exchange, &Value) -> Result<Value, String>) -> Result<String, String> {
     let kind = Exchange::from_name(exchange_name)?;
-    Ok(exchange::read(kind, &parse(input_json)?, Reply::Timeout(u64::from(seconds)))?.to_string())
+    let input = parse(input_json)?;
+    let mut out = read(kind, &input)?;
+    if let Some(found) = diagnosis::diagnosis_json(&document_type(kind, &input), &out) {
+        out["diagnosis"] = found;
+    }
+    Ok(out.to_string())
+}
+
+/// The CLI's rule: the second part of `name` for `send` and `summary`, `document_type` for `status`,
+/// none for `ticket` (a summary or void communication, which the table has no rows for).
+fn document_type(kind: Exchange, input: &Value) -> String {
+    let field = |name: &str| input[name].as_str().unwrap_or_default().to_string();
+    match kind {
+        Exchange::Send | Exchange::Summary => field("name").split('-').nth(1).unwrap_or_default().to_string(),
+        Exchange::Status => field("document_type"),
+        Exchange::Ticket => String::new(),
+    }
 }
 
 /// The Consulta Integrada's token request as `fetch` options with its `url`

@@ -1,6 +1,6 @@
 // Type-checked (never run) from the clean consumer: the declarations resolve through `exports`
 // and describe the API that node-consumer.mjs and browser-page.mjs exercise.
-import { load, type BuildOutput, type Cdr, type Sdk, type SignOutput, type SoapRequest, type TicketOutcome, type ZipOutput, type RestRequest, type TokenOutcome, type ValidityOutcome, type GreRequest, type GreSendRequest, type GreTokenOutcome, type GreSendOutcome, type GreTicketOutcome } from '@kembec/facturacion-electronica-sunat-sdk';
+import { load, type BuildOutput, type Cdr, type Sdk, type SignOutput, type SoapRequest, type TicketOutcome, type ZipOutput, type RestRequest, type TokenOutcome, type ValidityOutcome, type GreRequest, type GreSendRequest, type GreTokenOutcome, type GreSendOutcome, type GreTicketOutcome, type SendOutcome, type Diagnosis, type DiagnosisField } from '@kembec/facturacion-electronica-sunat-sdk';
 import wasm from '@kembec/facturacion-electronica-sunat-sdk/wasm';
 
 const sdk: Sdk = await load();
@@ -30,8 +30,16 @@ const greStatus: GreTicketOutcome = JSON.parse(sdk.greTicketResponse(200, new Ui
 const greLate: GreTicketOutcome = JSON.parse(sdk.greTimeout('ticket', 30, 'a.b.c'));
 const askAgain: boolean = greStatus.outcome === 'ticket_status' && greStatus.state === 'in_process' && greTicket.outcome === 'ticket' && greLate.outcome === 'no_verdict';
 export const greUsed = [greTokenCall.url, greSendCall.hash_zip, reusable, askAgain, sdk.greTicketRequest('a.b.c', 'token', 'https://api.test')];
+const sent: SendOutcome = JSON.parse(sdk.soapResponse('send', '{}', 200, new Uint8Array()));
+const diagnosed: Diagnosis = JSON.parse(sdk.diagnose('03', '2800', 'x'));
+const field: DiagnosisField | undefined = sent.diagnosis[0]?.fields[0];
+const pointed: (string | null)[] = [diagnosed.code, diagnosed.detail?.node ?? null, field?.input_path ?? null, field?.xpath ?? null];
+const sure: boolean = field?.certainty === 'fuente';
+export const diagnosisUsed = [pointed, sure];
 export const used = [tokenCall.url, queryCall.headers, decided, fromUrl, signed.digest_value, signed.signature_value, built.file_name, named, zipped, read, post.body, again];
 
+// @ts-expect-error certainty is fuente or inferido
+const unsure: DiagnosisField['certainty'] = 'maybe';
 // @ts-expect-error signatureId is a string
 sdk.sign(built.xml, 'cert', 'key', 1);
 // @ts-expect-error the package does no network I/O: there is no send

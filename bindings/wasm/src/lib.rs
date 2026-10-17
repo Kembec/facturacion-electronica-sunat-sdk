@@ -8,7 +8,7 @@ mod api;
 mod gre;
 
 pub use api::{
-    build_json, cdr_json, sign_json, soap_request_json, soap_response_json, soap_timeout_json, validity_request_json,
+    build_json, cdr_json, diagnose_json, sign_json, soap_request_json, soap_response_json, soap_timeout_json, validity_request_json,
     validity_response_json, validity_timeout_json, validity_token_request_json, validity_token_response_json, zip_json,
 };
 pub use gre::{
@@ -48,10 +48,17 @@ pub fn soap_request(exchange: &str, input_json: &str, user: &str, password: &str
     soap_request_json(exchange, input_json, user, password).map_err(|message| JsError::new(&message))
 }
 
-/// The HTTP status and body SUNAT answered -> the CLI's output for that exchange.
+/// The HTTP status and body SUNAT answered -> the CLI's output for that exchange, `diagnosis` included.
 #[wasm_bindgen(js_name = soapResponse)]
 pub fn soap_response(exchange: &str, input_json: &str, http_status: u16, body: &[u8]) -> Result<String, JsError> {
     soap_response_json(exchange, input_json, http_status, body).map_err(|message| JsError::new(&message))
+}
+
+/// A SUNAT code and its message, for `document_type` (`01`, `03`, `07`, `08`) -> one element of
+/// `diagnosis`: `{"code", "detail": {"node", "value"} | null, "fields": [{"input_path", "xpath", "certainty"}]}`.
+#[wasm_bindgen]
+pub fn diagnose(document_type: &str, code: &str, message: &str) -> String {
+    diagnose_json(document_type, code, message)
 }
 
 /// No answer within `seconds` -> `no_verdict` for ticket and status; thrown for send and summary.

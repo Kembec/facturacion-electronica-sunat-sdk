@@ -29,7 +29,7 @@ fn cases() -> Vec<String> {
 fn build(case: &str) -> Vec<u8> {
     let json = fs::read_to_string(repository().join("fixtures").join(format!("{case}.json"))).expect("fixture");
     let document = Document::from_json(&json).unwrap_or_else(|e| panic!("{case}: {e}"));
-    sunat_ubl::build(&document).unwrap_or_else(|e| panic!("{case}: {e}"))
+    kembec_sunat_ubl::build(&document).unwrap_or_else(|e| panic!("{case}: {e}"))
 }
 
 fn canonical(case: &str, xml: &[u8]) -> Vec<u8> {

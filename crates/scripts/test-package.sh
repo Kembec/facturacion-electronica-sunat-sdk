@@ -29,9 +29,10 @@ for crate in "$@"; do
   fi
   tar -xzf "$file" -C "$work/crates"
   mv "$work/crates/$crate-$version" "$work/crates/$crate"
-  if [ -d "$root/crates/$crate/tests/data" ]; then
+  source_dir="$root/crates/${crate#kembec-}"  # the folders keep the sunat-* names
+  if [ -d "$source_dir/tests/data" ]; then
     mkdir -p "$work/crates/$crate/tests"
-    cp -R "$root/crates/$crate/tests/data" "$work/crates/$crate/tests/data"
+    cp -R "$source_dir/tests/data" "$work/crates/$crate/tests/data"
   fi
   members="$members\"crates/$crate\", "
   patches="$patches$crate = { path = \"crates/$crate\" }"$'\n'

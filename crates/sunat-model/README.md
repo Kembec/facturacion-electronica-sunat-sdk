@@ -1,4 +1,4 @@
-# sunat-model
+# kembec-sunat-model
 
 El modelo de entrada del [SDK de facturación electrónica SUNAT](https://github.com/Kembec/facturacion-electronica-sunat-sdk)
 para Rust: lee el JSON de una factura (01), una boleta (03), una nota de crédito (07) o de débito (08), un resumen
@@ -13,7 +13,7 @@ forma del JSON está en el [modelo de entrada](https://github.com/Kembec/factura
 ## Instalación
 
 ```bash
-cargo add sunat-model@0.1.0-beta.4
+cargo add kembec-sunat-model@0.1.0-beta.4
 ```
 
 ## Uso
@@ -32,24 +32,24 @@ curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
 use std::fs;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let document = sunat_model::Document::from_json(&fs::read_to_string("01-invoice-taxed-cash.json")?)?;
+    let document = kembec_sunat_model::Document::from_json(&fs::read_to_string("01-invoice-taxed-cash.json")?)?;
     println!("{}", document.file_name()); // 20123456789-01-F001-1
     Ok(())
 }
 ```
 
 Lo que el SDK no sabe escribir, o lo que la SUNAT rechazaría, vuelve como `ModelError` con la ruta del campo
-(`$.lines[2].affectation`) y, si es una regla de la SUNAT, el código con el que contestaría (`1001`). Lo que sigue es armar el XML con `sunat-ubl` y firmarlo con `sunat-xmldsig`.
+(`$.lines[2].affectation`) y, si es una regla de la SUNAT, el código con el que contestaría (`1001`). Lo que sigue es armar el XML con `kembec-sunat-ubl` y firmarlo con `kembec-sunat-xmldsig`.
 
 ## Los crates del SDK
 
 | Crate | Qué hace |
 |---|---|
-| [`sunat-model`](https://crates.io/crates/sunat-model) | lee el JSON del documento y comprueba que esté dentro del alcance del SDK |
-| [`sunat-ubl`](https://crates.io/crates/sunat-ubl) | arma el XML UBL en forma canónica |
-| [`sunat-xmldsig`](https://crates.io/crates/sunat-xmldsig) | lo firma con tu certificado y verifica firmas |
-| [`sunat-transport`](https://crates.io/crates/sunat-transport) | el ZIP, los sobres SOAP y la lectura de respuestas y CDR |
-| [`sunat-sdk`](https://crates.io/crates/sunat-sdk) | cada llamada a la SUNAT como JSON: arma la petición y lee la respuesta |
+| [`kembec-sunat-model`](https://crates.io/crates/kembec-sunat-model) | lee el JSON del documento y comprueba que esté dentro del alcance del SDK |
+| [`kembec-sunat-ubl`](https://crates.io/crates/kembec-sunat-ubl) | arma el XML UBL en forma canónica |
+| [`kembec-sunat-xmldsig`](https://crates.io/crates/kembec-sunat-xmldsig) | lo firma con tu certificado y verifica firmas |
+| [`kembec-sunat-transport`](https://crates.io/crates/kembec-sunat-transport) | el ZIP, los sobres SOAP y la lectura de respuestas y CDR |
+| [`kembec-sunat-sdk`](https://crates.io/crates/kembec-sunat-sdk) | cada llamada a la SUNAT como JSON: arma la petición y lee la respuesta |
 
 Ninguno abre conexiones ni lee archivos: el POST HTTP lo haces tú, con TLS verificado. Se publican juntos y cada uno
 pide a los otros en su versión exacta, así que agrégalos todos con la misma versión.

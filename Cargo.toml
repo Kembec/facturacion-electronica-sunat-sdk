@@ -27,8 +27,8 @@ keywords = ["sunat", "peru", "facturacion", "e-invoicing", "xmldsig"]
 # released together, and a mixed set (a sunat-ubl built against another sunat-model) would not be the
 # one that passed the vectors. The crates workflow fails if these drift from `version` above.
 [workspace.dependencies]
-sunat-model = { path = "crates/sunat-model", version = "=0.1.0-beta.4" }
-sunat-ubl = { path = "crates/sunat-ubl", version = "=0.1.0-beta.4" }
-sunat-xmldsig = { path = "crates/sunat-xmldsig", version = "=0.1.0-beta.4" }
-sunat-transport = { path = "crates/sunat-transport", version = "=0.1.0-beta.4" }
-sunat-sdk = { path = "crates/sunat-sdk", version = "=0.1.0-beta.4" }
+sunat-model = { package = "kembec-sunat-model", path = "crates/sunat-model", version = "=0.1.0-beta.4" }
+sunat-ubl = { package = "kembec-sunat-ubl", path = "crates/sunat-ubl", version = "=0.1.0-beta.4" }
+sunat-xmldsig = { package = "kembec-sunat-xmldsig", path = "crates/sunat-xmldsig", version = "=0.1.0-beta.4" }
+sunat-transport = { package = "kembec-sunat-transport", path = "crates/sunat-transport", version = "=0.1.0-beta.4" }
+sunat-sdk = { package = "kembec-sunat-sdk", path = "crates/sunat-sdk", version = "=0.1.0-beta.4" }

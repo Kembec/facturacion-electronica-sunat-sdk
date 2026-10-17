@@ -1,4 +1,4 @@
-use sunat_model::{Document, ModelError};
+use kembec_sunat_model::{Document, ModelError};
 
 const BASE: &str = include_str!("../../../fixtures/01-invoice-taxed-cash.json");
 

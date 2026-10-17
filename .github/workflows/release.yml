@@ -26,7 +26,7 @@ env:
   MATURIN_VERSION: "v1.15.0"
   TWINE_VERSION: "7.0.0"
   # In dependency order; the same list as crates.yml, where check-publish.sh holds it to the workspace.
-  CRATES: "sunat-model sunat-transport sunat-sdk sunat-xmldsig sunat-ubl"
+  CRATES: "kembec-sunat-model kembec-sunat-transport kembec-sunat-sdk kembec-sunat-xmldsig kembec-sunat-ubl"
 
 jobs:
   cli-linux-musl:
@@ -318,7 +318,7 @@ jobs:
       - name: Version equals the tag
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
-          version="$(cargo metadata --no-deps --locked --format-version 1 | jq -r '.packages[] | select(.name == "sunat-model") | .version')"
+          version="$(cargo metadata --no-deps --locked --format-version 1 | jq -r '.packages[] | select(.name == "kembec-sunat-model") | .version')"
           test "v$version" = "$GITHUB_REF_NAME"
       - name: cargo publish --dry-run, each crate in dependency order
         run: cargo publish --dry-run --locked $(printf -- '-p %s ' $CRATES)

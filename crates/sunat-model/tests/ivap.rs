@@ -1,4 +1,4 @@
-use sunat_model::{Document, ModelError};
+use kembec_sunat_model::{Document, ModelError};
 
 const INVOICE: &str = include_str!("../../../fixtures/01-invoice-ivap.json");
 const CREDIT: &str = include_str!("../../../fixtures/07-credit-note-ivap.json");

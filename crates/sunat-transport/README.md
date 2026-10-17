@@ -1,4 +1,4 @@
-# sunat-transport
+# kembec-sunat-transport
 
 Lo que viaja entre tu sistema y los servicios web de la SUNAT, sin hacer red: comprime el XML firmado como lo espera la
 SUNAT, arma los sobres SOAP de `sendBill`, `sendSummary`, `getStatus` y `getStatusCdr` con usuario y clave SOL, y lee lo
@@ -7,12 +7,12 @@ que la SUNAT contesta, incluidos los SOAP Fault y la constancia de recepción (C
 
 Sans-IO SOAP envelopes, ZIP packaging and CDR parsing for the SUNAT (Peru) web services.
 
-Si prefieres no armar cada paso, `sunat-sdk` hace lo mismo con una entrada y una salida JSON por llamada.
+Si prefieres no armar cada paso, `kembec-sunat-sdk` hace lo mismo con una entrada y una salida JSON por llamada.
 
 ## Instalación
 
 ```bash
-cargo add sunat-transport@0.1.0-beta.4
+cargo add kembec-sunat-transport@0.1.0-beta.4
 ```
 
 ## Enviar una factura
@@ -21,7 +21,7 @@ cargo add sunat-transport@0.1.0-beta.4
 llegan con HTTP 500 y también se leen.
 
 ```rust,no_run
-use sunat_transport::{
+use kembec_sunat_transport::{
     parse_send_bill_response, read_cdr, send_bill_envelope, unzip_xml, zip_document, zip_file_name,
     SendBillOutcome, TransportError, SOAP_ACTION_SEND_BILL,
 };
@@ -50,11 +50,11 @@ fn send(
 
 | Crate | Qué hace |
 |---|---|
-| [`sunat-model`](https://crates.io/crates/sunat-model) | lee el JSON del documento y comprueba que esté dentro del alcance del SDK |
-| [`sunat-ubl`](https://crates.io/crates/sunat-ubl) | arma el XML UBL en forma canónica |
-| [`sunat-xmldsig`](https://crates.io/crates/sunat-xmldsig) | lo firma con tu certificado y verifica firmas |
-| [`sunat-transport`](https://crates.io/crates/sunat-transport) | el ZIP, los sobres SOAP y la lectura de respuestas y CDR |
-| [`sunat-sdk`](https://crates.io/crates/sunat-sdk) | cada llamada a la SUNAT como JSON: arma la petición y lee la respuesta |
+| [`kembec-sunat-model`](https://crates.io/crates/kembec-sunat-model) | lee el JSON del documento y comprueba que esté dentro del alcance del SDK |
+| [`kembec-sunat-ubl`](https://crates.io/crates/kembec-sunat-ubl) | arma el XML UBL en forma canónica |
+| [`kembec-sunat-xmldsig`](https://crates.io/crates/kembec-sunat-xmldsig) | lo firma con tu certificado y verifica firmas |
+| [`kembec-sunat-transport`](https://crates.io/crates/kembec-sunat-transport) | el ZIP, los sobres SOAP y la lectura de respuestas y CDR |
+| [`kembec-sunat-sdk`](https://crates.io/crates/kembec-sunat-sdk) | cada llamada a la SUNAT como JSON: arma la petición y lee la respuesta |
 
 Ninguno abre conexiones ni lee archivos: el POST HTTP lo haces tú, con TLS verificado. Se publican juntos y cada uno
 pide a los otros en su versión exacta, así que agrégalos todos con la misma versión.

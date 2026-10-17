@@ -35,7 +35,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN: "1.94.1"
   # In dependency order. check-publish.sh fails if crates.io would take any other workspace member.
-  CRATES: "sunat-model sunat-transport sunat-sdk sunat-xmldsig sunat-ubl"
+  CRATES: "kembec-sunat-model kembec-sunat-transport kembec-sunat-sdk kembec-sunat-xmldsig kembec-sunat-ubl"
 
 jobs:
   package:

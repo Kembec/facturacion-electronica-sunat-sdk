@@ -2,7 +2,7 @@
 //! advice so that it breaks exactly that rule and expects SUNAT's error code.
 
 use serde_json::{json, Value};
-use sunat_model::{Document, ModelError};
+use kembec_sunat_model::{Document, ModelError};
 
 /// Reason 01 (sale), private transport, two vehicles and a driver.
 const SALE: &str = include_str!("../../../fixtures/09-despatch-sale.json");

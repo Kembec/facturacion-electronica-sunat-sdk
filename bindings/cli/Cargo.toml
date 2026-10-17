@@ -19,10 +19,10 @@ path = "src/main.rs"
 
 [dependencies]
 serde_json = "1"
-sunat-model = { path = "../../crates/sunat-model" }
-sunat-sdk = { path = "../../crates/sunat-sdk" }
-sunat-ubl = { path = "../../crates/sunat-ubl" }
-sunat-xmldsig = { path = "../../crates/sunat-xmldsig" }
+sunat-model = { package = "kembec-sunat-model", path = "../../crates/sunat-model" }
+sunat-sdk = { package = "kembec-sunat-sdk", path = "../../crates/sunat-sdk" }
+sunat-ubl = { package = "kembec-sunat-ubl", path = "../../crates/sunat-ubl" }
+sunat-xmldsig = { package = "kembec-sunat-xmldsig", path = "../../crates/sunat-xmldsig" }
 # Default features: TLS through rustls with webpki roots; certificate verification stays on.
 ureq = "2"
 

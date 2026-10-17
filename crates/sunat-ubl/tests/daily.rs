@@ -9,7 +9,7 @@ fn first_line(edit: impl FnOnce(&mut serde_json::Value)) -> String {
     let mut value: serde_json::Value = serde_json::from_str(SUMMARY).unwrap();
     edit(&mut value["lines"][0]);
     let document = Document::from_json(&value.to_string()).unwrap();
-    let xml = String::from_utf8(sunat_ubl::build(&document).unwrap()).unwrap();
+    let xml = String::from_utf8(kembec_sunat_ubl::build(&document).unwrap()).unwrap();
     let start = xml.find("<sac:SummaryDocumentsLine>").unwrap();
     let end = xml[start..].find("</sac:SummaryDocumentsLine>").unwrap();
     xml[start..start + end].to_owned()

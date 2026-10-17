@@ -109,6 +109,8 @@ jobs:
             Select-String -Path "$dir\$($case[0]).txt" -Pattern 'differs in size from sunat_sdk.h' | Select-Object -First 1
             if (-not (Select-String -Path "$dir\$($case[0]).txt" -Pattern 'differs in size from sunat_sdk.h' -Quiet)) { throw "$($case[1]): failed for another reason" }
           }
+          # Every case was refused for the expected reason; the last cl left a non-zero $LASTEXITCODE on purpose.
+          exit 0
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: dll-${{ matrix.dll }}

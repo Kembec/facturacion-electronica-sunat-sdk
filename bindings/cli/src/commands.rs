@@ -43,23 +43,8 @@ fn call(kind: Exchange, input: &Value, conn: &Connection, post: Post) -> Result<
         Err(PostError::Timeout(seconds)) => Reply::Timeout(*seconds),
         Err(PostError::Other(message)) => return Err(message.clone()),
     };
-    let mut out = exchange::read(kind, input, reply)?;
-    if let Some(diagnosis) = sunat_sdk::diagnosis::diagnosis_json(&document_type(kind, input), &out) {
-        out["diagnosis"] = diagnosis;
-    }
-    Ok(out)
-}
-
-/// The document type the codes are looked up for: the second part of the file name for `send` and
-/// `summary` (`RUC-01-F001-1`, `RUC-RC-...`), the `document_type` field for `status`. A `ticket`
-/// only answers for a summary or void communication, whose codes the table has no rows for.
-fn document_type(kind: Exchange, input: &Value) -> String {
-    let field = |name: &str| input[name].as_str().unwrap_or_default().to_string();
-    match kind {
-        Exchange::Send | Exchange::Summary => field("name").split('-').nth(1).unwrap_or_default().to_string(),
-        Exchange::Status => field("document_type"),
-        Exchange::Ticket => String::new(),
-    }
+    let out = exchange::read(kind, input, reply)?;
+    Ok(sunat_sdk::diagnosis::with_diagnosis(kind, input, out))
 }
 
 #[cfg(test)]

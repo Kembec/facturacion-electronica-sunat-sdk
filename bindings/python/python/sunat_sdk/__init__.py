@@ -21,6 +21,7 @@ __all__ = [
     "SunatSdkError",
     "build",
     "cdr",
+    "diagnose",
     "exchange",
     "gre_send",
     "gre_send_request",
@@ -96,6 +97,12 @@ def soap_response(exchange: Exchange, input: Json, http_status: int, body: bytes
 def soap_timeout(exchange: Exchange, input: Json, seconds: int) -> Dict[str, Any]:
     """No answer within ``seconds`` -> ``no_verdict`` for ticket and status; raises for send and summary."""
     return json.loads(_native.soap_timeout(exchange, _text(input), int(seconds)))
+
+
+def diagnose(document_type: str, code: str, message: str = "") -> Dict[str, Any]:
+    """The input field a SUNAT code points at, for a document type (``01``, ``03``, ``07``, ``08``) ->
+    ``{code, detail: {node, value} | None, fields: [{input_path, xpath, certainty}]}``, an element of ``diagnosis``."""
+    return json.loads(_native.diagnose(document_type, code, message))
 
 
 def validity_token_request(client_id: str, client_secret: str, base: Optional[str] = None) -> Dict[str, Any]:

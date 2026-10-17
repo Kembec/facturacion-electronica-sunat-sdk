@@ -44,16 +44,22 @@ pub fn post_soap(endpoint: &str, soap_action: &str, envelope: &str, timeout: Dur
     Ok(body)
 }
 
-/// Posts a REST call built by `sunat_sdk::validity` (`{"method", "url", "headers", "body"}`) and
-/// returns the HTTP status with its body, whatever the status: the caller decides what each means.
+/// Sends a REST call built by `sunat_sdk::validity` or `sunat_sdk::gre` (`{"method", "url", "headers",
+/// "body"}`; `POST` or `GET`, which carries no body) and returns the HTTP status with its body,
+/// whatever the status: the caller decides what each means.
 pub fn post_rest(request: &serde_json::Value, timeout: Duration) -> Result<(u16, Vec<u8>), PostError> {
     let url = request["url"].as_str().ok_or_else(|| PostError::Other("request without url".into()))?;
+    let method = request["method"].as_str().unwrap_or("POST");
+    if method != "POST" && method != "GET" {
+        return Err(PostError::Other(format!("unsupported method {method}")));
+    }
     let agent = ureq::AgentBuilder::new().timeout(timeout).build();
-    let mut call = agent.post(url);
+    let mut call = agent.request(method, url);
     for (name, value) in request["headers"].as_object().into_iter().flatten() {
         call = call.set(name, value.as_str().unwrap_or_default());
     }
-    let response = match call.send_string(request["body"].as_str().unwrap_or_default()) {
+    let sent = if method == "GET" { call.call() } else { call.send_string(request["body"].as_str().unwrap_or_default()) };
+    let response = match sent {
         Ok(response) | Err(ureq::Error::Status(_, response)) => response,
         Err(ureq::Error::Transport(err)) if is_timeout(&err) => return Err(PostError::Timeout(timeout.as_secs())),
         Err(ureq::Error::Transport(err)) => return Err(PostError::Other(format!("transport error: {}", err.kind()))),

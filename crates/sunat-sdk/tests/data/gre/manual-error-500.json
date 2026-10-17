@@ -1,0 +1,1 @@
+{"cod":"500","msg":"Internal Server Error - Se presento una condicion inesperada que impidio completar el Request","exc":"java.lang.NullPointerException at ..."}

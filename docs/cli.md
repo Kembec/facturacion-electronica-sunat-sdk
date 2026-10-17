@@ -64,6 +64,37 @@ Deciding without issuing again: no outcome is a reason to issue the operation wi
 with `ticket` or `status` first; `voided` is spent; `printed_*` is outside the contract for an electronic
 series. The token and the secret never reach stdout or stderr.
 
+## `gre-send` and `gre-ticket` (despatch advice, REST)
+
+The sender's despatch advice (09) goes by SUNAT's GRE REST API, not by SOAP: an OAuth token by `password`, the POST of
+the zipped guide and the GET of its ticket. **SUNAT has no test environment for GRE** (neither GRE-M nor the SOAP
+manual offers one): nothing here is labelled accepted by SUNAT. Authentication and errors follow SUNAT's «Manual de
+servicios web, plataforma nueva GRE» (§1.2, §1.3, annex I); the send and ticket paths and fields come from the MIT
+client `greenter/gre-api`, a secondary source. Tests replay `crates/sunat-sdk/tests/data/gre/` (sources in its README).
+
+Flags, all required, flags before environment: `--client-id`/`SUNAT_API_CLIENT_ID` and `--client-secret`/
+`SUNAT_API_CLIENT_SECRET` (the GRE pair of «Credenciales de API SUNAT»), `--user`/`SUNAT_SOL_USER` (RUC + SOL user) and
+`--password`/`SUNAT_SOL_PASSWORD`, `--token-endpoint`/`SUNAT_GRE_TOKEN_ENDPOINT` (GRE-M: `https://api-seguridad.sunat.gob.pe/v1/clientessol`)
+and `--endpoint`/`SUNAT_GRE_ENDPOINT` (`https://api-cpe.sunat.gob.pe/v1`). No default URL: https only. `--timeout` bounds
+the token and the call together. Each call asks for its own token; the token never reaches stdout or stderr.
+
+- `gre-send`: stdin `{"name": "RUC-09-SERIE-NUMERO", "xml" | "xml_base64"}` (the signed guide) → `{"outcome": "ticket",
+  "ticket", "received_at", "zip_name", "hash_zip"}`. Store the ticket first: it is the only handle on the outcome.
+  `hash_zip` is the SHA-256 of the zip in lowercase hex. No answer, or an answer that is not GRE-M's, exits 1: the
+  guide may have arrived, so send the same file again, never the operation with another number.
+- `gre-ticket`: stdin `{"ticket"}` → `{"outcome": "ticket_status", "ticket", "status_code", "state", "cdr_generated",
+  "error"?, "cdr"?, "cdr_zip_base64"?}`; `state` is `processed` (0), `in_process` (98: ask again with the same ticket,
+  never send again) or `processed_with_errors` (99); `error` is `{code, description, class}` from `numError`/`desError`;
+  `cdr` is read like `cdr` (a code 0 with a 4000+ note is `observed`). No answer is `no_verdict` with `stage: "ticket"`.
+- Both: `{"outcome": "api_error", "stage": "token" | "send" | "ticket", "http_status", "general_error", "code", "message",
+  "errors": [{code, description}]}` when SUNAT answers GRE-M's error body (`general_error` names annex I's status:
+  `unauthorized`, `unprocessable_entity`…; 422 lists the validation errors). A token with no answer is `no_verdict`
+  with `stage: "token"`: nothing was sent.
+
+In the core (`sunat_sdk::gre`): `token_request`/`token_read` (with `expires_at` from the caller's clock and
+`token_usable`, which renews 10 minutes before expiry), `send_request`/`send_read`, `ticket_request`/`ticket_read`,
+`timeout`. Each `*_request` gives `{"method", "url", "headers", "body"}`; the caller makes the call.
+
 ## Consumers
 
 - `bindings/php`: Composer package; runs the binary with `proc_open`, writes the JSON to stdin, reads

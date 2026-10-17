@@ -52,3 +52,16 @@ fn plain_http_endpoint_is_refused_and_password_is_not_echoed() {
     let stderr = String::from_utf8(out.stderr).unwrap();
     assert!(stderr.contains("https://") && !stderr.contains("pw-secret"));
 }
+
+#[test]
+fn gre_send_refuses_a_plain_http_base_before_any_call_and_echoes_no_secret() {
+    let flags = [
+        "--client-id", "c04864ce-f454", "--client-secret", "client-secret-x", "--user", "20000000001MODUSER",
+        "--password", "sol-secret-x", "--token-endpoint", "https://auth.invalid/v1/clientessol", "--endpoint", "http://cpe.invalid/v1",
+    ];
+    let out = run(&[&["gre-send"][..], &flags[..]].concat(), r#"{"name":"20000000001-09-T001-1","xml":"<x/>"}"#);
+    assert!(!out.status.success() && out.stdout.is_empty());
+    let stderr = String::from_utf8(out.stderr).unwrap();
+    assert!(stderr.contains("--endpoint must use https://"));
+    assert!(!stderr.contains("sol-secret-x") && !stderr.contains("client-secret-x"));
+}

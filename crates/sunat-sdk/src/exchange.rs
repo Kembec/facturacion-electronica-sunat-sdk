@@ -236,7 +236,7 @@ fn number(input: &Value) -> Result<u32, String> {
         .ok_or_else(|| "`number` must be a positive integer".to_string())
 }
 
-fn cdr_json(cdr: &Cdr) -> Value {
+pub(crate) fn cdr_json(cdr: &Cdr) -> Value {
     json!({
         "reference_id": cdr.reference_id,
         "response_code": cdr.response_code,

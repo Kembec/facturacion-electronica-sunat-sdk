@@ -8,5 +8,6 @@ keywords.workspace = true
 
 [dependencies]
 base64 = "0.22"
+sha2 = "0.10"
 serde_json = "1"
 sunat-transport = { path = "../sunat-transport" }

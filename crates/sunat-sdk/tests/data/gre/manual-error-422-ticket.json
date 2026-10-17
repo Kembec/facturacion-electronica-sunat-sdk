@@ -1,0 +1,1 @@
+{"cod":"422","msg":"Unprocessable Entity - Se presentaron errores de validacion que impidieron completar el Request","exc":null,"errors":[{"codError":"166","desError":"Código de ticket no enviado."}]}

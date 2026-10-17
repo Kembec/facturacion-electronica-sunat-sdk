@@ -6,3 +6,5 @@ SUNAT technical documentation, catalogs and schemas belong to SUNAT and are not 
 `tests/xsd/` holds the OASIS UBL 2.1 schemas, Copyright (c) OASIS Open 2013, under the OASIS notices
 (`tests/xsd/LICENSE-OASIS.md`); they are used by the tests and are not part of the published crates.
 This project is not affiliated with SUNAT.
+`crates/sunat-sdk/tests/data/gre/fork-*` hold test answers taken from Greenter (`greenter/ws`), Copyright (c)
+2021 Giancarlos Salas, under the MIT License, kept with this notice; only the tests use them.

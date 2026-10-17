@@ -1,0 +1,6 @@
+/target/
+# The six native builds are staged here by CI before `mvn package`; never committed.
+/natives/
+/artifacts/
+/tests/target/
+/tests/.m2/

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  The Java package of the SDK: the C ABI of bindings/ffi through JNA, with the six native builds inside the jar.
+  CI stages the natives in natives/ before `mvn package` (.github/workflows/java.yml); the version is the Rust
+  workspace's (scripts/check-package.sh fails if they differ). The release profile only signs: nothing here publishes.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>com.kembec</groupId>
+  <artifactId>sunat-sdk</artifactId>
+  <version>0.1.0-beta.4</version>
+  <packaging>jar</packaging>
+
+  <name>SUNAT electronic invoicing SDK</name>
+  <description>Builds, signs, sends and queries SUNAT (Peru) electronic vouchers: invoices, receipts, notes, daily summaries, voids and despatch advices. The SDK's Rust core in process, with its native builds for Windows x86 and x64, Linux x64 and ARM64 and macOS inside the jar.</description>
+  <url>https://github.com/Kembec/facturacion-electronica-sunat-sdk</url>
+  <inceptionYear>2026</inceptionYear>
+
+  <licenses>
+    <license>
+      <name>MIT License</name>
+      <url>https://opensource.org/license/mit</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+
+  <developers>
+    <developer>
+      <id>kembec</id>
+      <name>Manuel Benancio</name>
+      <email>dev@kembec.com</email>
+      <url>https://kembec.com</url>
+    </developer>
+  </developers>
+
+  <scm>
+    <connection>scm:git:https://github.com/Kembec/facturacion-electronica-sunat-sdk.git</connection>
+    <developerConnection>scm:git:https://github.com/Kembec/facturacion-electronica-sunat-sdk.git</developerConnection>
+    <url>https://github.com/Kembec/facturacion-electronica-sunat-sdk</url>
+  </scm>
+
+  <issueManagement>
+    <system>GitHub</system>
+    <url>https://github.com/Kembec/facturacion-electronica-sunat-sdk/issues</url>
+  </issueManagement>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+    <!-- Java 8 bytecode and API: 8, 11 and 17 still run most of the billing systems this package is for. -->
+    <maven.compiler.release>8</maven.compiler.release>
+    <!-- Fixed timestamp for reproducible jars. -->
+    <project.build.outputTimestamp>2026-10-17T00:00:00Z</project.build.outputTimestamp>
+    <jna.version>5.19.1</jna.version>
+  </properties>
+
+  <dependencies>
+    <dependency>
+      <groupId>net.java.dev.jna</groupId>
+      <artifactId>jna</artifactId>
+      <version>${jna.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <resources>
+      <!-- The six native builds, staged by CI; absent on a plain checkout, where the compile still works. -->
+      <resource>
+        <directory>natives</directory>
+      </resource>
+    </resources>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.5.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.5.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.6.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>3.2.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.16.0</version>
+        <configuration>
+          <compilerArgs>
+            <!-- options: newer JDKs call release 8 obsolete; that is the point of building it. -->
+            <arg>-Xlint:all,-options</arg>
+            <arg>-Werror</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>3.5.1</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+            </manifest>
+            <manifestEntries>
+              <!-- A stable module name for the module path; the jar stays a plain jar on Java 8. -->
+              <Automatic-Module-Name>com.kembec.sunatsdk</Automatic-Module-Name>
+            </manifestEntries>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-source-plugin</artifactId>
+        <version>3.4.0</version>
+        <executions>
+          <execution>
+            <id>attach-sources</id>
+            <goals>
+              <goal>jar-no-fork</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-javadoc-plugin</artifactId>
+        <version>3.12.0</version>
+        <configuration>
+          <doclint>all</doclint>
+          <failOnWarnings>true</failOnWarnings>
+          <quiet>true</quiet>
+          <!-- No links to fetch: the build needs no network beyond Maven Central. -->
+          <detectJavaApiLink>false</detectJavaApiLink>
+          <detectOfflineLinks>false</detectOfflineLinks>
+        </configuration>
+        <executions>
+          <execution>
+            <id>attach-javadocs</id>
+            <goals>
+              <goal>jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+
+  <profiles>
+    <!-- Signs the jar, the sources, the javadoc and the pom with the key in the agent; publishing is a separate step. -->
+    <profile>
+      <id>release</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-gpg-plugin</artifactId>
+            <version>3.2.8</version>
+            <executions>
+              <execution>
+                <id>sign-artifacts</id>
+                <phase>verify</phase>
+                <goals>
+                  <goal>sign</goal>
+                </goals>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
+</project>

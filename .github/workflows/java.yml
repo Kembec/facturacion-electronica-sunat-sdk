@@ -1,0 +1,276 @@
+name: java
+
+# The Java package (bindings/java, com.kembec:sunat-sdk): the C ABI built for its six platforms, the jar packed with
+# them, and the battery resolved from that jar as a consumer would, on every platform it serves and on Java 8, 11, 17,
+# 21 and 25 (8, 11 and 17 on 32-bit Windows, the last ones with a 32-bit JDK). The jar, its sources and javadoc jars
+# and the pom stay as an artifact: nothing is signed or published.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "bindings/java/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/java.yml"
+  pull_request:
+    paths:
+      - "bindings/java/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/java.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: java-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.94.1"
+  # Maven from Central, pinned by its published SHA-512: the runner images do not all carry the same Maven, or any.
+  MAVEN_VERSION: "3.9.11"
+  MAVEN_SHA512: "bcfe4fe305c962ace56ac7b5fc7a08b87d5abd8b7e89027ab251069faebee516b0ded8961445d6d91ec1985dfe30f8153268843c89aa392733d1a3ec956c9978"
+
+jobs:
+  # The library alone, without native builds: compile, lint and javadoc errors show in a minute.
+  compile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: zulu
+          java-version: "21"
+      - name: Maven ${{ env.MAVEN_VERSION }}
+        shell: bash
+        run: bindings/java/scripts/maven.sh
+      - name: Java 8 bytecode, -Xlint:all -Werror, javadoc with doclint as errors
+        run: mvn -B -ntp -f bindings/java/pom.xml verify
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux inside manylinux2014 (glibc 2.17), as the Python wheels and the .NET package: built on ubuntu-24.04
+          # the library would need glibc 2.34+ and not load on Debian 11, Ubuntu 20.04 or RHEL 8. Pinned by digest.
+          - prefix: linux-x86-64
+            os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_x86_64@sha256:f6a6f153c9cf45470507ebbc27013e5db14ce21331b62fd2c540561f25e5f0a5
+          - prefix: linux-aarch64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_aarch64@sha256:c10b5d2ce68a4426011b5b9b8492f01037b9d0fd2187ed1956b346aa42faeb17
+          - { prefix: darwin-aarch64, os: macos-15, target: aarch64-apple-darwin }
+          - { prefix: darwin-x86-64, os: macos-15-intel, target: x86_64-apple-darwin }
+          - { prefix: win32-x86-64, os: windows-2025, target: x86_64-pc-windows-msvc }
+          - { prefix: win32-x86, os: windows-2025, target: i686-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    name: native (${{ matrix.prefix }})
+    env:
+      # Windows: the C runtime inside the DLL, as ffi.yml, so no Visual C++ redistributable is needed.
+      RUSTFLAGS: ${{ contains(matrix.target, 'windows') && '-C target-feature=+crt-static' || '' }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Build in manylinux2014
+        if: runner.os == 'Linux'
+        run: |
+          docker run --rm -e RUST_TOOLCHAIN -e CARGO_TERM_COLOR -v "$PWD":/io -w /io "${{ matrix.image }}" bash -euc '
+            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain "$RUST_TOOLCHAIN"
+            . "$HOME/.cargo/env"
+            cargo build -p sunat-sdk-ffi --release --locked --target "${{ matrix.target }}"
+            ldd --version | head -1'
+      - name: Build
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target "${{ matrix.target }}"
+          rustup default "$RUST_TOOLCHAIN"
+          cargo build -p sunat-sdk-ffi --release --locked --target "${{ matrix.target }}"
+      # JNA's names for the platforms (Platform.RESOURCE_PREFIX), under the package's own resource directory so no other
+      # jar on the classpath can shadow them.
+      - name: Stage com/kembec/sunatsdk/native/${{ matrix.prefix }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="target/${{ matrix.target }}/release"
+          dir="stage/com/kembec/sunatsdk/native/${{ matrix.prefix }}"
+          mkdir -p "$dir"
+          case "${{ matrix.prefix }}" in
+            win32-*) cp "$out/sunat_sdk_ffi.dll" "$dir/" ;;
+            linux-*) cp "$out/libsunat_sdk_ffi.so" "$dir/" ;;
+            darwin-*) cp "$out/libsunat_sdk_ffi.dylib" "$dir/" ;;
+          esac
+          ls -l "$dir"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-${{ matrix.prefix }}
+          path: stage
+          if-no-files-found: error
+
+  pack:
+    needs: [compile, native]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: native-*
+          path: bindings/java/natives
+          merge-multiple: true
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        with:
+          distribution: zulu
+          java-version: "21"
+      - name: Maven ${{ env.MAVEN_VERSION }}
+        shell: bash
+        run: bindings/java/scripts/maven.sh
+      - name: Jar with the six native builds, sources and javadoc jars
+        shell: bash
+        run: |
+          set -euo pipefail
+          mvn -B -ntp -f bindings/java/pom.xml package
+          version=$(mvn -B -ntp -q -f bindings/java/pom.xml help:evaluate -Dexpression=project.version -DforceStdout)
+          mkdir -p bindings/java/artifacts
+          cp bindings/java/target/sunat-sdk-"$version".jar bindings/java/target/sunat-sdk-"$version"-sources.jar \
+            bindings/java/target/sunat-sdk-"$version"-javadoc.jar bindings/java/artifacts/
+          cp bindings/java/pom.xml bindings/java/artifacts/sunat-sdk-"$version".pom
+          ls -l bindings/java/artifacts
+      - name: Version, contents, Java 8 bytecode and the oldest glibc
+        run: bindings/java/scripts/check-package.sh bindings/java/artifacts
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: maven
+          path: bindings/java/artifacts
+          if-no-files-found: error
+
+  test:
+    needs: pack
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux-x86-64
+            os: ubuntu-24.04
+            arch: x64
+            # the last one is JAVA_HOME and builds the battery
+            java: |
+              8
+              11
+              17
+              25
+              21
+          - name: linux-aarch64
+            os: ubuntu-24.04-arm
+            arch: aarch64
+            # the last one is JAVA_HOME and builds the battery
+            java: |
+              8
+              11
+              17
+              25
+              21
+          - name: darwin-aarch64
+            os: macos-15
+            arch: aarch64
+            # the last one is JAVA_HOME and builds the battery
+            java: |
+              8
+              11
+              17
+              25
+              21
+          - name: darwin-x86-64
+            os: macos-15-intel
+            arch: x64
+            # the last one is JAVA_HOME and builds the battery
+            java: |
+              8
+              11
+              17
+              25
+              21
+          - name: win32-x86-64
+            os: windows-2025
+            arch: x64
+            # the last one is JAVA_HOME and builds the battery
+            java: |
+              8
+              11
+              17
+              25
+              21
+          # Azul builds 32-bit Windows JDKs up to 17 (JEP 449 deprecated the port in 21): 8, 11 and 17 at 32 bits.
+          - name: win32-x86
+            os: windows-2025
+            arch: x86
+            # the last one is JAVA_HOME and builds the battery
+            java: |
+              8
+              11
+              17
+    runs-on: ${{ matrix.os }}
+    name: test (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: maven
+          path: bindings/java/artifacts
+      # Several JDKs in one step; each one runs the battery.
+      - uses: actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00 # v4.7.1
+        id: jdks
+        with:
+          distribution: zulu
+          architecture: ${{ matrix.arch }}
+          java-version: ${{ matrix.java }}
+      - name: Maven ${{ env.MAVEN_VERSION }}
+        shell: bash
+        run: bindings/java/scripts/maven.sh
+      - name: Battery compiled against the jar from Maven
+        shell: bash
+        run: bindings/java/scripts/battery.sh build bindings/java/artifacts
+      - name: The battery on each JDK (${{ matrix.arch }})
+        shell: bash
+        env:
+          JDKS: ${{ matrix.java }}
+          # The battery fails if the JVM is not of this bitness: 32-bit Windows must run on 32-bit JDKs.
+          EXPECT_DATA_MODEL: ${{ matrix.arch == 'x86' && '32' || '64' }}
+        run: |
+          set -euo pipefail
+          homes=()
+          for v in $JDKS; do
+            # The JDK setup-java installed for this architecture, never the runner's own (64-bit) one of the same version.
+            var=""
+            for suffix in $(tr a-z A-Z <<<"${{ matrix.arch }}") ARM64; do
+              if [ -n "$(printenv "JAVA_HOME_${v}_${suffix}" || true)" ]; then var="JAVA_HOME_${v}_${suffix}"; break; fi
+            done
+            [ -n "$var" ] || { echo "no JAVA_HOME for Java $v on ${{ matrix.arch }}" >&2; env | grep '^JAVA_HOME' >&2; exit 1; }
+            homes+=("${!var}")
+          done
+          bindings/java/scripts/battery.sh run "${homes[@]}"
+      # The same jar on glibc 2.17, the floor the package claims (CentOS 7, RHEL 7): Java 8 from the runner, mounted.
+      - name: Java 8 inside manylinux2014 (glibc 2.17)
+        if: matrix.name == 'linux-x86-64'
+        shell: bash
+        run: |
+          set -euo pipefail
+          var=$(env | grep -o '^JAVA_HOME_8_[A-Za-z0-9]*' | head -1)
+          docker run --rm -v "${!var}":/jdk:ro -v "$PWD":/io:ro -w /io \
+            quay.io/pypa/manylinux2014_x86_64@sha256:f6a6f153c9cf45470507ebbc27013e5db14ce21331b62fd2c540561f25e5f0a5 bash -euc '
+              ldd --version | head -1
+              /jdk/bin/java -cp "/io/bindings/java/tests/target/classes:/io/bindings/java/tests/target/dependency/*" \
+                com.kembec.sunatsdk.vectors.Vectors /io'

@@ -50,7 +50,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.4
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.5
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -171,10 +171,7 @@ if ($check->hasState()) {
 
 ### Guía de remisión remitente (09) por la API REST
 
-`greSend` y `greTicket` están en la rama `main` y todavía no en un release: la 0.1.0-beta.4 de Packagist no los trae, y
-su binario no tiene los comandos `gre-send` ni `gre-ticket`. Para usarlos hoy, instala
-`kembec/facturacion-electronica-sunat-sdk:dev-main` y compila el binario de `main` con Rust, como se explica
-arriba, en «Instalación».
+`greSend` y `greTicket` llegaron en la 0.1.0-beta.5, con los comandos `gre-send` y `gre-ticket` en su binario.
 
 ```php
 use Kembec\SunatSdk\ApiCredentials;

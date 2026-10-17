@@ -3,7 +3,7 @@
 #import <KembecSunatSDKObjC/KSSErrors.h>
 #import "KSSResults+Private.h"
 
-NSString *const KSSPackageVersion = @"0.1.0-beta.4";
+NSString *const KSSPackageVersion = @"0.1.0-beta.5";
 
 /// Sets *error to KSSErrorInvalidArgument when `value` is nil and says so; ObjC lets nil through a nonnull parameter.
 #define KSS_REQUIRE(value)                                                                                   \

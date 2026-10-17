@@ -21,7 +21,7 @@ cualquiera de ellos. Guías y ejemplos: **https://fe.kembec.com**
 | Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) | crates, sin red |
 | Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` | binario estático |
 
-La versión publicada es la 0.1.0-beta.4. Qué trae, en [Versiones](#versiones).
+La versión publicada es la 0.1.0-beta.5. Qué trae, en [Versiones](#versiones).
 
 ## Tu primer comprobante firmado
 
@@ -29,7 +29,7 @@ Baja a una carpeta vacía una factura de ejemplo y el certificado de prueba del 
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.4
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.5
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -101,14 +101,15 @@ La instalación y el envío a la SUNAT (`exchange`) están en el [README del paq
 
 ### Rust
 
-Los crates no están en crates.io: se usan como dependencia git de la versión publicada en GitHub. `sunat-model` lee y
-valida el documento, `sunat-ubl` arma el XML y `sunat-xmldsig` lo firma.
+Desde la 0.1.0-beta.5 los crates se publican en crates.io como `kembec-sunat-*`; también se usan como dependencia git
+del tag, con la clave corta para que el código diga `sunat_model::…`. `sunat-model` lee y valida el documento,
+`sunat-ubl` arma el XML y `sunat-xmldsig` lo firma.
 
 ```toml
 [dependencies]
-sunat-model = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.4" }
-sunat-ubl = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.4" }
-sunat-xmldsig = { git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.4" }
+sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.5" }
+sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.5" }
+sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.5" }
 ```
 
 ```rust
@@ -135,7 +136,7 @@ tú. Lo que expone cada crate está en la [arquitectura](docs/architecture.md).
 En Linux x86_64, el binario estático del release:
 
 ```bash
-url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.4
+url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.5
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl"
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl.sha256"
 sha256sum -c sunat-sdk-x86_64-unknown-linux-musl.sha256
@@ -228,20 +229,28 @@ detracción con esas operaciones y la rechaza con cualquier otra.
 base, cargo 62 del catálogo 53). El cliente debe tener RUC; que sea agente de retención lo valida la SUNAT contra su
 padrón solo en producción.
 
-**Guía de remisión remitente (09)**: la 0.1.0-beta.4 la arma y la firma. Su envío por la API REST de la SUNAT está en
-la rama `main`, todavía sin publicar: en la CLI (`gre-send`, que pide el token con la clave SOL y sube el zip con su
-`hashZip`, y `gre-ticket`, que consulta el ticket hasta tener la CDR), en PHP (`greSend`, `greTicket`), en Python
-(`gre_send`, `gre_ticket`) y en npm, que arma cada llamada y lee su respuesta para que tu `fetch` la haga
-(`greTokenRequest`, `greSendRequest`, `greTicketRequest` y sus `*Response`). **La SUNAT no tiene ambiente de pruebas
-para la GRE**, y ninguna guía de este SDK figura como aceptada por la SUNAT. Quedan fuera los traslados de importación
-y exportación y la guía del transportista (31).
+**Guía de remisión remitente (09)**: se arma, se firma y se envía por la API REST de la SUNAT: en la CLI
+(`gre-send`, que pide el token con la clave SOL y sube el zip con su `hashZip`, y `gre-ticket`, que consulta el ticket
+hasta tener la CDR), en PHP (`greSend`, `greTicket`), en Python (`gre_send`, `gre_ticket`) y en npm, que arma cada
+llamada y lee su respuesta para que tu `fetch` la haga (`greTokenRequest`, `greSendRequest`, `greTicketRequest` y sus
+`*Response`). **La SUNAT no tiene ambiente de pruebas para la GRE**, y ninguna guía de este SDK figura como aceptada
+por la SUNAT. Quedan fuera los traslados de importación y exportación y la guía del transportista (31).
 
 El comprobante de retención y el de percepción no forman parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).
 
 ## Versiones
 
-La 0.1.0-beta.4, publicada en npm, PyPI, Packagist y GitHub, suma frente a la 0.1.0-beta.3:
+La 0.1.0-beta.5, publicada en npm, PyPI, Packagist y GitHub, suma frente a la 0.1.0-beta.4:
+
+- el envío de la guía de remisión remitente (09) por la API REST de la SUNAT, en la CLI, PHP, Python y JavaScript;
+- en PHP, los resúmenes diarios y las comunicaciones de baja (`summary`, `ticket`);
+- la ABI en C y, sobre ella, .NET, Java, Ruby, Perl, Swift, Objective-C, VB6, Visual FoxPro y PowerBuilder; ninguno
+  está todavía en su registro (NuGet, Maven Central, RubyGems, CPAN) ni se agrega por URL con SwiftPM;
+- dos cambios que rompen compatibilidad: los crates se llaman `kembec-sunat-*`, y una CDR con código 0 y cualquier nota
+  es `observed`. Cómo migrar, en el [CHANGELOG](CHANGELOG.md).
+
+La 0.1.0-beta.4 había sumado frente a la 0.1.0-beta.3:
 
 - la consulta de estado de comprobantes (`validity`, Consulta Integrada) para facturas, boletas y notas, en la CLI, PHP,
   JavaScript y Python;

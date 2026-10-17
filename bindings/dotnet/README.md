@@ -20,14 +20,25 @@ https://fe.kembec.com
 
 ## Instalación
 
+El paquete todavía no está en NuGet. Cuando se publique, se instalará con:
+
 ```bash
 dotnet add package Kembec.SunatSdk --prerelease
 ```
 
-Las versiones son beta. El paquete sirve a .NET Framework 4.6.2 o posterior, a .NET Standard 2.0 (.NET Core 3.1 a 7,
-Mono, Unity) y a .NET 8 o posterior, y trae el núcleo en Rust del SDK ya compilado: no llama a ningún programa externo
-ni necesita instalar nada más. Corre en Windows de 64 y 32 bits, Linux x64 y ARM64 con glibc 2.17 o posterior (no
-Alpine) y macOS Intel y Apple Silicon.
+Hasta entonces, el CI del repositorio arma el `.nupkg` en cada cambio: baja el artefacto `nupkg` de una ejecución del
+[workflow `dotnet`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/actions/workflows/dotnet.yml),
+descomprímelo en `nupkg/` y agrega esa carpeta como origen:
+
+```bash
+dotnet nuget add source "$PWD/nupkg" --name kembec-sunat-sdk
+dotnet add package Kembec.SunatSdk --prerelease
+```
+
+Es una versión beta. El paquete trae un destino para .NET Framework 4.6.2 o posterior, otro para .NET 10 o posterior y
+otro para .NET Standard 2.0, que toman .NET Core 3.1 a .NET 9. Lleva el núcleo en Rust del SDK ya compilado: no llama a
+ningún programa externo ni necesita instalar nada más. Corre en Windows de 64 y 32 bits, Linux x64 y ARM64 con glibc
+2.17 o posterior (no Alpine) y macOS Intel y Apple Silicon.
 
 En .NET Framework, al compilar quedan junto a tu aplicación `runtimes\win-x64\native\` y `runtimes\win-x86\native\`, y
 el paquete carga la de la arquitectura del proceso: la misma aplicación corre en 32 y en 64 bits. En un sitio ASP.NET
@@ -39,7 +50,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/main
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.4
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -48,6 +59,8 @@ curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
 En C#:
 
 ```csharp
+using System;
+using System.IO;
 using Kembec.SunatSdk;
 
 var sdk = new SunatSdkClient();
@@ -79,7 +92,7 @@ del [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-
 ## Enviar a la SUNAT y leer la respuesta
 
 ```csharp
-var sdk = new SunatSdkClient(TimeSpan.FromSeconds(60));          // espera a la SUNAT; 90 s si no se indica
+var sdk = new SunatSdkClient(TimeSpan.FromSeconds(60));          // espera a la SUNAT: de 1 a 300 s enteros; 90 s si no se indica
 var built = sdk.Build(documentJson);                               // el JSON de docs/input-model.md
 var signed = sdk.Sign(built.Xml, new SigningKey(@"C:\seguro\cert.pem", @"C:\seguro\key.pem"));
 var sent = sdk.Send(built.FileName, signed.Xml, new SolCredentials(rucAndSolUser, solPassword), sendBillEndpoint);
@@ -131,16 +144,39 @@ llegó (el ticket de un resumen puede seguir en proceso), así que antes se conc
 ### Guía de remisión remitente (09) por la API REST
 
 `GreSend` envía la guía firmada y devuelve su ticket; `GreTicket` consulta el resultado con ese ticket. Usan el par GRE
-de las «Credenciales de API SUNAT» y el usuario SOL, y las dos URL base no tienen valor por defecto. La SUNAT no tiene
-ambiente de pruebas para la GRE.
+de las «Credenciales de API SUNAT» y el usuario SOL.
+
+```csharp
+var api = new ApiCredentials(greClientId, greClientSecret);      // el par de GRE de «Credenciales de API SUNAT»
+var sol = new SolCredentials(rucAndSolUser, solPassword);
+var sent = sdk.GreSend(built.FileName, signed.Xml, api, sol, tokenEndpoint, greEndpoint);
+
+if (sent.Outcome == Outcome.Ticket)
+{
+    var ticket = sent.Ticket!;                                    // guárdalo antes que nada: es lo único que lleva al resultado
+    var status = sdk.GreTicket(ticket, api, sol, tokenEndpoint, greEndpoint);
+    // status.State: InProcess (98) se vuelve a consultar con el mismo ticket; Processed (0) trae Cdr;
+    // ProcessedWithErrors (99) trae Error, con su código, descripción y clase
+}
+else if (sent.Outcome == Outcome.ApiError)
+{
+    var errors = sent.ApiError!.Errors;                           // lo que la SUNAT rechazó, en sus palabras
+}
+```
+
+- **La SUNAT no tiene ambiente de pruebas para la GRE**, y ninguna guía de este SDK figura como aceptada por la SUNAT.
+- Las dos URL base no tienen valor por defecto y solo se aceptan `https://` (las del manual:
+  `https://api-seguridad.sunat.gob.pe/v1/clientessol` para el token y `https://api-cpe.sunat.gob.pe/v1` para la API).
+- Si el envío no recibe respuesta, `GreSend` lanza `SunatSdkException`: la guía pudo haber llegado, así que se reenvía
+  el mismo archivo, nunca la operación con otro número. Sin token no se envía nada y el resultado es `Outcome.NoVerdict`.
 
 ## Errores
 
 | Excepción | Cuándo |
 |---|---|
-| `ArgumentException` | el JSON del documento no es un valor JSON, o falta un argumento |
-| `SunatSdkException` | el SDK rechazó el documento (el mensaje dice qué campo y por qué), no hubo respuesta a un envío o la respuesta no es la del contrato; `Command` dice qué comando |
-| `SunatSdkLoadException` | no se encontró la biblioteca nativa de esta plataforma o es de otra versión del paquete |
+| `ArgumentException` | el JSON del documento no es un valor JSON, falta un argumento o la espera del cliente no es de 1 a 300 segundos enteros |
+| `SunatSdkException` | el comando no corrió: el SDK rechazó el documento (el mensaje dice qué campo y por qué), falta el certificado, el endpoint no es `https://`, no hubo respuesta a un envío o la respuesta no es la del contrato; `Command` dice qué comando |
+| `SunatSdkLoadException` | subclase de la anterior: no se encontró la biblioteca nativa de esta plataforma, es de otra arquitectura que el proceso o de otra versión del paquete |
 
 Las contraseñas y secretos no aparecen en ningún resultado, excepción ni `ToString()`.
 
@@ -153,12 +189,17 @@ el SDK no cubre lo rechaza con un error explícito en vez de armar un XML que la
 
 ## Pruebas
 
-El CI (`.github/workflows/dotnet.yml`) compila el núcleo para las seis plataformas, arma el paquete y, en cada una,
-restaura ese `.nupkg` como lo haría tu proyecto y corre la batería en C# y en VB.NET: cada uno de los 38 documentos de
+Lo que aceptó la SUNAT y cómo se comprueba cada versión está en
+[Cómo se comprueba](https://github.com/Kembec/facturacion-electronica-sunat-sdk#cómo-se-comprueba): la beta de la SUNAT
+aceptó 36 de los 38 documentos de ejemplo; las 2 guías de remisión no tienen beta.
+
+Para este paquete, el CI compila el núcleo para las seis plataformas, arma el paquete y, en cada una, restaura ese
+`.nupkg` como lo haría tu proyecto y corre la batería en C# y en VB.NET: cada uno de los 38 documentos de
 [fixtures](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/fixtures) tiene que dar, con `Build`
 y `Sign`, el XML y la firma exactos de
 [tests/vectors](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/tests/vectors). En Windows la
-corre en .NET 8 y en .NET Framework 4.8, a 64 y a 32 bits. No envía nada a la SUNAT.
+corre también en .NET Framework 4.8, a 64 y a 32 bits. `Status`, `Validity` y `GreTicket` se prueban sin respuesta
+contra un servidor local mudo, y `ReadCdr` contra CDR grabadas; no envía nada a la SUNAT.
 
 ## Licencia
 

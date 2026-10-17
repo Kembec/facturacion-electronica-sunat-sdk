@@ -247,12 +247,18 @@ jobs:
         shell: bash
         env:
           JDKS: ${{ matrix.java }}
+          # The battery fails if the JVM is not of this bitness: 32-bit Windows must run on 32-bit JDKs.
+          EXPECT_DATA_MODEL: ${{ matrix.arch == 'x86' && '32' || '64' }}
         run: |
           set -euo pipefail
           homes=()
           for v in $JDKS; do
-            var=$(env | grep -o "^JAVA_HOME_${v}_[A-Za-z0-9]*" | head -1)
-            [ -n "$var" ] || { echo "no JAVA_HOME for Java $v" >&2; env | grep '^JAVA_HOME' >&2; exit 1; }
+            # The JDK setup-java installed for this architecture, never the runner's own (64-bit) one of the same version.
+            var=""
+            for suffix in $(tr a-z A-Z <<<"${{ matrix.arch }}") ARM64; do
+              if [ -n "$(printenv "JAVA_HOME_${v}_${suffix}" || true)" ]; then var="JAVA_HOME_${v}_${suffix}"; break; fi
+            done
+            [ -n "$var" ] || { echo "no JAVA_HOME for Java $v on ${{ matrix.arch }}" >&2; env | grep '^JAVA_HOME' >&2; exit 1; }
             homes+=("${!var}")
           done
           bindings/java/scripts/battery.sh run "${homes[@]}"

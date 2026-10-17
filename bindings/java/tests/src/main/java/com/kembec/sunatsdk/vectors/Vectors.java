@@ -79,6 +79,9 @@ public final class Vectors {
                 repo.resolve("tests/vectors/test-cert/test-cert.pem"), repo.resolve("tests/vectors/test-cert/test-key.pem"));
         final SunatSdkClient client = new SunatSdkClient(Duration.ofSeconds(30));
 
+        String model = System.getenv("EXPECT_DATA_MODEL");
+        check(model == null || model.equals(System.getProperty("sun.arch.data.model")),
+                "a " + System.getProperty("sun.arch.data.model") + "-bit JVM, expected " + model);
         run("version", Vectors::version);
         List<Path> fixtures = fixtures(repo);
         check(fixtures.size() == EXPECTED_FIXTURES, "fixtures: " + fixtures.size() + ", expected " + EXPECTED_FIXTURES);

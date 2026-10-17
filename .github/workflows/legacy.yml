@@ -1,0 +1,137 @@
+name: legacy
+
+# The zip for VB6, Visual FoxPro and PowerBuilder (bindings/legacy). Those IDEs do not run in CI, so the
+# Windows DLLs of the C ABI are called through the declarations the zip ships, translated type by type
+# into C (tests/declarations.py): the 38 vectors on 32 bits for the three, and on 64 bits for
+# PowerBuilder. The VB6 JSON reader runs as VBScript over the same responses. The zip stays as an
+# artifact: nothing is published.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "bindings/legacy/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/legacy.yml"
+  pull_request:
+    paths:
+      - "bindings/legacy/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/legacy.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: legacy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.94.1"
+
+jobs:
+  windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { target: i686-pc-windows-msvc, arch: x86, dll: x86, languages: "vb6 vfp powerbuilder" }
+          - { target: x86_64-pc-windows-msvc, arch: x64, dll: x64, languages: "powerbuilder" }
+    runs-on: windows-2025
+    name: windows (${{ matrix.dll }})
+    env:
+      # The C runtime inside the DLL: it loads on a machine without the Visual C++ redistributable.
+      RUSTFLAGS: -C target-feature=+crt-static
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Rust toolchain
+        shell: bash
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target "${{ matrix.target }}"
+          rustup default "$RUST_TOOLCHAIN"
+      - name: Build the DLL
+        shell: bash
+        run: cargo build -p sunat-sdk-ffi --release --target "${{ matrix.target }}" --locked
+      - name: Battery through each language's declarations
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $vcvars = "`"$vs\VC\Auxiliary\Build\vcvarsall.bat`" ${{ matrix.arch }}"
+          $out = "target\${{ matrix.target }}\release"
+          $sources = @{ vb6 = 'vb6\SunatSdk.bas'; vfp = 'vfp\sunat_sdk.prg'; powerbuilder = 'powerbuilder\n_sunat_sdk.sru' }
+          $cases = Get-ChildItem fixtures -Filter *.json | Sort-Object Name | ForEach-Object { $_.BaseName }
+          New-Item -ItemType Directory -Force "$out\dump" | Out-Null
+          foreach ($lang in '${{ matrix.languages }}'.Split(' ')) {
+            $dir = "$out\legacy-$lang"
+            New-Item -ItemType Directory -Force $dir | Out-Null
+            python bindings\legacy\tests\declarations.py $lang "bindings\legacy\$($sources[$lang])" bindings\ffi\include\sunat_sdk.h "$dir\legacy_declarations.h"
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            # /RTC1 checks the stack after every call through a pointer: a declaration whose stack
+            # differs from __stdcall's stops the program on 32 bits instead of passing by luck.
+            cmd /c "$vcvars && cl /nologo /std:c11 /W3 /WX /wd5105 /Od /RTC1 /MTd /D_CRT_SECURE_NO_WARNINGS /I$dir /Ibindings\ffi\include bindings\legacy\tests\battery.c /Fo$dir\battery.obj /Fe$dir\battery.exe"
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            Copy-Item "$out\sunat_sdk_ffi.dll" $dir
+            $dump = if ($lang -eq 'vb6') { @('--dump', "$out\dump") } else { @() }
+            & "$dir\battery.exe" (Get-Location).Path @dump @cases
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+          }
+      - name: The VB6 JSON reader over the VB6 responses, as VBScript
+        if: matrix.dll == 'x86'
+        shell: pwsh
+        run: bindings\legacy\tests\json.ps1 -Dump "target\${{ matrix.target }}\release\dump" -Repo (Get-Location).Path
+      - name: A 64-bit build refuses the 32-bit declarations of VB6 and VFP, and a wrong PowerBuilder one
+        if: matrix.dll == 'x64'
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $vcvars = "`"$vs\VC\Auxiliary\Build\vcvarsall.bat`" x64"
+          $dir = "target\refused"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          # A Long response slot where the DLL writes 8 bytes: what a PowerBuilder 64-bit user would get wrong.
+          (Get-Content bindings\legacy\powerbuilder\n_sunat_sdk.sru -Raw).Replace('ref longptr response', 'ref long response') | Set-Content "$dir\wrong.sru" -NoNewline
+          foreach ($case in @(@('vb6', 'bindings\legacy\vb6\SunatSdk.bas'), @('vfp', 'bindings\legacy\vfp\sunat_sdk.prg'), @('powerbuilder', "$dir\wrong.sru"))) {
+            python bindings\legacy\tests\declarations.py $case[0] $case[1] bindings\ffi\include\sunat_sdk.h "$dir\legacy_declarations.h"
+            if ($LASTEXITCODE -ne 0) { exit 1 }
+            cmd /c "$vcvars && cl /nologo /std:c11 /W3 /wd5105 /c /D_CRT_SECURE_NO_WARNINGS /I$dir /Ibindings\ffi\include bindings\legacy\tests\battery.c /Fo$dir\refused.obj" | Out-File "$dir\$($case[0]).txt"
+            if ($LASTEXITCODE -eq 0) { throw "$($case[1]) compiled for 64 bits" }
+            Select-String -Path "$dir\$($case[0]).txt" -Pattern 'differs in size from sunat_sdk.h' | Select-Object -First 1
+            if (-not (Select-String -Path "$dir\$($case[0]).txt" -Pattern 'differs in size from sunat_sdk.h' -Quiet)) { throw "$($case[1]): failed for another reason" }
+          }
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: dll-${{ matrix.dll }}
+          path: target/${{ matrix.target }}/release/sunat_sdk_ffi.dll
+          if-no-files-found: error
+
+  zip:
+    needs: windows
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: dll-*
+          path: dlls
+      - name: Stage the zip with the DLLs tested above
+        id: stage
+        run: |
+          name=$(bindings/legacy/scripts/package.sh dlls/dll-x86/sunat_sdk_ffi.dll dlls/dll-x64/sunat_sdk_ffi.dll "$RUNNER_TEMP/zip")
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+      # GitHub serves the artifact as <name>.zip with this folder inside.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: ${{ steps.stage.outputs.name }}
+          path: ${{ runner.temp }}/zip
+          if-no-files-found: error

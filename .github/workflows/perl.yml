@@ -154,19 +154,42 @@ jobs:
       # XML::LibXML is the battery's C14N, not a dependency of the module; FFI::Platypus goes first, without its own
       # long suite, so that the installation below runs the distribution's tests and not its dependency's.
       - name: The battery's tools
-        shell: bash
+        if: runner.os != 'Windows'
         run: |
           perl -V:archname -V:useithreads
           perl -S cpanm --notest --quiet FFI::Platypus XML::LibXML
       - name: Install the distribution as a consumer would (Makefile.PL, make, t/, make install)
-        shell: bash
+        if: runner.os != 'Windows'
         run: perl -S cpanm --verbose ./dist/Kembec-SunatSdk-*.tar.gz
       - name: The battery from the installed module
-        shell: bash
+        if: runner.os != 'Windows'
         env:
           EXPECT_PLATFORM: ${{ matrix.target.name }}
         run: perl bindings/perl/test/vectors.pl .
+      # The same on Windows from PowerShell: Git's bash puts its own MSYS perl (x86_64-cygwin) before Strawberry's.
+      - name: The battery's tools (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          perl -V:archname -V:useithreads
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          perl -S cpanm --notest --quiet FFI::Platypus XML::LibXML
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Install the distribution as a consumer would (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          perl -S cpanm --verbose (Get-Item dist\Kembec-SunatSdk-*.tar.gz).FullName
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: The battery from the installed module (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          EXPECT_PLATFORM: ${{ matrix.target.name }}
+        run: |
+          perl bindings/perl/test/vectors.pl .
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
       - name: cpanm's log of what failed
         if: failure()
         shell: bash
-        run: cat "$HOME/.cpanm/latest-build/build.log" || true
+        run: cat "$HOME/.cpanm/latest-build/build.log" "$USERPROFILE/.cpanm/latest-build/build.log" 2>/dev/null || true

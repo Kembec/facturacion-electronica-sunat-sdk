@@ -6,6 +6,11 @@ license.workspace = true
 repository.workspace = true
 keywords.workspace = true
 
+# The dispatch lives in the library so the C ABI (`bindings/ffi`) runs the same commands.
+[lib]
+name = "sunat_sdk_cli"
+path = "src/lib.rs"
+
 [[bin]]
 name = "sunat-sdk"
 path = "src/main.rs"

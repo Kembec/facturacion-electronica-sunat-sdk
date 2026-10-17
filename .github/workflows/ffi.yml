@@ -1,0 +1,132 @@
+name: ffi
+
+# The C ABI (bindings/ffi) on the six platforms its consumers run: the battery through the ABI from
+# Rust, from C and, on Windows, from .NET by P/Invoke; the header against its source. Nothing is
+# published. Runs on any branch that touches the ABI or what it runs.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/ffi.yml"
+  pull_request:
+    paths:
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/ffi.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ffi-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.94.1"
+  CBINDGEN_VERSION: "0.29.4"
+
+jobs:
+  header:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Rust toolchain
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component clippy
+          rustup default "$RUST_TOOLCHAIN"
+      - run: cargo install cbindgen --version "$CBINDGEN_VERSION" --locked
+      - name: The committed header is what the source generates
+        run: bindings/ffi/scripts/header.sh --check
+      - name: The header compiles as C and as C++
+        run: |
+          cc -std=c99 -Wall -Wextra -Werror -fsyntax-only -x c bindings/ffi/include/sunat_sdk.h
+          c++ -std=c++11 -Wall -Wextra -Werror -fsyntax-only -x c++ bindings/ffi/include/sunat_sdk.h
+      - name: Clippy on the CLI (now a library too) and the ABI
+        run: cargo clippy -p sunat-sdk-cli -p sunat-sdk-ffi --all-targets --no-deps --locked -- -D warnings
+      - name: The CLI's own tests after its dispatch moved to the library
+        run: cargo test -p sunat-sdk-cli --locked
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, target: x86_64-unknown-linux-gnu }
+          - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
+          - { os: macos-15, target: aarch64-apple-darwin }
+          - { os: macos-15-intel, target: x86_64-apple-darwin }
+          - { os: windows-2025, target: x86_64-pc-windows-msvc, arch: x64, powershell: System32 }
+          - { os: windows-2025, target: i686-pc-windows-msvc, arch: x86, powershell: SysWOW64 }
+    runs-on: ${{ matrix.os }}
+    name: native (${{ matrix.target }})
+    env:
+      # Windows: the C runtime goes inside the DLL, so a VB6, Visual FoxPro or PowerBuilder machine
+      # without the Visual C++ redistributable loads it. Checked below with dumpbin.
+      RUSTFLAGS: ${{ contains(matrix.target, 'windows') && '-C target-feature=+crt-static' || '' }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Rust toolchain
+        shell: bash
+        run: |
+          if ! command -v rustup >/dev/null; then
+            curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --default-toolchain none --profile minimal
+            echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+            export PATH="$HOME/.cargo/bin:$PATH"
+          fi
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target "${{ matrix.target }}"
+          rustup default "$RUST_TOOLCHAIN"
+      - name: Battery through the ABI, from Rust
+        shell: bash
+        run: cargo test -p sunat-sdk-ffi --target "${{ matrix.target }}" --locked
+      - name: Build the libraries
+        shell: bash
+        run: |
+          set -euo pipefail
+          # The native libraries a C program needs to link the static library, as rustc reports them.
+          cargo --color never rustc -p sunat-sdk-ffi --lib --release --target "${{ matrix.target }}" --locked --crate-type staticlib \
+            -- --print native-static-libs 2> "$RUNNER_TEMP/rustc.txt" || { cat "$RUNNER_TEMP/rustc.txt"; exit 1; }
+          sed -n 's/.*native-static-libs: //p' "$RUNNER_TEMP/rustc.txt" | tail -1 > "$RUNNER_TEMP/native-libs.txt"
+          cargo build -p sunat-sdk-ffi --release --target "${{ matrix.target }}" --locked
+          ls -l "target/${{ matrix.target }}/release"
+      - name: Battery from C, shared and static library
+        if: runner.os != 'Windows'
+        run: bindings/ffi/scripts/test-c.sh "target/${{ matrix.target }}/release" "$(cat "$RUNNER_TEMP/native-libs.txt")"
+      - name: Battery from C with MSVC, loaded by name like a VB6 Declare
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $vs = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          $out = "target\${{ matrix.target }}\release"
+          $vcvars = "`"$vs\VC\Auxiliary\Build\vcvarsall.bat`" ${{ matrix.arch }}"
+          # /RTC1 checks the stack pointer after every call through a pointer: a library whose calling
+          # convention differs from SUNAT_SDK_CALL stops the program instead of passing by luck.
+          cmd /c "$vcvars && cl /nologo /W3 /WX /Od /RTC1 /MTd /D_CRT_SECURE_NO_WARNINGS /DSUNAT_SDK_DYNAMIC /Ibindings\ffi\include bindings\ffi\tests\c\vectors.c /Fo$out\vectors.obj /Fe$out\vectors.exe"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          cmd /c "$vcvars && dumpbin /nologo /exports $out\sunat_sdk_ffi.dll > $out\exports.txt && dumpbin /nologo /dependents /headers $out\sunat_sdk_ffi.dll > $out\headers.txt"
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Get-Content "$out\exports.txt"
+          Select-String -Path "$out\headers.txt" -Pattern 'machine \(|\.dll$'
+          if (Select-String -Path "$out\headers.txt" -Pattern 'VCRUNTIME|MSVCP|api-ms-win-crt' -Quiet) { throw 'the DLL needs the Visual C++ runtime' }
+          $cases = Get-ChildItem fixtures -Filter *.json | Sort-Object Name | ForEach-Object { $_.BaseName }
+          & "$out\vectors.exe" (Get-Location).Path @cases
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+      - name: Battery from .NET Framework by P/Invoke (StdCall)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $powershell = "$env:WINDIR\${{ matrix.powershell }}\WindowsPowerShell\v1.0\powershell.exe"
+          & $powershell -NoProfile -ExecutionPolicy Bypass -File bindings\ffi\tests\dotnet.ps1 -Dll "target\${{ matrix.target }}\release\sunat_sdk_ffi.dll" -Repo (Get-Location).Path
+          if ($LASTEXITCODE -ne 0) { exit 1 }

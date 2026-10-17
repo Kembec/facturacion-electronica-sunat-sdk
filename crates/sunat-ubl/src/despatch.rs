@@ -6,7 +6,7 @@
 //! UBL 2.1 schema (`tests/xsd.rs`) and the model applies SUNAT's XSL rules; nothing here has been
 //! accepted by SUNAT's REST service.
 
-use sunat_model::{Carrier, Despatch, DespatchLine, DespatchParty, Driver, Place, RelatedDocument, Shipment};
+use sunat_model::{Carrier, Date, Despatch, DespatchLine, DespatchParty, Driver, Place, RelatedDocument, Shipment};
 
 use crate::amount::shortest;
 use crate::document::root;
@@ -130,6 +130,12 @@ fn shipment_stage(w: &mut XmlWriter, s: &Shipment) {
     }
     if let Some(carrier) = &s.carrier {
         carrier_party(w, carrier);
+    }
+    // After `CarrierParty` and `TransportMeans`, before `DriverPerson`, as the UBL 2.1 schema orders it.
+    if let Some(handover) = s.carrier_handover_date.as_deref().and_then(|text| text.parse::<Date>().ok()) {
+        w.open("cac:LoadingTransportEvent", &[]);
+        w.text("cbc:OccurrenceDate", &handover.date_string());
+        w.close();
     }
     for (index, driver) in s.drivers.iter().enumerate() {
         driver_person(w, driver, if index == 0 { "Principal" } else { "Secundario" });

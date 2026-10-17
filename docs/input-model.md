@@ -338,6 +338,7 @@ rendered.
 | `reason_description` | required for reason `13` (3457) |
 | `transport_mode` | catalog 18: `"01"` public (a carrier moves the goods), `"02"` private (the sender does) |
 | `start_date` | `"2026-10-15"`, not before the issue date; required in private transport or with M1 or L vehicles (3406) |
+| `carrier_handover_date` | `"2026-10-15"`, the day the goods are handed to the carrier; public transport only, where it is required (3617), a date (3619) and the same day as the issue date or later (3618). Rendered as `cac:ShipmentStage/cac:LoadingTransportEvent/cbc:OccurrenceDate`. Not allowed in private transport |
 | `gross_weight`, `weight_unit` | required; up to 12 integer digits and 3 decimals; `"KGM"` or `"TNE"` |
 | `packages` | optional, number of packages or pallets |
 | `m1_or_l_vehicle` | `true` when the goods travel in M1 or L category vehicles: then no driver, at most one plate, and the carrier is not required |
@@ -348,6 +349,11 @@ rendered.
 
 In public transport the carrier names its own vehicles and drivers, so the despatch advice carries
 none (3354, 3455).
+
+`carrier_handover_date` is field 39-A of RS 108-2026/SUNAT (annex II), in force since 2026-06-01. The norm
+fixes no relation between it and `start_date`, so the SDK checks none: ERR-3616 (start of transfer after the handover
+date in a single GRE) comes only from a secondary source and is not validated. Codes 3617 to 3619 are not in the
+validation-rules sheet this repository follows; they come from SUNAT's change control as reproduced by Nubefact.
 
 ## What is checked, and what is not
 

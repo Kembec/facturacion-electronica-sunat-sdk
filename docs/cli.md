@@ -112,6 +112,10 @@ In the core (`sunat_sdk::gre`): `token_request`/`token_read` (with `expires_at` 
 - `bindings/java`: Maven artifact `com.kembec:sunat-sdk` (Java 8+) over that ABI through JNA, with the six native
   builds inside the jar; one method per command, typed results with the response in `getRawJson()`, the SDK's
   `{"error"}` as `SunatSdkException`.
+- `bindings/perl`: CPAN distribution `Kembec-SunatSdk` (module `Kembec::SunatSdk`, Perl 5.26+) over that ABI with
+  `FFI::Platypus`, with the five native builds inside and only the machine's installed; one method per command,
+  results with the contract's names as text for the outcomes and the response in `raw_json`, the SDK's `{"error"}` as
+  `Kembec::SunatSdk::Error`.
 - `bindings/php`: Composer package; runs the binary with `proc_open`, writes the JSON to stdin, reads
   stdout and stderr, maps a non-zero exit to a typed exception carrying the `error` message.
 - `bindings/ruby`: gem `kembec-sunat_sdk` (Ruby 3.2+) over that ABI with `ffi`, one gem per platform with its native

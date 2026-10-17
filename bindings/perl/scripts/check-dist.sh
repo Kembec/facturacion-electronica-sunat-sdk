@@ -68,7 +68,7 @@ for row in "${expected[@]}"; do
   [ -f "$library" ] || { echo "missing $rid/$file" >&2; exit 1; }
   grep -qx "lib/Kembec/SunatSdk/native/$rid/$file" "$root/MANIFEST" || { echo "MANIFEST misses $rid/$file" >&2; exit 1; }
   kind=$(file -b "$library")
-  grep -Eq "$pattern" <<<"$kind" || { echo "$rid/$file is «$kind», expected «$pattern»" >&2; exit 1; }
+  grep -Eq "$pattern" <<<"$kind" || { echo "$rid/$file is «${kind}», expected «${pattern}»" >&2; exit 1; }
   case $rid in
     linux-*)
       glibc=$(readelf -V -W "$library" | grep -o 'GLIBC_[0-9.]*' | sed 's/GLIBC_//' | sort -uV | tail -1)

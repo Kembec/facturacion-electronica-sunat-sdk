@@ -30,6 +30,8 @@ File::Find::find({ no_chdir => 1, wanted => sub {
 } }, 'lib');
 
 my $web = 'https://github.com/Kembec/facturacion-electronica-sunat-sdk';
+# MakeMaker calls every version with an underscore "unstable" (alpha); a beta of the SDK is a "testing" release.
+my $release_status = MM->parse_version('lib/Kembec/SunatSdk.pm') =~ /_/ ? 'testing' : 'stable';
 WriteMakefile(
     NAME               => 'Kembec::SunatSdk',
     AUTHOR             => 'Manuel Benancio',
@@ -48,13 +50,14 @@ WriteMakefile(
     TEST_REQUIRES => { 'Test::More' => '0.88' },
     PM            => \%pm,
     META_MERGE    => {
-        'meta-spec' => { version => 2 },
-        resources   => {
+        'meta-spec'    => { version => 2 },
+        release_status => $release_status,
+        resources      => {
             homepage   => 'https://fe.kembec.com',
             repository => { type => 'git', url => "$web.git", web => $web },
             bugtracker => { web => "$web/issues" },
         },
-        keywords => [qw(sunat peru facturacion electronic-invoicing ubl xmldsig cpe)],
+        keywords       => [qw(sunat peru facturacion electronic-invoicing ubl xmldsig cpe)],
     },
     dist  => { COMPRESS => 'gzip -9f', SUFFIX => 'gz' },
     clean => { FILES => 'Kembec-SunatSdk-*' },

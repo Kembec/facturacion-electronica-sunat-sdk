@@ -32,7 +32,7 @@ final class VectorsTest extends BinaryTestCase
         return $cases;
     }
 
-    public function testThereAreThirtyFourFixtures(): void
+    public function testThereAreThirtyEightFixtures(): void
     {
         self::assertCount(38, self::fixtures());
     }

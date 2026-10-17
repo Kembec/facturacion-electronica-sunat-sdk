@@ -94,13 +94,13 @@ fn check_profile(signed_info: Node) -> Result<Vec<u8>, SignError> {
             "Reference URI {uri:?}"
         )));
     }
-    let transforms = xml::dsig_child(reference, "Transforms")
+    let transforms: Vec<_> = xml::dsig_child(reference, "Transforms")
         .map(|t| {
             t.children()
                 .filter(|c| xml::is_element(*c, DSIG_NS, "Transform"))
                 .collect()
         })
-        .unwrap_or_else(Vec::new);
+        .unwrap_or_default();
     if !transforms
         .iter()
         .any(|t| t.attribute("Algorithm") == Some(ALG_ENVELOPED))

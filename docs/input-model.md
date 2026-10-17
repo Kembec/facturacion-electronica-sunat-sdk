@@ -10,8 +10,8 @@ explicit error: ISC, ICBPER, other taxes, global discounts or charges, line char
 discounts other than catalog 53 code `00` or in notes, advances, detraction on operation types 1002 and
 1004, perception.
 
-The daily summary (RC), the void communication (RA) and the sender's despatch advice (09) have their
-own sections below.
+The daily summary (RC), the void communication (RA), the sender's despatch advice (09) and the
+retention voucher (20) have their own sections below.
 
 ## Document
 
@@ -271,3 +271,67 @@ Not checked here, because SUNAT answers them from its registries or at reception
 (2108, 2329), the sender's, recipient's and carrier's taxpayer status, RENIEC identities, the MTC
 registration, the registered establishments (3366, 3367, 3370, 3371, 3412) and whether the related
 documents were issued.
+
+# Retention voucher (20)
+
+The comprobante de retención electrónico: UBL 2.0 `Retention`, SUNAT customization 1.0. `build`
+renders it with `file_name` `RUC-20-SERIES-NUMBER` and `sign` signs it like any other document; `zip`
+gives `RUC-20-SERIES-NUMBER.zip`. Sending it (`sendBill` of SUNAT's `otroscpe` service) is not
+covered yet.
+
+As everywhere else, the caller gives every amount and the SDK reconciles them: it does not compute
+the retention, it checks it. All amounts of the voucher itself are in PEN.
+
+Not supported, rejected with an explicit error: related documents of type `07` and `20` (SUNAT allows
+them but they carry no payment and stay out of the totals) and the reversal summary (RR).
+
+## Retention (`kind: "retention"`)
+
+| Field | Notes |
+|---|---|
+| `ubl_version` | `"2.0"` |
+| `document_type` | `"20"` |
+| `series` | `R` and 3 uppercase letters or digits, `"R001"` (1001) |
+| `number` | 1 to 8 digits, string; zero padding is kept as given (`"0000001"`) |
+| `issue_date` | ISO 8601 with offset; gives `IssueDate` and `IssueTime` |
+| `issuer` | the retention agent, see Issuer; `country_code` must be `PE` (2548). The address is written with `CityName` = province and `CountrySubentity` = department, as SUNAT's sheet says; an `urbanization` of `"-"` is left out |
+| `supplier` | `{ "document_type": "6", "document_number", "legal_name" }`: a RUC of 11 digits, not the issuer's (2620) |
+| `regime` | catalog 23: `"01"` (3 %) or `"02"` (6 %, only for related documents issued up to 28/02/2014, 2985) (2618) |
+| `rate` | the regime's: `"3.00"` for `01`, `"6.00"` for `02` (2619) |
+| `note` | optional, up to 250 characters |
+| `total_retained` | PEN, the exact sum of the lines' `retention.amount`, no tolerance (2628) |
+| `total_paid` | PEN, the exact sum of the lines' `retention.net_paid` plus `rounding_amount`, no tolerance (2629) |
+| `rounding_amount` | optional, PEN, absolute value up to 1 (3303) |
+| `lines` | at least one, one per payment of a related document; see Retention line |
+
+## Retention line
+
+| Field | Notes |
+|---|---|
+| `related_document` | `{ "document_type", "number", "issue_date", "currency", "total" }`; type `"01"`, `"08"` or `"12"` (2692; a receipt `03` is rejected); `number` is `SERIES-NUMBER` (2694); `total` positive (2696) |
+| `payment` | `{ "number"?, "date", "amount" }` in the related document's currency. `number` up to 9 digits, unique for the same related document within the voucher (2626); by default 1, 2, … in the order the document appears. All payment dates in one month (2661), not after the voucher's issue date and not before the first day of its month, or the related document's issue date when it is from that month (2625) |
+| `retention` | `{ "date"?, "amount", "net_paid" }` in PEN; `date` defaults to the payment date. `amount` = `payment.amount` × rate (× `exchange_rate.rate` when not PEN) and `net_paid` = `payment.amount` (× `exchange_rate.rate`) − `amount`, each within ±1 PEN (2623) |
+| `exchange_rate` | `{ "source_currency", "target_currency", "rate", "date" }`, required when the related document is not in PEN (2719, 2721, 2722): `source_currency` is the document's currency (2749), `target_currency` is `"PEN"` (2715), `rate` up to 4 integer digits and 6 decimals (2716) |
+
+## What is checked, and what is not
+
+The SUNAT validation rules of sheet «Retenciones1_0» that read only the document are checked in the
+sheet's order, each rejected with the code SUNAT would answer (`{"error": "$.rate: must be the
+regime's rate (01: 3.00, 02: 6.00) (SUNAT ERR-2619)"}`); one test per code in
+`crates/sunat-model/tests/retention_rules.rs`. The vectors are `fixtures/retention/`: `v1` to `v3`
+(PEN, several documents and payments, USD) build, sign and pass the independent verifier
+(`crates/sunat-ubl/tests/retention.rs`); `v4` (6 % with regime 01), `v5` (USD amounts without the
+exchange rate, target currency USD) and `v6` (totals summed before rounding the lines) are rejected
+with 2619, 2623 then 2715, and 2628 then 2629. These vectors were written by this SDK and have not
+been sent to SUNAT beta yet: they guard the rules, they do not prove acceptance. There is no SUNAT
+schema for `Retention` in the repository.
+
+The send term (2600) is not part of `validate`, which has no clock: `Retention::check_send_deadline(now,
+max_days)` checks it with the term as a parameter. Note: RS 274-2015 art. 41 gives 7 calendar days
+from the day after the issue date, but SUNAT's rules defer it to «the regulation in force» since
+01/11/2024 without citing it; pass the term, do not assume it.
+
+Not checked here, because SUNAT answers them from its registries: whether the issuer is a retention
+agent (2617), whether the supplier's RUC exists (2621) and its condition (4091, an observation), and
+whether the numbering was already used (1033). The S/ 700 threshold and the exclusions of RS
+037-2002 are the agent's decision, not the SDK's.

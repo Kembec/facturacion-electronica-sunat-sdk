@@ -114,6 +114,10 @@ In the core (`sunat_sdk::gre`): `token_request`/`token_read` (with `expires_at` 
   `{"error"}` as `SunatSdkException`.
 - `bindings/php`: Composer package; runs the binary with `proc_open`, writes the JSON to stdin, reads
   stdout and stderr, maps a non-zero exit to a typed exception carrying the `error` message.
+- `bindings/ruby`: gem `kembec-sunat_sdk` (Ruby 3.2+) over that ABI with `ffi`, one gem per platform with its native
+  build inside; one method per command (`send` is `send_bill`, since `Object#send` is Ruby's), results with symbols for
+  the outcomes and the response in `raw_json`, the SDK's `{"error"}` as `Kembec::SunatSdk::Error`; the call releases
+  the GVL while it waits.
 - `validity` in the bindings: wasm `validityTokenRequest`/`validityTokenResponse`, `validityRequest`/
   `validityResponse`, `validityTimeout` (fetch options carry the `url`); Python the same as `validity_*`,
   plus `sunat_sdk.validity(...)` that makes both calls; PHP `SunatSdk::validity()` with `ApiCredentials`.

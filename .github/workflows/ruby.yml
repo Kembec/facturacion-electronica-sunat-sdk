@@ -1,0 +1,215 @@
+name: ruby
+
+# The Ruby gem (bindings/ruby, kembec-sunat_sdk): the C ABI built for its six platforms, one gem per platform with its
+# library inside, and the battery run from the installed gem on every platform it serves and every maintained Ruby
+# (3.2, EOL since 2026-03, is the floor). The gems stay as an artifact: nothing is published.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "bindings/ruby/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/ruby.yml"
+  pull_request:
+    paths:
+      - "bindings/ruby/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/ruby.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ruby-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.94.1"
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux inside manylinux2014 (glibc 2.17), as .NET and the Python wheels. Images pinned by digest.
+          - rid: linux-x64
+            os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_x86_64@sha256:f6a6f153c9cf45470507ebbc27013e5db14ce21331b62fd2c540561f25e5f0a5
+          - rid: linux-arm64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_aarch64@sha256:c10b5d2ce68a4426011b5b9b8492f01037b9d0fd2187ed1956b346aa42faeb17
+          - { rid: osx-arm64, os: macos-15, target: aarch64-apple-darwin }
+          - { rid: osx-x64, os: macos-15-intel, target: x86_64-apple-darwin }
+          - { rid: win-x64, os: windows-2025, target: x86_64-pc-windows-msvc }
+          - { rid: win-x86, os: windows-2025, target: i686-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    name: native (${{ matrix.rid }})
+    env:
+      RUSTFLAGS: ${{ contains(matrix.target, 'windows') && '-C target-feature=+crt-static' || '' }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Build in manylinux2014
+        if: runner.os == 'Linux'
+        run: |
+          docker run --rm -e RUST_TOOLCHAIN -e CARGO_TERM_COLOR -v "$PWD":/io -w /io "${{ matrix.image }}" bash -euc '
+            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain "$RUST_TOOLCHAIN"
+            . "$HOME/.cargo/env"
+            cargo build -p sunat-sdk-ffi --release --locked --target "${{ matrix.target }}"
+            ldd --version | head -1'
+      - name: Build
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target "${{ matrix.target }}"
+          rustup default "$RUST_TOOLCHAIN"
+          cargo build -p sunat-sdk-ffi --release --locked --target "${{ matrix.target }}"
+      - name: Stage ${{ matrix.rid }}/native
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="target/${{ matrix.target }}/release"
+          mkdir -p "stage/${{ matrix.rid }}/native"
+          case "${{ matrix.rid }}" in
+            win-*) cp "$out/sunat_sdk_ffi.dll" "stage/${{ matrix.rid }}/native/" ;;
+            linux-*) cp "$out/libsunat_sdk_ffi.so" "stage/${{ matrix.rid }}/native/" ;;
+            osx-*) cp "$out/libsunat_sdk_ffi.dylib" "stage/${{ matrix.rid }}/native/" ;;
+          esac
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-${{ matrix.rid }}
+          path: stage
+          if-no-files-found: error
+
+  pack:
+    needs: native
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: native-*
+          path: natives
+          merge-multiple: true
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: "3.4"
+      - name: One gem per platform
+        run: bindings/ruby/scripts/build-gems.sh natives
+      - name: Version, contents, architecture and the oldest glibc
+        run: bindings/ruby/scripts/check-gems.sh bindings/ruby/pkg
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: gems
+          path: bindings/ruby/pkg/*.gem
+          if-no-files-found: error
+
+  test:
+    needs: pack
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { name: linux-x64, os: ubuntu-24.04, platform: x86_64-linux-gnu }
+          - { name: linux-arm64, os: ubuntu-24.04-arm, platform: aarch64-linux-gnu }
+          - { name: osx-arm64, os: macos-15, platform: arm64-darwin }
+          - { name: osx-x64, os: macos-15-intel, platform: x86_64-darwin }
+          - { name: win-x64, os: windows-2025, platform: x64-mingw-ucrt }
+        ruby: ["3.2", "3.3", "3.4", "4.0"]
+    runs-on: ${{ matrix.target.os }}
+    name: test (${{ matrix.target.name }}, Ruby ${{ matrix.ruby }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: gems
+          path: pkg
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        with:
+          ruby-version: ${{ matrix.ruby }}
+      - name: Install the gem as a consumer would, and nokogiri for C14N
+        shell: bash
+        run: |
+          ruby -e 'puts Gem::Platform.local'
+          gem install --no-document pkg/kembec-sunat_sdk-*-${{ matrix.target.platform }}.gem
+          gem install --no-document nokogiri
+      - name: The battery from the installed gem
+        shell: bash
+        env:
+          EXPECT_PLATFORM: ${{ matrix.target.platform }}
+          EXPECT_ADDRESS_SIZE: "64"
+        run: ruby bindings/ruby/test/vectors.rb .
+
+  # 32-bit Windows: RubyInstaller x86, which exists up to Ruby 3.4 (4.0 has no x86 build). nokogiri has an x86 binary
+  # only up to Ruby 3.3 (1.17.2): on 3.4 the battery dumps its XML and a 64-bit Ruby compares it under C14N.
+  test-x86:
+    needs: pack
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ruby: 3.3.12-1
+            sha256: 38fad8b2b77580291d52a473b5a7bfab37a35ba322e88fac5f5fec79912094b7
+            nokogiri: "1.17.2"
+          - ruby: 3.4.11-1
+            sha256: f7fc3713eb6513eaeae17d4e713fda6e0a8cd2519f16e4108815de8612943f45
+            nokogiri: ""
+    runs-on: windows-2025
+    name: test (win-x86, Ruby ${{ matrix.ruby }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: gems
+          path: pkg
+      - name: 32-bit RubyInstaller ${{ matrix.ruby }}
+        shell: pwsh
+        run: |
+          $name = "rubyinstaller-${{ matrix.ruby }}-x86"
+          $archive = Join-Path $env:RUNNER_TEMP "$name.7z"
+          Invoke-WebRequest "https://github.com/oneclick/rubyinstaller2/releases/download/RubyInstaller-${{ matrix.ruby }}/$name.7z" -OutFile $archive
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLower()
+          if ($hash -ne "${{ matrix.sha256 }}") { throw "sha256 $hash" }
+          7z x $archive "-o$env:RUNNER_TEMP" | Out-Null
+          "$env:RUNNER_TEMP\$name\bin" | Out-File -FilePath $env:GITHUB_PATH -Append -Encoding utf8
+      - name: Install the gem, and nokogiri where it has an x86 binary
+        shell: pwsh
+        run: |
+          ruby -v -e 'puts Gem::Platform.local'
+          gem install --no-document (Get-Item pkg\kembec-sunat_sdk-*-x86-mingw32.gem).FullName
+          if ("${{ matrix.nokogiri }}") { gem install --no-document nokogiri -v "${{ matrix.nokogiri }}" --platform x86-mingw32 }
+      - name: The battery from the installed gem, 32-bit
+        shell: pwsh
+        env:
+          EXPECT_PLATFORM: x86-mingw32
+          EXPECT_ADDRESS_SIZE: "32"
+        run: |
+          if ("${{ matrix.nokogiri }}") { ruby bindings/ruby/test/vectors.rb . }
+          else { ruby bindings/ruby/test/vectors.rb . --c14n-dump "$env:RUNNER_TEMP\c14n" }
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - uses: ruby/setup-ruby@651ff0d62c5c79bed6d53ec518387aae20e72c1a # v1.329.0
+        if: matrix.nokogiri == ''
+        with:
+          ruby-version: "3.4"
+      - name: C14N of the 32-bit output, from a 64-bit Ruby
+        if: matrix.nokogiri == ''
+        shell: pwsh
+        run: |
+          gem install --no-document nokogiri
+          ruby bindings/ruby/test/c14n.rb . "$env:RUNNER_TEMP\c14n"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }

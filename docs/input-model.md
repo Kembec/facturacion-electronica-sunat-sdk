@@ -316,15 +316,19 @@ them but they carry no payment and stay out of the totals) and the reversal summ
 ## What is checked, and what is not
 
 The SUNAT validation rules of sheet «Retenciones1_0» that read only the document are checked in the
-sheet's order, each rejected with the code SUNAT would answer (`{"error": "$.rate: must be the
+sheet's order, except that a line's exchange rate goes before the amounts it converts (the beta answered 2715, not
+2623, to a line that breaks both), each rejected with the code SUNAT would answer (`{"error": "$.rate: must be the
 regime's rate (01: 3.00, 02: 6.00) (SUNAT ERR-2619)"}`); one test per code in
 `crates/sunat-model/tests/retention_rules.rs`. The vectors are `fixtures/retention/`: `v1` to `v3`
 (PEN, several documents and payments, USD) build, sign and pass the independent verifier
 (`crates/sunat-ubl/tests/retention.rs`); `v4` (6 % with regime 01), `v5` (USD amounts without the
 exchange rate, target currency USD) and `v6` (totals summed before rounding the lines) are rejected
-with 2619, 2623 then 2715, and 2628 then 2629. These vectors were written by this SDK and have not
-been sent to SUNAT beta yet: they guard the rules, they do not prove acceptance. There is no SUNAT
-schema for `Retention` in the repository.
+with 2619, 2715 then 2623, and 2628 then 2629. On 17/10/2026 the SUNAT beta (`otroscpe`) accepted `v1` to `v3`
+with code 0 and no notes, rejected `v4` with 2619, `v5` with 2715 and a payment number repeated for the same
+document with 2626, and accepted `v6` with code 0: the beta does not apply 2628 and 2629, the SDK still does. An
+identical resend of an accepted voucher got code 0 again, not 1033: the beta keeps no record, so what production
+answers to a resend is still unproven. The signed XML sent, the CLI's answer and the CDR of each are in
+`fixtures/retention/beta/`. There is no SUNAT schema for `Retention` in the repository.
 
 The send term (2600) is not part of `validate`, which has no clock: `Retention::check_send_deadline(now,
 max_days)` checks it with the term as a parameter. Note: RS 274-2015 art. 41 gives 7 calendar days

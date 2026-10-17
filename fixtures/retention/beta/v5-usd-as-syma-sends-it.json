@@ -1,0 +1,15 @@
+{
+  "sent_at": "2026-10-17T14:28:19-05:00",
+  "endpoint": "e-beta otroscpe billService",
+  "class": "rejected",
+  "code": "2715",
+  "diagnosis": [
+    {
+      "code": "2715",
+      "detail": null,
+      "fields": []
+    }
+  ],
+  "message": "2715",
+  "outcome": "fault"
+}

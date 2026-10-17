@@ -49,8 +49,10 @@ pub(crate) fn check_lines(r: &Retention, rate: i128) -> Result<(), ModelError> {
         let key = (line.related_document.number.as_str(), number);
         rule(!seen.contains(&key), "2626", at("payment.number"), "repeats a payment number of the same related document")?;
         seen.push(key);
-        check_amounts(line, rate, &at)?;
+        // The exchange rate before the amounts it converts: the beta answered 2715, not 2623, to a
+        // line that breaks both (17/10/2026).
         check_exchange_rate(line, &at)?;
+        check_amounts(line, rate, &at)?;
     }
     Ok(())
 }

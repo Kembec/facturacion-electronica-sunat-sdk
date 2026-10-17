@@ -11,7 +11,8 @@ SUNAT (Peru) electronic invoicing SDK for Rust, JavaScript/TypeScript, Python an
 
 Todos los lenguajes usan el mismo motor por dentro, así que los mismos datos dan el mismo comprobante firmado en
 cualquiera de ellos. Las pruebas automáticas lo comprueban en cada cambio con los 38 documentos de ejemplo de
-[`fixtures/`](fixtures), y el entorno de pruebas de la SUNAT aceptó 22 de ellos el 16/10/2026.
+[`fixtures/`](fixtures), y el entorno de pruebas de la SUNAT aceptó 36 de ellos el 16/10/2026; los otros 2 son guías de
+remisión, para las que la SUNAT no tiene entorno de pruebas.
 
 Guías y ejemplos: **https://fe.kembec.com**
 
@@ -217,8 +218,9 @@ un verificador independiente, y la beta de la SUNAT lo acepta.
 - **En cada cambio**, el CI arma y firma los 38 casos de [`fixtures/`](fixtures) por la CLI, por PHP, por el paquete
   npm en Node 18, Node 22 y Chrome, y por el paquete de Python instalado, y exige el `DigestValue` y el `SignatureValue`
   exactos de su vector. Un verificador en Python que no comparte código con el núcleo acepta las firmas.
-- **En la beta de la SUNAT**, el 16/10/2026, enviados con la CLI: los 15 comprobantes, aceptados con código 0 y sin
-  observaciones; los 7 resúmenes y bajas, procesados con código 0.
+- **En la beta de la SUNAT**, el 16/10/2026, enviados con la CLI: los 29 comprobantes, aceptados con código 0 y sin
+  observaciones; los 7 resúmenes y bajas, procesados con código 0. Las 2 guías de remisión no pasan por la beta: la
+  SUNAT no tiene ambiente de pruebas para la GRE.
 - **Sin red**, con respuestas escritas a mano: el envío y las consultas desde JavaScript y Python, que comparten con la
   CLI el código que arma la petición y lee la respuesta. Los envíos a la beta se hicieron con la CLI.
 - La consulta de la CDR (`status`) sigue el ejemplo del manual; la SUNAT solo la ofrece en producción, así que no se ha

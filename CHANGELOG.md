@@ -10,13 +10,16 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
-### Added
+### Changed
 
-- Despatch advice (09) in public transport carries the day the goods are handed to the carrier, which SUNAT requires
-  since 2026-06-01 (field 39-A of RS 108-2026): `shipment.carrier_handover_date`, rendered as
+- **Breaking** — Despatch advice (09) in public transport carries the day the goods are handed to the carrier, which
+  SUNAT requires since 2026-06-01 (field 39-A of RS 108-2026): `shipment.carrier_handover_date`, rendered as
   `cac:LoadingTransportEvent/cbc:OccurrenceDate`. Without it the SDK answers 3617 locally, before sending; a date before
   the issue date is 3618 and a malformed one 3619. Private transport takes no such field
-  ([`docs/input-model.md`](docs/input-model.md#shipment)).
+  ([`docs/input-model.md`](docs/input-model.md#shipment)). Migration: a public-transport despatch advice that built
+  before now needs `carrier_handover_date`; SUNAT already rejected it without one.
+
+### Added
 
 - Which input field a SUNAT code points at: `sunat_sdk::diagnose(document_type, code, message)` gives the node and value
   SUNAT names in the message, if any, and the candidate fields from SUNAT's validation rules of 26.08.2026 (01, 03, 07,

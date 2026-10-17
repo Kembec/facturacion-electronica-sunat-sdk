@@ -12,7 +12,6 @@ use crate::{Company, Date, Decimal, Document, ModelError};
 const SUMMARY_LINE_KEYS: &[(&str, &str)] = &[
     ("perception", "perception"),
     ("isc", "ISC"),
-    ("icbper", "ICBPER"),
     ("ivap", "IVAP"),
     ("other_taxes", "other taxes"),
 ];
@@ -58,6 +57,8 @@ pub struct SummaryLine {
     pub free: Option<Decimal>,
     pub other_charges: Option<Decimal>,
     pub igv: Option<Decimal>,
+    /// ICBPER (tax 7152) of the reported document, in PEN; `total` includes it.
+    pub icbper: Option<Decimal>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]

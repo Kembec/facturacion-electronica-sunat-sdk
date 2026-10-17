@@ -11,14 +11,16 @@ Si prefieres no armar cada paso, `kembec-sunat-sdk` hace lo mismo con una entrad
 
 ## Instalación
 
+Requiere Rust 1.88 o posterior.
+
 ```bash
-cargo add kembec-sunat-transport@0.1.0-beta.4
+cargo add kembec-sunat-transport
 ```
 
 ## Enviar una factura
 
-`post` es tu cliente HTTP: recibe el `SOAPAction` y el sobre, y devuelve el cuerpo de la respuesta. Las faltas SOAP
-llegan con HTTP 500 y también se leen.
+`post` es tu cliente HTTP: envía el sobre con `Content-Type: text/xml; charset=utf-8` y `SOAPAction` entre comillas, y
+devuelve el cuerpo de la respuesta. Las faltas SOAP llegan con HTTP 500 y también se leen.
 
 ```rust,no_run
 use kembec_sunat_transport::{
@@ -61,6 +63,10 @@ pide a los otros en su versión exacta, así que agrégalos todos con la misma v
 
 Cada versión pasa, compilada desde los paquetes que se suben a crates.io, la batería de vectores de compatibilidad del
 [repositorio](https://github.com/Kembec/facturacion-electronica-sunat-sdk): el mismo `DigestValue` y el mismo
-`SignatureValue` que dan JavaScript, Python, PHP y la línea de comandos para los mismos datos.
+`SignatureValue` que dan las versiones del SDK en los otros lenguajes y la línea de comandos para los mismos datos.
 
-Licencia MIT ([LICENSE](LICENSE)). Este proyecto no está afiliado a la SUNAT ([NOTICE](NOTICE)).
+## Licencia
+
+MIT, © 2026 Manuel Benancio: ver
+[`LICENSE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/LICENSE). Este proyecto no está afiliado a la
+SUNAT ([`NOTICE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/NOTICE)).

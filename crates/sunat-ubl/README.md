@@ -11,10 +11,12 @@ se escriben como llegan: este crate no calcula impuestos ni totales.
 
 ## Instalación
 
+Requiere Rust 1.88 o posterior.
+
 ```bash
-cargo add kembec-sunat-ubl@0.1.0-beta.4
-cargo add kembec-sunat-model@0.1.0-beta.4 --rename sunat-model
-cargo add kembec-sunat-xmldsig@0.1.0-beta.4 --rename sunat-xmldsig
+cargo add kembec-sunat-ubl
+cargo add kembec-sunat-model --rename sunat-model
+cargo add kembec-sunat-xmldsig --rename sunat-xmldsig
 ```
 
 ## Tu primer comprobante firmado
@@ -47,7 +49,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 El archivo firmado lleva `<ds:DigestValue>+te61a2ub5MlTFf8tKTPNGWEXKI=</ds:DigestValue>`: la misma huella que da el SDK
 en cualquier lenguaje para esa factura. Tus propios documentos siguen la forma del
-[modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
+[modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md). El envío a la
+SUNAT está en [`kembec-sunat-sdk`](https://crates.io/crates/kembec-sunat-sdk), o paso a paso en
+[`kembec-sunat-transport`](https://crates.io/crates/kembec-sunat-transport).
 
 ## Los crates del SDK
 
@@ -64,6 +68,10 @@ pide a los otros en su versión exacta, así que agrégalos todos con la misma v
 
 Cada versión pasa, compilada desde los paquetes que se suben a crates.io, la batería de vectores de compatibilidad del
 [repositorio](https://github.com/Kembec/facturacion-electronica-sunat-sdk): el mismo `DigestValue` y el mismo
-`SignatureValue` que dan JavaScript, Python, PHP y la línea de comandos para los mismos datos.
+`SignatureValue` que dan las versiones del SDK en los otros lenguajes y la línea de comandos para los mismos datos.
 
-Licencia MIT ([LICENSE](LICENSE)). Este proyecto no está afiliado a la SUNAT ([NOTICE](NOTICE)).
+## Licencia
+
+MIT, © 2026 Manuel Benancio: ver
+[`LICENSE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/LICENSE). Este proyecto no está afiliado a la
+SUNAT ([`NOTICE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/NOTICE)).

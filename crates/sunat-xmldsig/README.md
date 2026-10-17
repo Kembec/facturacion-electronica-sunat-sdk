@@ -13,8 +13,10 @@ byte a byte a los de los vectores de compatibilidad. La llave privada nunca apar
 
 ## Instalación
 
+Requiere Rust 1.88 o posterior.
+
 ```bash
-cargo add kembec-sunat-xmldsig@0.1.0-beta.4
+cargo add kembec-sunat-xmldsig
 ```
 
 ## Firmar y verificar
@@ -54,6 +56,10 @@ pide a los otros en su versión exacta, así que agrégalos todos con la misma v
 
 Cada versión pasa, compilada desde los paquetes que se suben a crates.io, la batería de vectores de compatibilidad del
 [repositorio](https://github.com/Kembec/facturacion-electronica-sunat-sdk): el mismo `DigestValue` y el mismo
-`SignatureValue` que dan JavaScript, Python, PHP y la línea de comandos para los mismos datos.
+`SignatureValue` que dan las versiones del SDK en los otros lenguajes y la línea de comandos para los mismos datos.
 
-Licencia MIT ([LICENSE](LICENSE)). Este proyecto no está afiliado a la SUNAT ([NOTICE](NOTICE)).
+## Licencia
+
+MIT, © 2026 Manuel Benancio: ver
+[`LICENSE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/LICENSE). Este proyecto no está afiliado a la
+SUNAT ([`NOTICE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/NOTICE)).

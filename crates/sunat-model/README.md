@@ -12,8 +12,10 @@ forma del JSON está en el [modelo de entrada](https://github.com/Kembec/factura
 
 ## Instalación
 
+Requiere Rust 1.88 o posterior.
+
 ```bash
-cargo add kembec-sunat-model@0.1.0-beta.4
+cargo add kembec-sunat-model
 ```
 
 ## Uso
@@ -39,7 +41,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ```
 
 Lo que el SDK no sabe escribir, o lo que la SUNAT rechazaría, vuelve como `ModelError` con la ruta del campo
-(`$.lines[2].affectation`) y, si es una regla de la SUNAT, el código con el que contestaría (`1001`). Lo que sigue es armar el XML con `kembec-sunat-ubl` y firmarlo con `kembec-sunat-xmldsig`.
+(`$.lines[2].affectation`) y, si es una regla de la SUNAT, el código con el que contestaría (`1001`). Lo que sigue, armar el XML y firmarlo,
+está en el README de [`kembec-sunat-ubl`](https://crates.io/crates/kembec-sunat-ubl).
 
 ## Los crates del SDK
 
@@ -56,6 +59,10 @@ pide a los otros en su versión exacta, así que agrégalos todos con la misma v
 
 Cada versión pasa, compilada desde los paquetes que se suben a crates.io, la batería de vectores de compatibilidad del
 [repositorio](https://github.com/Kembec/facturacion-electronica-sunat-sdk): el mismo `DigestValue` y el mismo
-`SignatureValue` que dan JavaScript, Python, PHP y la línea de comandos para los mismos datos.
+`SignatureValue` que dan las versiones del SDK en los otros lenguajes y la línea de comandos para los mismos datos.
 
-Licencia MIT ([LICENSE](LICENSE)). Este proyecto no está afiliado a la SUNAT ([NOTICE](NOTICE)).
+## Licencia
+
+MIT, © 2026 Manuel Benancio: ver
+[`LICENSE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/LICENSE). Este proyecto no está afiliado a la
+SUNAT ([`NOTICE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/NOTICE)).

@@ -15,13 +15,17 @@ respuesta es un error, porque el documento pudo haber llegado. El detalle de cad
 
 ## Instalación
 
+Requiere Rust 1.88 o posterior.
+
 ```bash
-cargo add kembec-sunat-sdk@0.1.0-beta.4 serde_json
+cargo add kembec-sunat-sdk serde_json
 ```
 
 ## Enviar una factura firmada
 
-`post` es tu cliente HTTP: recibe el `SOAPAction` y el sobre, y devuelve el estado HTTP y el cuerpo.
+`post` es tu cliente HTTP: envía el sobre al servicio de la SUNAT con `Content-Type: text/xml; charset=utf-8` y
+`SOAPAction` entre comillas, y devuelve el estado HTTP y el cuerpo. El XML firmado sale del recorrido del README de
+[`kembec-sunat-ubl`](https://crates.io/crates/kembec-sunat-ubl).
 
 ```rust,no_run
 use serde_json::{json, Value};
@@ -42,6 +46,10 @@ fn send(
 }
 ```
 
+Si tu cliente se queda sin respuesta, pasa `Reply::Timeout(segundos)` en lugar de `Reply::from_http`. En un envío
+eso vuelve como `Err`, porque el documento pudo haber llegado: se consulta con `Exchange::Status` y, si hay que
+reenviar, va el mismo XML firmado con el mismo número, nunca otro.
+
 ## Los crates del SDK
 
 | Crate | Qué hace |
@@ -57,6 +65,10 @@ pide a los otros en su versión exacta, así que agrégalos todos con la misma v
 
 Cada versión pasa, compilada desde los paquetes que se suben a crates.io, la batería de vectores de compatibilidad del
 [repositorio](https://github.com/Kembec/facturacion-electronica-sunat-sdk): el mismo `DigestValue` y el mismo
-`SignatureValue` que dan JavaScript, Python, PHP y la línea de comandos para los mismos datos.
+`SignatureValue` que dan las versiones del SDK en los otros lenguajes y la línea de comandos para los mismos datos.
 
-Licencia MIT ([LICENSE](LICENSE)). Este proyecto no está afiliado a la SUNAT ([NOTICE](NOTICE)).
+## Licencia
+
+MIT, © 2026 Manuel Benancio: ver
+[`LICENSE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/LICENSE). Este proyecto no está afiliado a la
+SUNAT ([`NOTICE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/NOTICE)).

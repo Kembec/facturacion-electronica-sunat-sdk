@@ -1,0 +1,191 @@
+name: dotnet
+
+# The .NET package (bindings/dotnet, Kembec.SunatSdk): the C ABI built for its six runtimes, the package packed
+# with them, and the battery in C# and VB.NET restored from that .nupkg on every platform it serves, .NET
+# Framework at 32 and 64 bits included. The .nupkg stays as an artifact: nothing is published.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "bindings/dotnet/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/dotnet.yml"
+  pull_request:
+    paths:
+      - "bindings/dotnet/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/dotnet.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dotnet-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.94.1"
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  DOTNET_SDK: "10.0.x"
+
+jobs:
+  # The library alone, without native builds: compile errors show in a minute instead of after the six builds.
+  compile:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: ${{ env.DOTNET_SDK }}
+      - name: net462, netstandard2.0 and net8.0, warnings as errors
+        run: dotnet build bindings/dotnet/src/Kembec.SunatSdk -c Release --nologo
+
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux inside manylinux2014 (glibc 2.17), as the Python wheels: built on ubuntu-24.04 the library would
+          # need glibc 2.34+ and not load on Debian 11, Ubuntu 20.04 or RHEL 8. Images pinned by digest (2026.10.10-1).
+          - rid: linux-x64
+            os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_x86_64@sha256:f6a6f153c9cf45470507ebbc27013e5db14ce21331b62fd2c540561f25e5f0a5
+          - rid: linux-arm64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_aarch64@sha256:c10b5d2ce68a4426011b5b9b8492f01037b9d0fd2187ed1956b346aa42faeb17
+          - { rid: osx-arm64, os: macos-15, target: aarch64-apple-darwin }
+          - { rid: osx-x64, os: macos-15-intel, target: x86_64-apple-darwin }
+          - { rid: win-x64, os: windows-2025, target: x86_64-pc-windows-msvc }
+          - { rid: win-x86, os: windows-2025, target: i686-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    name: native (${{ matrix.rid }})
+    env:
+      # Windows: the C runtime inside the DLL, as ffi.yml, so no Visual C++ redistributable is needed.
+      RUSTFLAGS: ${{ contains(matrix.target, 'windows') && '-C target-feature=+crt-static' || '' }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Build in manylinux2014
+        if: runner.os == 'Linux'
+        run: |
+          docker run --rm -e RUST_TOOLCHAIN -e CARGO_TERM_COLOR -v "$PWD":/io -w /io "${{ matrix.image }}" bash -euc '
+            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain "$RUST_TOOLCHAIN"
+            . "$HOME/.cargo/env"
+            cargo build -p sunat-sdk-ffi --release --locked --target "${{ matrix.target }}"
+            ldd --version | head -1'
+      - name: Build
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target "${{ matrix.target }}"
+          rustup default "$RUST_TOOLCHAIN"
+          cargo build -p sunat-sdk-ffi --release --locked --target "${{ matrix.target }}"
+      - name: Stage runtimes/${{ matrix.rid }}/native
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="target/${{ matrix.target }}/release"
+          mkdir -p "stage/${{ matrix.rid }}/native"
+          case "${{ matrix.rid }}" in
+            win-*) cp "$out/sunat_sdk_ffi.dll" "stage/${{ matrix.rid }}/native/" ;;
+            linux-*) cp "$out/libsunat_sdk_ffi.so" "stage/${{ matrix.rid }}/native/" ;;
+            osx-*) cp "$out/libsunat_sdk_ffi.dylib" "stage/${{ matrix.rid }}/native/" ;;
+          esac
+          ls -l "stage/${{ matrix.rid }}/native"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-${{ matrix.rid }}
+          path: stage
+          if-no-files-found: error
+
+  pack:
+    needs: [compile, native]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: native-*
+          path: bindings/dotnet/src/Kembec.SunatSdk/runtimes
+          merge-multiple: true
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: ${{ env.DOTNET_SDK }}
+      - name: Pack with the six native builds
+        run: dotnet pack bindings/dotnet/src/Kembec.SunatSdk -c Release -o bindings/dotnet/artifacts --nologo
+      - name: Version, contents and the oldest glibc
+        run: bindings/dotnet/scripts/check-package.sh bindings/dotnet/artifacts/Kembec.SunatSdk.*[0-9].nupkg
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: nupkg
+          path: |
+            bindings/dotnet/artifacts/*.nupkg
+            bindings/dotnet/artifacts/*.snupkg
+          if-no-files-found: error
+
+  test:
+    needs: pack
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: linux-x64, os: ubuntu-24.04 }
+          - { name: linux-arm64, os: ubuntu-24.04-arm }
+          - { name: osx-arm64, os: macos-15 }
+          - { name: osx-x64, os: macos-15-intel }
+          - { name: win-x64, os: windows-2025 }
+          - { name: win-x86, os: windows-2025 }
+    runs-on: ${{ matrix.os }}
+    name: test (${{ matrix.name }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: nupkg
+          path: bindings/dotnet/artifacts
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
+        with:
+          dotnet-version: |
+            8.0.x
+            ${{ env.DOTNET_SDK }}
+      - name: .NET 8, C# and VB.NET
+        if: matrix.name != 'win-x86'
+        shell: bash
+        run: bindings/dotnet/scripts/battery.sh net8.0
+      - name: .NET Framework 4.8 x64, C# and VB.NET
+        if: matrix.name == 'win-x64'
+        shell: bash
+        run: bindings/dotnet/scripts/battery.sh net48 x64
+      - name: .NET Framework 4.8 x86, C# and VB.NET
+        if: matrix.name == 'win-x86'
+        shell: bash
+        run: bindings/dotnet/scripts/battery.sh net48 x86
+      # The runner has only the 64-bit .NET: the 32-bit runtime runs the same portable build, which must pick
+      # runtimes/win-x86/native by itself.
+      - name: 32-bit .NET 8 runtime
+        if: matrix.name == 'win-x86'
+        shell: pwsh
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'dotnet-x86'
+          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile (Join-Path $env:RUNNER_TEMP 'dotnet-install.ps1')
+          & (Join-Path $env:RUNNER_TEMP 'dotnet-install.ps1') -Channel 8.0 -Runtime dotnet -Architecture x86 -InstallDir $dir
+          "DOTNET_RUNNER=$dir\dotnet.exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - name: .NET 8 x86, C# and VB.NET
+        if: matrix.name == 'win-x86'
+        shell: bash
+        run: bindings/dotnet/scripts/battery.sh net8.0

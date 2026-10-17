@@ -1,0 +1,166 @@
+# SDK de facturación electrónica SUNAT (Perú) para .NET
+
+Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **C#** o **VB.NET**, para quien programa el sistema de
+facturación de una empresa. Con los datos de una factura (01), una boleta (03), una nota de crédito (07) o de débito
+(08), un resumen diario de boletas (RC) o una comunicación de baja (RA):
+
+- arma el archivo XML que pide la SUNAT y lo firma con tu certificado digital;
+- lo comprime, lo envía y lee la CDR, la constancia con la que la SUNAT dice si lo aceptó;
+- después consulta un comprobante ya enviado: su CDR (`Status`), el ticket de un resumen (`Ticket`) o su estado en la
+  Consulta Integrada de la SUNAT (`Validity`: aceptado, anulado o no informado).
+
+También arma, firma y envía la guía de remisión remitente (09) por la API REST de la SUNAT. Es la versión para .NET del
+[SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y TypeScript,
+PHP, Python, Rust y la línea de comandos: los mismos datos dan el mismo comprobante firmado en todos.
+
+SUNAT (Peru) electronic invoicing SDK for .NET.
+
+Tu sistema calcula los importes; el SDK los valida y los pone en el XML, pero no calcula impuestos. Guías y ejemplos:
+https://fe.kembec.com
+
+## Instalación
+
+```bash
+dotnet add package Kembec.SunatSdk --prerelease
+```
+
+Las versiones son beta. El paquete sirve a .NET Framework 4.6.2 o posterior, a .NET Standard 2.0 (.NET Core 3.1 a 7,
+Mono, Unity) y a .NET 8 o posterior, y trae el núcleo en Rust del SDK ya compilado: no llama a ningún programa externo
+ni necesita instalar nada más. Corre en Windows de 64 y 32 bits, Linux x64 y ARM64 con glibc 2.17 o posterior (no
+Alpine) y macOS Intel y Apple Silicon.
+
+En .NET Framework, al compilar quedan junto a tu aplicación `runtimes\win-x64\native\` y `runtimes\win-x86\native\`, y
+el paquete carga la de la arquitectura del proceso: la misma aplicación corre en 32 y en 64 bits. En un sitio ASP.NET
+esa carpeta `runtimes` va dentro de `bin`, como la deja la publicación.
+
+## Tu primer comprobante
+
+Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba del repositorio. Ese certificado es
+autogenerado y no sirve para emitir.
+
+```bash
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/main
+curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
+curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
+curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
+```
+
+En C#:
+
+```csharp
+using Kembec.SunatSdk;
+
+var sdk = new SunatSdkClient();
+var built = sdk.Build(File.ReadAllText("01-invoice-taxed-cash.json"));
+var signed = sdk.Sign(built.Xml, new SigningKey("test-cert.pem", "test-key.pem"));
+Console.WriteLine(built.FileName + " " + signed.DigestValue); // 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
+```
+
+En VB.NET:
+
+```vb
+Imports System.IO
+Imports Kembec.SunatSdk
+
+Module PrimerComprobante
+    Sub Main()
+        Dim sdk As New SunatSdkClient()
+        Dim built = sdk.Build(File.ReadAllText("01-invoice-taxed-cash.json"))
+        Dim signed = sdk.Sign(built.Xml, New SigningKey("test-cert.pem", "test-key.pem"))
+        Console.WriteLine(built.FileName & " " & signed.DigestValue) ' 20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=
+    End Sub
+End Module
+```
+
+Si imprime `20123456789-01-F001-1 +te61a2ub5MlTFf8tKTPNGWEXKI=` (el nombre del archivo y la huella de la firma), el
+SDK funciona: es la misma salida que dan JavaScript, PHP, Python, Rust y la CLI. Tus propios documentos siguen la forma
+del [modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md).
+
+## Enviar a la SUNAT y leer la respuesta
+
+```csharp
+var sdk = new SunatSdkClient(TimeSpan.FromSeconds(60));          // espera a la SUNAT; 90 s si no se indica
+var built = sdk.Build(documentJson);                               // el JSON de docs/input-model.md
+var signed = sdk.Sign(built.Xml, new SigningKey(@"C:\seguro\cert.pem", @"C:\seguro\key.pem"));
+var sent = sdk.Send(built.FileName, signed.Xml, new SolCredentials(rucAndSolUser, solPassword), sendBillEndpoint);
+
+if (sent.Outcome == Outcome.Fault)
+{
+    var code = sent.Fault!.Code;                                   // por ejemplo, "1033", con su Class
+}
+else
+{
+    File.WriteAllBytes(built.FileName + ".cdr.zip", sent.CdrZip!); // guarda la CDR como llegó
+    var valid = sent.Cdr!.IsValidDocument;                         // aceptado, con o sin observaciones
+}
+```
+
+- Cada método espera a que termine su comando. Los que van a la SUNAT pueden tardar hasta la espera del cliente: no
+  los llames desde el hilo de una ventana. El cliente no guarda estado y se puede compartir entre hilos.
+- Un error SOAP de la SUNAT es un resultado (`Outcome.Fault`), no una excepción. Un envío sin respuesta lanza
+  `SunatSdkException`, porque pudo haber llegado: se reenvía el mismo XML firmado con el mismo número, nunca otro.
+- `IsAccepted` es verdadero solo con código 0 y sin observaciones; con código 0 y una nota de 4000 o más, la CDR queda
+  `Observed` e `IsValidDocument` es verdadero en los dos casos.
+- `Summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `Ticket` y `Status`
+  sin respuesta dan `Outcome.NoVerdict`: se vuelve a consultar, nunca a enviar.
+- Cada resultado guarda en `RawJson` la respuesta tal como la da el
+  [contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md).
+
+### Consultar el estado de un comprobante (Consulta Integrada)
+
+`Validity` pregunta a la Consulta Integrada de la SUNAT si una factura, boleta o nota (01, 03, 07, 08) existe y en qué
+estado está. Usa las «Credenciales de API SUNAT» que se crean en SOL para esta consulta: no el usuario SOL ni el par de
+la GRE. **No hay ambiente de pruebas**: la consulta va siempre a producción.
+
+```vb
+Dim check = sdk.Validity("20123456789", "01", "F001", 123, New DateTime(2026, 10, 16), 118.00D,
+                         New ApiCredentials(clientId, clientSecret))
+Select Case check.Outcome
+    Case Outcome.Validity
+        Console.WriteLine(check.State)          ' Accepted, Voided, NotReported…; Observations dice qué difiere
+    Case Outcome.QueryError
+        Console.WriteLine(check.QueryError.Message) ' la SUNAT rechazó la consulta, no el comprobante
+    Case Else
+        Console.WriteLine(check.NoVerdict.Stage)  ' sin respuesta en Token o Query: vuelve a consultar
+End Select
+```
+
+Ningún resultado es motivo para emitir la operación con otro número: `NotReported` no prueba que el comprobante no
+llegó (el ticket de un resumen puede seguir en proceso), así que antes se concilia con `Status` o con el ticket.
+
+### Guía de remisión remitente (09) por la API REST
+
+`GreSend` envía la guía firmada y devuelve su ticket; `GreTicket` consulta el resultado con ese ticket. Usan el par GRE
+de las «Credenciales de API SUNAT» y el usuario SOL, y las dos URL base no tienen valor por defecto. La SUNAT no tiene
+ambiente de pruebas para la GRE.
+
+## Errores
+
+| Excepción | Cuándo |
+|---|---|
+| `ArgumentException` | el JSON del documento no es un valor JSON, o falta un argumento |
+| `SunatSdkException` | el SDK rechazó el documento (el mensaje dice qué campo y por qué), no hubo respuesta a un envío o la respuesta no es la del contrato; `Command` dice qué comando |
+| `SunatSdkLoadException` | no se encontró la biblioteca nativa de esta plataforma o es de otra versión del paquete |
+
+Las contraseñas y secretos no aparecen en ningún resultado, excepción ni `ToString()`.
+
+## Qué cubre y qué no
+
+Lo mismo que el SDK en cualquier lenguaje: la lista completa está en el
+[alcance del SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk#alcance) y cada campo, en el
+[modelo de entrada](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/input-model.md). Lo que
+el SDK no cubre lo rechaza con un error explícito en vez de armar un XML que la SUNAT rechazaría.
+
+## Pruebas
+
+El CI (`.github/workflows/dotnet.yml`) compila el núcleo para las seis plataformas, arma el paquete y, en cada una,
+restaura ese `.nupkg` como lo haría tu proyecto y corre la batería en C# y en VB.NET: cada uno de los 38 documentos de
+[fixtures](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/fixtures) tiene que dar, con `Build`
+y `Sign`, el XML y la firma exactos de
+[tests/vectors](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/tests/vectors). En Windows la
+corre en .NET 8 y en .NET Framework 4.8, a 64 y a 32 bits. No envía nada a la SUNAT.
+
+## Licencia
+
+MIT, © 2026 Manuel Benancio: ver
+[`LICENSE`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/LICENSE).

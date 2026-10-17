@@ -194,7 +194,7 @@ namespace Kembec.SunatSdk
             }
             if (endpoint != null)
             {
-                flags.Add(new Flag"endpoint", endpoint);
+                flags.Add(new Flag("endpoint", endpoint));
             }
             var date = issueDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             var amount = total.ToString(CultureInfo.InvariantCulture);
@@ -203,11 +203,11 @@ namespace Kembec.SunatSdk
                 w =>
                 {
                     VoucherKey(w, ruc, documentType, series, number, end: false);
-                    w.WriteString"issue_date", date;
-                    w.WriteString"total", amount;
+                    w.WriteString("issue_date", date);
+                    w.WriteString("total", amount);
                     if (requesterRuc != null)
                     {
-                        w.WriteString"requester_ruc", requesterRuc;
+                        w.WriteString("requester_ruc", requesterRuc);
                     }
                     w.WriteEndObject();
                 },
@@ -255,7 +255,7 @@ namespace Kembec.SunatSdk
             Require(endpoint, nameof(endpoint));
             return new[]
             {
-                new Flag"endpoint", endpoint,
+                new Flag("endpoint", endpoint),
                 new Flag("user", credentials.User),
                 new Flag("password", credentials.Password),
                 new Flag("timeout", _timeoutSeconds),
@@ -275,7 +275,7 @@ namespace Kembec.SunatSdk
                 new Flag("user", sol.User),
                 new Flag("password", sol.Password),
                 new Flag("token-endpoint", tokenEndpoint),
-                new Flag"endpoint", endpoint,
+                new Flag("endpoint", endpoint),
                 new Flag("timeout", _timeoutSeconds),
             };
         }
@@ -283,10 +283,10 @@ namespace Kembec.SunatSdk
         private static void VoucherKey(Utf8JsonWriter w, string ruc, string documentType, string series, int number, bool end)
         {
             w.WriteStartObject();
-            w.WriteString"ruc", ruc;
-            w.WriteString"document_type", documentType;
-            w.WriteString"series", series;
-            w.WriteNumber"number", number;
+            w.WriteString("ruc", ruc);
+            w.WriteString("document_type", documentType);
+            w.WriteString("series", series);
+            w.WriteNumber("number", number);
             if (end)
             {
                 w.WriteEndObject();

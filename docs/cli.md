@@ -104,6 +104,8 @@ In the core (`sunat_sdk::gre`): `token_request`/`token_read` (with `expires_at` 
 
 ## Consumers
 
+- `bindings/ffi`: the same commands in process through a C ABI, with the flags in the request and no environment
+  (`docs/c-abi.md`).
 - `bindings/php`: Composer package; runs the binary with `proc_open`, writes the JSON to stdin, reads
   stdout and stderr, maps a non-zero exit to a typed exception carrying the `error` message.
 - `validity` in the bindings: wasm `validityTokenRequest`/`validityTokenResponse`, `validityRequest`/

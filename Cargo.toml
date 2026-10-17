@@ -7,6 +7,7 @@ members = [
   "crates/sunat-transport",
   "crates/sunat-sdk",
   "bindings/cli",
+  "bindings/ffi",
   "bindings/wasm",
   "bindings/python",
 ]

@@ -10,6 +10,8 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+## [0.1.0-beta.5] - 2026-10-17
+
 ### Added
 
 - Sender's despatch advice (09) by SUNAT's GRE REST API: `gre-send` and `gre-ticket` in the CLI and the core
@@ -118,7 +120,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.4...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.5...HEAD
+[0.1.0-beta.5]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.4...v0.1.0-beta.5
 [0.1.0-beta.4]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.3...v0.1.0-beta.4
 [0.1.0-beta.3]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.2...v0.1.0-beta.3
 [0.1.0-beta.2]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.1...v0.1.0-beta.2

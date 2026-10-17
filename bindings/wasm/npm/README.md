@@ -31,7 +31,7 @@ Baja a una carpeta vacía la factura de prueba y el certificado de prueba del re
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.4
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.5
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -104,7 +104,7 @@ const check = JSON.parse(sdk.validityResponse(queryRes.status, await read(queryR
 
 ## Guía de remisión remitente (09) por la API REST
 
-Estas funciones están en la rama `main` y todavía no en un release: la 0.1.0-beta.4 de npm no las trae.
+Estas funciones llegaron en la 0.1.0-beta.5.
 
 La guía no va por SOAP: un token con la clave SOL, el envío del zip y la consulta del ticket. El paquete arma cada
 llamada (con su `url`) y lee cada respuesta; el `fetch` es tuyo, como con `soapRequest`.

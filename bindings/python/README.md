@@ -9,7 +9,7 @@ facturación de una empresa. Con los datos de una factura (01), una boleta (03),
 - después consulta el estado de un comprobante ya enviado en la Consulta Integrada de la SUNAT (`validity`: aceptado,
   anulado o no informado).
 
-También arma y firma la guía de remisión remitente (09); su envío está solo en la rama `main`
+También arma, firma y envía la guía de remisión remitente (09) por la API REST de la SUNAT
 ([abajo](#guía-de-remisión-remitente-09-por-la-api-rest)). Es la versión para Python del
 [SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y TypeScript,
 PHP, Rust y la línea de comandos: los mismos datos dan el mismo comprobante firmado en todos.
@@ -46,7 +46,7 @@ Baja a una carpeta vacía la factura de prueba y el certificado de prueba del re
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.4
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.5
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -104,8 +104,7 @@ check = sunat_sdk.validity(
 
 ## Guía de remisión remitente (09) por la API REST
 
-`gre_send`, `gre_ticket` y sus piezas sin red están en la rama `main` y todavía no en un release: la 0.1.0-beta.4 de
-PyPI no los trae. Para usarlos hoy, instala la versión en desarrollo como se explica arriba, en «Instalación».
+`gre_send`, `gre_ticket` y sus piezas sin red llegaron en la 0.1.0-beta.5.
 
 ```python
 sent = sunat_sdk.gre_send(

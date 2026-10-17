@@ -8,6 +8,7 @@ package com.kembec.sunatsdk;
 public class SunatSdkException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
+    /** The command of docs/cli.md that failed; null if none ran. */
     private final String command;
 
     /**

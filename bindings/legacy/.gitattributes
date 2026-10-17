@@ -1,0 +1,7 @@
+# VB6 reads its sources only with CRLF, and the three IDEs expect Windows line endings: checked out
+# as CRLF on every platform, so the zip built on Linux carries them (scripts/package.sh checks it).
+*.bas text eol=crlf
+*.vbp text eol=crlf
+*.prg text eol=crlf
+*.sru text eol=crlf
+*.srf text eol=crlf

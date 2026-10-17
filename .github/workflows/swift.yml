@@ -243,5 +243,7 @@ jobs:
         run: bindings/objc/scripts/fetch-xcframework.sh
       - name: pod lib lint (iOS and macOS)
         run: |
+          # xcodebuild refuses both targets in one environment; the podspec declares each platform's own.
+          unset MACOSX_DEPLOYMENT_TARGET IPHONEOS_DEPLOYMENT_TARGET
           pod --version
           pod lib lint KembecSunatSDKObjC.podspec --skip-import-validation

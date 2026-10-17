@@ -69,11 +69,16 @@ final class Locked<Value>: @unchecked Sendable {
 }
 
 /// The checked-out repository: fixtures, vectors, the test certificate and the recorded CDR.
+/// Holds the root as a path: `URL` is not `Sendable` in swift-corelibs-foundation 5.9.
 struct Repository: Sendable {
-    let root: URL
+    let rootPath: String
+
+    init(root: URL) {
+        rootPath = root.path
+    }
 
     func file(_ path: String) -> URL {
-        root.appendingPathComponent(path)
+        URL(fileURLWithPath: rootPath, isDirectory: true).appendingPathComponent(path)
     }
 
     func text(_ path: String) throws -> String {

@@ -51,7 +51,7 @@ jobs:
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
           dotnet-version: ${{ env.DOTNET_SDK }}
-      - name: net462, netstandard2.0 and net8.0, warnings as errors
+      - name: net462, netstandard2.0 and net10.0, warnings as errors
         run: dotnet build bindings/dotnet/src/Kembec.SunatSdk -c Release --nologo
 
   native:
@@ -160,13 +160,11 @@ jobs:
           path: bindings/dotnet/artifacts
       - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4.3.1
         with:
-          dotnet-version: |
-            8.0.x
-            ${{ env.DOTNET_SDK }}
-      - name: .NET 8, C# and VB.NET
+          dotnet-version: ${{ env.DOTNET_SDK }}
+      - name: .NET 10, C# and VB.NET
         if: matrix.name != 'win-x86'
         shell: bash
-        run: bindings/dotnet/scripts/battery.sh net8.0
+        run: bindings/dotnet/scripts/battery.sh net10.0
       - name: .NET Framework 4.8 x64, C# and VB.NET
         if: matrix.name == 'win-x64'
         shell: bash
@@ -177,15 +175,15 @@ jobs:
         run: bindings/dotnet/scripts/battery.sh net48 x86
       # The runner has only the 64-bit .NET: the 32-bit runtime runs the same portable build, which must pick
       # runtimes/win-x86/native by itself.
-      - name: 32-bit .NET 8 runtime
+      - name: 32-bit .NET 10 runtime
         if: matrix.name == 'win-x86'
         shell: pwsh
         run: |
           $dir = Join-Path $env:RUNNER_TEMP 'dotnet-x86'
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile (Join-Path $env:RUNNER_TEMP 'dotnet-install.ps1')
-          & (Join-Path $env:RUNNER_TEMP 'dotnet-install.ps1') -Channel 8.0 -Runtime dotnet -Architecture x86 -InstallDir $dir
+          & (Join-Path $env:RUNNER_TEMP 'dotnet-install.ps1') -Channel 10.0 -Runtime dotnet -Architecture x86 -InstallDir $dir
           "DOTNET_RUNNER=$dir\dotnet.exe" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      - name: .NET 8 x86, C# and VB.NET
+      - name: .NET 10 x86, C# and VB.NET
         if: matrix.name == 'win-x86'
         shell: bash
-        run: bindings/dotnet/scripts/battery.sh net8.0
+        run: bindings/dotnet/scripts/battery.sh net10.0

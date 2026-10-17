@@ -2,11 +2,11 @@
 # The .NET battery in C# and in VB.NET against the .nupkg in bindings/dotnet/artifacts, restored as a consumer
 # restores it (tests/nuget.config): what is published is what is tested, not the source.
 #
-#   battery.sh net8.0            run with `dotnet`, or with $DOTNET_RUNNER (an x86 dotnet.exe for 32-bit)
+#   battery.sh net10.0           run with `dotnet`, or with $DOTNET_RUNNER (an x86 dotnet.exe for 32-bit)
 #   battery.sh net48 x64|x86     Windows: .NET Framework at that bitness, through the package's loader
 set -euo pipefail
 
-framework=${1:?usage: battery.sh <net8.0|net48> [x64|x86]}
+framework=${1:?usage: battery.sh <net10.0|net48> [x64|x86]}
 platform=${2:-}
 here=$(cd "$(dirname "$0")/.." && pwd)
 repo=$(cd "$here/../.." && pwd)

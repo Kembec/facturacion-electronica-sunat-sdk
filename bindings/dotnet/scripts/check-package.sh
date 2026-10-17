@@ -26,7 +26,7 @@ for entry in \
   README.md \
   lib/net462/Kembec.SunatSdk.dll lib/net462/Kembec.SunatSdk.xml \
   lib/netstandard2.0/Kembec.SunatSdk.dll lib/netstandard2.0/Kembec.SunatSdk.xml \
-  lib/net8.0/Kembec.SunatSdk.dll lib/net8.0/Kembec.SunatSdk.xml \
+  lib/net10.0/Kembec.SunatSdk.dll lib/net10.0/Kembec.SunatSdk.xml \
   build/Kembec.SunatSdk.targets buildTransitive/Kembec.SunatSdk.targets \
   runtimes/win-x64/native/sunat_sdk_ffi.dll runtimes/win-x86/native/sunat_sdk_ffi.dll \
   runtimes/linux-x64/native/libsunat_sdk_ffi.so runtimes/linux-arm64/native/libsunat_sdk_ffi.so \

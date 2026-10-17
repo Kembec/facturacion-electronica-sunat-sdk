@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <!-- net462 carries the loader for .NET Framework (x86 and x64 side by side); netstandard2.0 serves .NET
-         Core 3.1 to 7, Mono and Unity; net8.0 needs no JSON package. -->
-    <TargetFrameworks>net462;netstandard2.0;net8.0</TargetFrameworks>
+         Core 3.1 to 9, Mono and Unity; net10.0 needs no JSON package. -->
+    <TargetFrameworks>net462;netstandard2.0;net10.0</TargetFrameworks>
     <RootNamespace>Kembec.SunatSdk</RootNamespace>
     <LangVersion>latest</LangVersion>
     <Nullable>enable</Nullable>
@@ -32,7 +32,7 @@
     <AllowMissingNatives Condition="'$(AllowMissingNatives)' == ''">false</AllowMissingNatives>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' != 'net8.0'">
+  <ItemGroup Condition="'$(TargetFramework)' != 'net10.0'">
     <PackageReference Include="System.Text.Json" Version="10.0.13" />
   </ItemGroup>
 

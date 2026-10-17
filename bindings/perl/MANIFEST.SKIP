@@ -1,0 +1,13 @@
+^\.gitignore$
+^MANIFEST\.SKIP$
+^MANIFEST\.bak$
+^Makefile$
+^Makefile\.old$
+^MYMETA\.
+^pm_to_blib$
+^blib/
+^scripts/
+^test/
+^stage/
+^dist/
+^Kembec-SunatSdk-

@@ -1,0 +1,10 @@
+# Staged by scripts/build-dist.sh: the native libraries, the copies of the repository's files and the built dist.
+/lib/Kembec/SunatSdk/native/
+/t/data/
+/stage/
+/dist/
+/blib/
+/Makefile
+/Makefile.old
+/MYMETA.*
+/pm_to_blib

@@ -1,0 +1,195 @@
+name: perl
+
+# The Perl distribution (bindings/perl, Kembec-SunatSdk): the C ABI built for its five platforms, one CPAN distribution
+# with every native library inside, installed with cpanm as a consumer would (Makefile.PL keeps only the machine's
+# library and runs t/), and the battery run from the installed module on every platform it serves and every maintained
+# Perl (5.42 and 5.44, and 5.40 for security fixes; 5.26 is the declared floor). Windows runs Strawberry Perl, which
+# reaches 5.42 and has no 32-bit build after 5.38. The distribution stays as an artifact: nothing is published.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "bindings/perl/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/perl.yml"
+  pull_request:
+    paths:
+      - "bindings/perl/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/perl.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: perl-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.94.1"
+
+jobs:
+  native:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux inside manylinux2014 (glibc 2.17), as .NET, Ruby and the Python wheels. Images pinned by digest.
+          - rid: linux-x64
+            os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_x86_64@sha256:f6a6f153c9cf45470507ebbc27013e5db14ce21331b62fd2c540561f25e5f0a5
+          - rid: linux-arm64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_aarch64@sha256:c10b5d2ce68a4426011b5b9b8492f01037b9d0fd2187ed1956b346aa42faeb17
+          - { rid: osx-arm64, os: macos-15, target: aarch64-apple-darwin }
+          - { rid: osx-x64, os: macos-15-intel, target: x86_64-apple-darwin }
+          - { rid: win-x64, os: windows-2025, target: x86_64-pc-windows-msvc }
+    runs-on: ${{ matrix.os }}
+    name: native (${{ matrix.rid }})
+    env:
+      RUSTFLAGS: ${{ contains(matrix.target, 'windows') && '-C target-feature=+crt-static' || '' }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Build in manylinux2014
+        if: runner.os == 'Linux'
+        run: |
+          docker run --rm -e RUST_TOOLCHAIN -e CARGO_TERM_COLOR -v "$PWD":/io -w /io "${{ matrix.image }}" bash -euc '
+            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain "$RUST_TOOLCHAIN"
+            . "$HOME/.cargo/env"
+            cargo build -p sunat-sdk-ffi --release --locked --target "${{ matrix.target }}"
+            ldd --version | head -1'
+      - name: Build
+        if: runner.os != 'Linux'
+        shell: bash
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target "${{ matrix.target }}"
+          rustup default "$RUST_TOOLCHAIN"
+          cargo build -p sunat-sdk-ffi --release --locked --target "${{ matrix.target }}"
+      - name: Stage ${{ matrix.rid }}/native
+        shell: bash
+        run: |
+          set -euo pipefail
+          out="target/${{ matrix.target }}/release"
+          mkdir -p "stage/${{ matrix.rid }}/native"
+          case "${{ matrix.rid }}" in
+            win-*) cp "$out/sunat_sdk_ffi.dll" "stage/${{ matrix.rid }}/native/" ;;
+            linux-*) cp "$out/libsunat_sdk_ffi.so" "stage/${{ matrix.rid }}/native/" ;;
+            osx-*) cp "$out/libsunat_sdk_ffi.dylib" "stage/${{ matrix.rid }}/native/" ;;
+          esac
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: native-${{ matrix.rid }}
+          path: stage
+          if-no-files-found: error
+
+  pack:
+    needs: native
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: native-*
+          path: natives
+          merge-multiple: true
+      # The runner's own perl: packing needs only ExtUtils::MakeMaker and JSON::PP, which come with it.
+      - name: One distribution with the five native libraries
+        run: perl -v | sed -n 2p && bindings/perl/scripts/build-dist.sh natives
+      - name: Version, release status, contents, architecture and the oldest glibc
+        run: bindings/perl/scripts/check-dist.sh bindings/perl/dist
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: cpan-dist
+          path: bindings/perl/dist/*.tar.gz
+          if-no-files-found: error
+
+  test:
+    needs: pack
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - { name: linux-x64, os: ubuntu-24.04 }
+          - { name: linux-arm64, os: ubuntu-24.04-arm }
+          - { name: osx-arm64, os: macos-15 }
+          - { name: osx-x64, os: macos-15-intel }
+        perl: ["5.40", "5.42", "5.44"]
+        distribution: [default]
+        include:
+          - { target: { name: linux-x64, os: ubuntu-24.04 }, perl: "5.26", distribution: default }
+          - { target: { name: win-x64, os: windows-2025 }, perl: "5.40", distribution: strawberry }
+          - { target: { name: win-x64, os: windows-2025 }, perl: "5.42", distribution: strawberry }
+    runs-on: ${{ matrix.target.os }}
+    name: test (${{ matrix.target.name }}, Perl ${{ matrix.perl }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: cpan-dist
+          path: dist
+      # With ithreads, so the battery's thread check runs (Strawberry always has them).
+      - uses: shogo82148/actions-setup-perl@8b574cdc2dffdae49f803204a4f2b716a2fa1db7 # v1.44.2
+        with:
+          perl-version: ${{ matrix.perl }}
+          distribution: ${{ matrix.distribution }}
+          multi-thread: "true"
+      - name: Headers for XML::LibXML and FFI::Platypus
+        if: runner.os == 'Linux'
+        run: sudo apt-get install -y --no-install-recommends libxml2-dev libffi-dev
+      # XML::LibXML is the battery's C14N, not a dependency of the module; FFI::Platypus goes first, without its own
+      # long suite, so that the installation below runs the distribution's tests and not its dependency's.
+      - name: The battery's tools
+        if: runner.os != 'Windows'
+        run: |
+          perl -V:archname -V:useithreads
+          perl -S cpanm --notest --quiet FFI::Platypus XML::LibXML
+      - name: Install the distribution as a consumer would (Makefile.PL, make, t/, make install)
+        if: runner.os != 'Windows'
+        run: perl -S cpanm --verbose ./dist/Kembec-SunatSdk-*.tar.gz
+      - name: The battery from the installed module
+        if: runner.os != 'Windows'
+        env:
+          EXPECT_PLATFORM: ${{ matrix.target.name }}
+        run: perl bindings/perl/test/vectors.pl .
+      # The same on Windows from PowerShell: Git's bash puts its own MSYS perl (x86_64-cygwin) before Strawberry's.
+      - name: The battery's tools (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          perl -V:archname -V:useithreads
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          perl -S cpanm --notest --quiet FFI::Platypus XML::LibXML
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: Install the distribution as a consumer would (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          perl -S cpanm --verbose (Get-Item dist\Kembec-SunatSdk-*.tar.gz).FullName
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: The battery from the installed module (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        env:
+          EXPECT_PLATFORM: ${{ matrix.target.name }}
+        run: |
+          perl bindings/perl/test/vectors.pl .
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+      - name: cpanm's log of what failed
+        if: failure()
+        shell: bash
+        run: cat "$HOME/.cpanm/latest-build/build.log" "$USERPROFILE/.cpanm/latest-build/build.log" 2>/dev/null || true

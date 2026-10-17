@@ -244,7 +244,7 @@ Summary line: `document_type` (`"03"`, `"07"`, `"08"`), `document_number` (`"B00
 or tabs), optional `igv_rate` (`"18.00"` or `"10.50"` for a receipt; a note also takes `"10.00"`),
 optional `reference_document` (`{ "document_type": "03", "document_number":
 "B001-1" }`, required for notes and rejected on receipts), and the amounts `total` (required), `taxed`,
-`exempt`, `unaffected`, `export`, `free`, `other_charges`, `igv`, `icbper` (in PEN, positive, 2048; `total`
+`exempt`, `unaffected`, `export`, `free`, `free_taxed`, `free_exempt`, `free_unaffected`, `free_export`, `free_igv`, `other_charges`, `igv`, `icbper` (in PEN, positive, 2048; `total`
 includes it, and it renders as its own `cac:TaxTotal` 7152 after the IGV one). `igv` is always rendered (`0.00` when
 absent); `taxed` is rendered whenever given, even `"0.00"`; `exempt`, `unaffected`, `export`, `free` and
 `other_charges` only when non-zero, so `"0.00"` there is the same as absent (the vectors' rule). Summary
@@ -260,9 +260,26 @@ SUNAT's validation rules (version of 24/04/2026, «Control de Cambios» rows 508
 | Change | What SUNAT beta did on 16/10/2026 | In the SDK |
 |---|---|---|
 | Summary: `Percent` of the IGV (errors 2992, 3504, 3102) and the customer's name (10.3, error 2022) | accepted `RC-20261016-911` with both, code 0 | `igv_rate` and `customer_name`, optional; vector `rc-igv-rate-and-customer-name` |
-| Summary: free sales split into catalog 11 codes 06-09 with the IGV of free sales (tax 9996), code 05 deactivated | rejected code 06 with error 2256 («no se encuentra en el catálogo 11») | `free` keeps code 05 |
+| Summary: free sales split into catalog 11 codes 06-09 with the IGV of free sales (tax 9996), code 05 deactivated | rejected code 06 with error 2256 («no se encuentra en el catálogo 11») | dated 01/01/2027, see «Rules that take effect on 01/01/2027» below: `free` (05) until then, `free_taxed`, `free_exempt`, `free_unaffected`, `free_export` and `free_igv` from then |
 | Invoice, receipt and notes: an invalid SUNAT product code becomes error 3496 | accepted with observation 3496 | `sunat_product_code` stays optional and unchecked |
 | IGV rate 10.5 % for MYPE restaurants and lodging | accepted `F001-911` with `igv_rate` `10.50`, code 0, no observations | `igv_rate` as given; vector `01-invoice-igv-10-5`. Being on SUNAT's list of taxpayers allowed to apply it is not checked: beta does not check it either |
+
+### Rules that take effect on 01/01/2027
+
+RS 143-2026 (art. 3.4) moves RS 048-2026 from 01/08/2026 to 01/01/2027, and its annexes carry these rules. The SDK
+applies each by the date its norm names, from a table of the SDK with the norm or lead behind every date: until
+2026-12-31 the rule of today, from 2027-01-01 the new one.
+
+| Rule | Until 2026-12-31 | From 2027-01-01 | Decided by |
+|---|---|---|---|
+| Free sales in the summary (catalog 11) | `free` renders code 05; `free_taxed`, `free_exempt`, `free_unaffected`, `free_export` (06 to 09) are rejected with 2256, `free_igv` too | 06 to 09 render, in that order after 01 to 04; `free_igv` renders its own `cac:TaxTotal` with tax 9996 after the IGV one; `free` (05) is rejected | `reference_date` |
+| Debit note 13 «Penalidades» (catalog 10) | `13` is rejected; penalties go under `03` | `13` only with every line on affectation 30 to 37 and no taxed, exempt or export total (3507); `03` is rejected (2524) | `issue_date` (Lima) |
+| SUNAT product code (3496) | not rejected | not rejected: no norm names it, so the SDK does not enforce it; the date sits in the table as a lead | `issue_date` |
+
+Not part of this change: 3503 (amount of the credit note against the modified document) needs the totals of that
+document as input and comes separately. The position of the 9996 `cac:TaxTotal` among the line's elements, and
+whether the IGV rate (`igv_rate`) becomes required for taxed amounts, follow the annexes' text; neither has been
+seen answered by SUNAT.
 
 ## Void communication (`kind: "voided"`, RA)
 

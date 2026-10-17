@@ -21,6 +21,13 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   sending, each with its code (2619 rate of the regime, 2623 amounts and exchange rate, 2626 payment number, 2628 and
   2629 totals, among others). The send term (2600) is a parameter of `Retention::check_send_deadline`. Not sent to
   SUNAT beta yet; sending by `otroscpe` comes next (#51).
+- Rules that take effect on 01/01/2027 (RS 143-2026 art. 3.4 over RS 048-2026), each applied by the date of its norm
+  from a table of the SDK with its source: in the daily summary, free sales by catalog 11 code (`free_taxed`,
+  `free_exempt`, `free_unaffected`, `free_export` for 06 to 09) and their IGV (`free_igv`, tax 9996) from a
+  `reference_date` of 2027-01-01, with `free` (05) rejected from then and 06 to 09 rejected (2256) before; debit note
+  13 «Penalidades» from an `issue_date` of 2027-01-01 on unaffected lines only (3507), `03` rejected from then (2524)
+  and `13` before. Documents dated before the cut build the same XML as today. The SUNAT product code (3496) stays
+  unenforced: it has no norm ([`docs/input-model.md`](docs/input-model.md#rules-that-take-effect-on-01012027)).
 
 ### Changed
 
@@ -39,6 +46,8 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   3238, 2949, 3292, 3294, 3306, 3279, 3280; a receipt gets the observation code), and the observations 4318 (amount
   ≠ rate × bags) and 4237 (rate not the one in force) are rejected too. PEN only. Not sent to SUNAT beta yet
   (#55, [`docs/input-model.md`](docs/input-model.md#icbper)).
+- `SummaryLine` gains `free_taxed`, `free_exempt`, `free_unaffected`, `free_export` and `free_igv`: Rust code that builds it
+  field by field adds them (`None`).
 - `Line` gains `icbper` and `icbper_factor`, `Totals` and `SummaryLine` gain `icbper`: Rust code that builds these
   structs field by field adds them (`None`). JSON input is unchanged for documents without ICBPER.
 - `sunat_model::LineDiscount` is now an alias of `AllowanceCharge`; `Line` gains `charges`, `Invoice` gains

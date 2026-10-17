@@ -35,6 +35,7 @@ impl Document {
                 }
                 let reference = &note.reference;
                 crate::ivap::check_note(&note.voucher, &reference.reason_code)?;
+                crate::penalty_notes::check(note)?;
                 require_text("$.note.reason_code", &reference.reason_code)?;
                 require_text("$.note.reason", &reference.reason)?;
                 require_text("$.note.affected_document_type", &reference.affected_document_type)?;
@@ -165,6 +166,7 @@ fn check_summary(summary: &Summary) -> Result<(), ModelError> {
     require(!summary.lines.is_empty(), "$.lines")?;
     summary.lines.iter().enumerate().try_for_each(|(index, line)| {
         check_summary_line(index, line)?;
+        crate::free_sales::check(index, line, summary)?;
         crate::icbper::check_summary_line(index, line, &summary.currency)
     })
 }

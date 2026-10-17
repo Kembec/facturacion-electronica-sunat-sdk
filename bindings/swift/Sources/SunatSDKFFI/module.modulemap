@@ -1,0 +1,8 @@
+// Linux only (Package.swift): the C ABI as a system library. The header is the generated one of bindings/ffi; the
+// linker needs libsunat_sdk_ffi.so on its path (bindings/swift/README.md). Apple platforms get this module from the
+// .xcframework instead.
+module SunatSDKFFI [system] {
+    header "../../../ffi/include/sunat_sdk.h"
+    link "sunat_sdk_ffi"
+    export *
+}

@@ -1,0 +1,6 @@
+// libxml2 for the battery's C14N: in the SDK on Apple platforms, libxml2-dev with pkg-config on Linux.
+module CLibXML2 [system] {
+    header "shim.h"
+    link "xml2"
+    export *
+}

@@ -112,6 +112,10 @@ In the core (`sunat_sdk::gre`): `token_request`/`token_read` (with `expires_at` 
 - `bindings/java`: Maven artifact `com.kembec:sunat-sdk` (Java 8+) over that ABI through JNA, with the six native
   builds inside the jar; one method per command, typed results with the response in `getRawJson()`, the SDK's
   `{"error"}` as `SunatSdkException`.
+- `bindings/objc`: product `KembecSunatSDKObjC` of the root `Package.swift` and the Git-served
+  `KembecSunatSDKObjC.podspec` (macOS 10.15+, iOS 13+) straight over that ABI, linked from `SunatSDKFFI.xcframework`
+  (static libraries); one method per command, results with `outcome` and one property per outcome, the response in
+  `rawJSON`, the SDK's `{"error"}` as `KSSErrorCommandFailed` in `KSSErrorDomain`.
 - `bindings/perl`: CPAN distribution `Kembec-SunatSdk` (module `Kembec::SunatSdk`, Perl 5.26+) over that ABI with
   `FFI::Platypus`, with the five native builds inside and only the machine's installed; one method per command,
   results with the contract's names as text for the outcomes and the response in `raw_json`, the SDK's `{"error"}` as
@@ -122,6 +126,10 @@ In the core (`sunat_sdk::gre`): `token_request`/`token_read` (with `expires_at` 
   build inside; one method per command (`send` is `send_bill`, since `Object#send` is Ruby's), results with symbols for
   the outcomes and the response in `raw_json`, the SDK's `{"error"}` as `Kembec::SunatSdk::Error`; the call releases
   the GVL while it waits.
+- `bindings/swift`: product `KembecSunatSDK` of the root `Package.swift` (Swift 5.9+; macOS 10.15+, iOS 13+, Linux)
+  over that ABI, from `SunatSDKFFI.xcframework` (static libraries) on Apple platforms and `libsunat_sdk_ffi.so` on
+  Linux; one method per command plus `async` overloads for the network ones, `Codable` results with the contract's keys
+  and one enum case per outcome, the response in `rawJSON`, the SDK's `{"error"}` as `SunatSDKError.commandFailed`.
 - `validity` in the bindings: wasm `validityTokenRequest`/`validityTokenResponse`, `validityRequest`/
   `validityResponse`, `validityTimeout` (fetch options carry the `url`); Python the same as `validity_*`,
   plus `sunat_sdk.validity(...)` that makes both calls; PHP `SunatSdk::validity()` with `ApiCredentials`.

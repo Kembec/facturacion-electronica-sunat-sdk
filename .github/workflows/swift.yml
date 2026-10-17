@@ -1,0 +1,249 @@
+name: swift
+
+# The Swift and Objective-C packages (Package.swift, KembecSunatSDKObjC.podspec): the C ABI built as static libraries for
+# macOS and iOS and packed into SunatSDKFFI.xcframework, and as a shared library for Linux; then the battery of each
+# product, as a consumer links it: Swift and Objective-C on macOS arm64 and x86_64 and in the iOS simulator, Swift on
+# Linux x86_64 and aarch64 with Swift 5.9 and 6.3. The iOS device slice is linked without signing; the podspec is linted.
+# The xcframework and its zip stay as artifacts: nothing is signed or published.
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - "Package.swift"
+      - "KembecSunatSDKObjC.podspec"
+      - "bindings/swift/**"
+      - "bindings/objc/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/swift.yml"
+  pull_request:
+    paths:
+      - "Package.swift"
+      - "KembecSunatSDKObjC.podspec"
+      - "bindings/swift/**"
+      - "bindings/objc/**"
+      - "bindings/ffi/**"
+      - "bindings/cli/**"
+      - "crates/**"
+      - "fixtures/**"
+      - "tests/vectors/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/swift.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: swift-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_TOOLCHAIN: "1.94.1"
+  # The oldest systems the package declares (Package.swift `platforms`, the podspec): without these the objects say the
+  # runner's own version and the linker warns, or refuses, for every older deployment target.
+  MACOSX_DEPLOYMENT_TARGET: "10.15"
+  IPHONEOS_DEPLOYMENT_TARGET: "13.0"
+
+jobs:
+  versions:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Cargo, Swift, Objective-C and podspec agree
+        run: bindings/swift/scripts/check-version.sh
+
+  apple-static:
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [aarch64-apple-darwin, x86_64-apple-darwin, aarch64-apple-ios, aarch64-apple-ios-sim, x86_64-apple-ios]
+    runs-on: macos-15
+    name: static (${{ matrix.target }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Build
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --target "${{ matrix.target }}"
+          rustup default "$RUST_TOOLCHAIN"
+          cargo rustc -p sunat-sdk-ffi --lib --release --locked --target "${{ matrix.target }}" --crate-type staticlib
+          mkdir -p "stage/${{ matrix.target }}/release"
+          cp "target/${{ matrix.target }}/release/libsunat_sdk_ffi.a" "stage/${{ matrix.target }}/release/"
+          lipo -info "stage/${{ matrix.target }}/release/libsunat_sdk_ffi.a"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: static-${{ matrix.target }}
+          path: stage
+          if-no-files-found: error
+
+  xcframework:
+    needs: apple-static
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          pattern: static-*
+          path: ${{ runner.temp }}/static
+          merge-multiple: true
+      - name: SunatSDKFFI.xcframework, its zip and checksum
+        run: bindings/swift/scripts/build-xcframework.sh "$RUNNER_TEMP/static"
+      # Unzipped into bindings/swift/artifacts, this is what Package.swift and the podspec take until a release.
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: SunatSDKFFI.xcframework
+          path: bindings/swift/artifacts/SunatSDKFFI.xcframework
+          if-no-files-found: error
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: SunatSDKFFI.xcframework-release-zip
+          path: |
+            bindings/swift/artifacts/SunatSDKFFI.xcframework.zip
+            bindings/swift/artifacts/SunatSDKFFI.xcframework.zip.sha256
+          if-no-files-found: error
+
+  linux-shared:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # manylinux2014 (glibc 2.17), as the other packages: the library loads on any distribution the Swift images
+          # run on. Pinned by digest.
+          - arch: x86_64
+            os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_x86_64@sha256:f6a6f153c9cf45470507ebbc27013e5db14ce21331b62fd2c540561f25e5f0a5
+          - arch: aarch64
+            os: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+            image: quay.io/pypa/manylinux2014_aarch64@sha256:c10b5d2ce68a4426011b5b9b8492f01037b9d0fd2187ed1956b346aa42faeb17
+    runs-on: ${{ matrix.os }}
+    name: shared (linux-${{ matrix.arch }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - name: Build in manylinux2014
+        run: |
+          docker run --rm -e RUST_TOOLCHAIN -e CARGO_TERM_COLOR -v "$PWD":/io -w /io "${{ matrix.image }}" bash -euc '
+            curl --proto "=https" --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain "$RUST_TOOLCHAIN"
+            . "$HOME/.cargo/env"
+            cargo build -p sunat-sdk-ffi --release --locked --target "${{ matrix.target }}"'
+          mkdir -p stage
+          cp "target/${{ matrix.target }}/release/libsunat_sdk_ffi.so" stage/
+          file stage/libsunat_sdk_ffi.so
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: shared-linux-${{ matrix.arch }}
+          path: stage
+          if-no-files-found: error
+
+  macos:
+    needs: [versions, xcframework]
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { arch: arm64, os: macos-15 }
+          - { arch: x86_64, os: macos-15-intel }
+    runs-on: ${{ matrix.os }}
+    name: battery (macOS ${{ matrix.arch }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: SunatSDKFFI.xcframework
+          path: bindings/swift/artifacts/SunatSDKFFI.xcframework
+      - name: Build both batteries (release, warnings as errors in the packages)
+        run: |
+          uname -m
+          swift --version
+          swift build -c release --product swift-battery -Xswiftc -warnings-as-errors
+          swift build -c release --product objc-battery -Xcc -Werror
+      - name: Swift, 38 vectors
+        run: .build/release/swift-battery "$PWD"
+      - name: Objective-C, 38 vectors
+        run: .build/release/objc-battery "$PWD"
+
+  ios:
+    needs: [versions, xcframework]
+    runs-on: macos-15
+    name: battery (iOS simulator) and device link
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: SunatSDKFFI.xcframework
+          path: bindings/swift/artifacts/SunatSDKFFI.xcframework
+      - name: Pick an available iPhone simulator
+        run: |
+          id=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          ios = sorted((runtime, d["udid"]) for runtime, items in devices.items() if ".iOS-" in runtime
+                       for d in items if d["name"].startswith("iPhone"))
+          print(ios[-1][1])')
+          xcrun simctl list devices available | grep "$id"
+          echo "SIMULATOR_ID=$id" >> "$GITHUB_ENV"
+      - name: XCTest of both batteries in the simulator
+        run: |
+          log="$RUNNER_TEMP/test.log"
+          xcodebuild test -scheme KembecSunatSDK-Package -destination "id=$SIMULATOR_ID" -only-testing:BatteryTests > "$log" 2>&1 \
+            || { grep -E "error:|FAIL|failed" "$log" | head -80; tail -40 "$log"; exit 1; }
+          grep -E "ok (Swift|Objective-C)|Executed" "$log"
+      - name: The iOS device slice links (unsigned, not run)
+        run: |
+          log="$RUNNER_TEMP/device.log"
+          xcodebuild build-for-testing -scheme KembecSunatSDK-Package -destination "generic/platform=iOS" CODE_SIGNING_ALLOWED=NO \
+            > "$log" 2>&1 || { grep -E "error:" "$log" | head -80; tail -40 "$log"; exit 1; }
+          grep -E "BUILD SUCCEEDED|TEST BUILD SUCCEEDED" "$log"
+
+  linux:
+    needs: [versions, linux-shared]
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, aarch64]
+        swift:
+          - swift:5.9.2-jammy@sha256:006635153a77dfc9d096dfc954b362d9017f1560d74c357100b50429bf5174c7
+          - swift:6.3-noble@sha256:c2f3ac2eb806ce43f68859c3d52bd3bb1cfc88672fb3a948b76e136d98e39278
+    runs-on: ${{ matrix.arch == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    name: battery (Linux ${{ matrix.arch }}, ${{ startsWith(matrix.swift, 'swift:5') && 'Swift 5.9' || 'Swift 6.3' }})
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: shared-linux-${{ matrix.arch }}
+          path: native
+      # The system library SunatSDKFFI links libsunat_sdk_ffi.so from the linker's path, as a consumer's does
+      # (bindings/swift/README.md): -L to build, LD_LIBRARY_PATH to run.
+      - name: Swift, 38 vectors
+        run: |
+          docker run --rm -v "$PWD":/io -w /io "${{ matrix.swift }}" bash -euc '
+            apt-get update -qq && apt-get install -y -qq libxml2-dev pkg-config > /dev/null
+            uname -m
+            swift --version
+            swift build -c release --product swift-battery -Xswiftc -warnings-as-errors -Xlinker -L/io/native
+            LD_LIBRARY_PATH=/io/native .build/release/swift-battery /io'
+
+  podspec:
+    needs: [versions, xcframework]
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: SunatSDKFFI.xcframework
+          path: bindings/swift/artifacts/SunatSDKFFI.xcframework
+      - name: The prepare_command keeps the CI's xcframework while Package.swift names no release
+        run: bindings/objc/scripts/fetch-xcframework.sh
+      - name: pod lib lint (iOS and macOS)
+        run: |
+          # xcodebuild refuses both targets in one environment; the podspec declares each platform's own.
+          unset MACOSX_DEPLOYMENT_TARGET IPHONEOS_DEPLOYMENT_TARGET
+          pod --version
+          pod lib lint KembecSunatSDKObjC.podspec --skip-import-validation

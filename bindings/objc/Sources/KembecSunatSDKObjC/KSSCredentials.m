@@ -1,11 +1,14 @@
-#import "KSSCredentials.h"
+#import <KembecSunatSDKObjC/KSSCredentials.h>
+
+// A nil that slips through a nonnull parameter is kept as empty text: the SDK refuses it with its own message (an empty
+// path, a missing user) instead of the request crashing on it.
 
 @implementation KSSSigningKey
 
 - (instancetype)initWithCertificatePath:(NSString *)certificatePath privateKeyPath:(NSString *)privateKeyPath {
     if ((self = [super init])) {
-        _certificatePath = [certificatePath copy];
-        _privateKeyPath = [privateKeyPath copy];
+        _certificatePath = [certificatePath copy] ?: @"";
+        _privateKeyPath = [privateKeyPath copy] ?: @"";
     }
     return self;
 }
@@ -16,8 +19,8 @@
 
 - (instancetype)initWithUser:(NSString *)user password:(NSString *)password {
     if ((self = [super init])) {
-        _user = [user copy];
-        _password = [password copy];
+        _user = [user copy] ?: @"";
+        _password = [password copy] ?: @"";
     }
     return self;
 }
@@ -36,8 +39,8 @@
 
 - (instancetype)initWithClientID:(NSString *)clientID clientSecret:(NSString *)clientSecret {
     if ((self = [super init])) {
-        _clientID = [clientID copy];
-        _clientSecret = [clientSecret copy];
+        _clientID = [clientID copy] ?: @"";
+        _clientSecret = [clientSecret copy] ?: @"";
     }
     return self;
 }

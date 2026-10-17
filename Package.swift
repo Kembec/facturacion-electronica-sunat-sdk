@@ -9,6 +9,14 @@ import PackageDescription
 // where the CI artifact is unzipped (bindings/swift/README.md).
 let release: (url: String, checksum: String)? = nil
 
+// libxml2 comes with the SDK on Apple platforms (headers in usr/include/libxml, libxml2.tbd): no pkg-config there, or a
+// Homebrew libxml2 found by it would be linked into the macOS build and break the iOS one.
+#if os(Linux)
+let libxml2PkgConfig: String? = "libxml-2.0"
+#else
+let libxml2PkgConfig: String? = nil
+#endif
+
 var products: [Product] = [
     .library(name: "KembecSunatSDK", targets: ["KembecSunatSDK"]),
 ]
@@ -23,7 +31,7 @@ var targets: [Target] = [
     .systemLibrary(
         name: "CLibXML2",
         path: "bindings/swift/Battery/CLibXML2",
-        pkgConfig: "libxml-2.0",
+        pkgConfig: libxml2PkgConfig,
         providers: [.apt(["libxml2-dev"])]
     ),
     .target(

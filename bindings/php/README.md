@@ -9,7 +9,7 @@ de una empresa. Con los datos de una factura (01), una boleta (03) o una nota de
   (`validity`: aceptado, anulado o no informado).
 
 También arma y firma resúmenes diarios de boletas (RC), comunicaciones de baja (RA) y guías de remisión remitente (09).
-Los resúmenes y las bajas se envían con la CLI `sunat-sdk`; las guías, solo desde la rama
+Los resúmenes y las bajas se envían con `summary` y su resultado se consulta con `ticket`; las guías, solo desde la rama
 `main` ([abajo](#guía-de-remisión-remitente-09-por-la-api-rest)). Es la versión para PHP del
 [SDK](https://github.com/Kembec/facturacion-electronica-sunat-sdk), que también funciona en JavaScript y TypeScript,
 Python y Rust: los mismos datos dan el mismo comprobante firmado en todos.
@@ -101,10 +101,41 @@ $sdk->cdr($cdrZipOrXmlBytes);                                 // Cdr
 - `isAccepted()` es verdadero solo con código 0 y sin notas. Con código 0 y cualquier nota, sea cual sea su código, la
   CDR queda `observed`; `isValidDocument()` es verdadero en los dos casos. El 2404 (una nota que modifica un comprobante
   físico) es observación aunque esté por debajo de 4000.
-- `send` y `status` esperan a la SUNAT 90 segundos, o el tiempo máximo por llamada menos 5 si es más corto. El tercer
-  argumento opcional del constructor cambia esa espera, en segundos enteros, y tiene que dejar esos 5 de margen.
-- Los resúmenes diarios (RC) y las comunicaciones de baja (RA) se arman y firman con `build` y `sign`, pero este
-  cliente no los envía ni consulta su ticket: para eso están los comandos `summary` y `ticket` de la CLI.
+- `send`, `summary`, `ticket` y `status` esperan a la SUNAT 90 segundos, o el tiempo máximo por llamada menos 5 si es
+  más corto. El tercer argumento opcional del constructor cambia esa espera, en segundos enteros, y tiene que dejar esos
+  5 de margen.
+
+### Resúmenes diarios (RC) y comunicaciones de baja (RA)
+
+Se arman y firman con `build` y `sign`, como un comprobante. `summary` los envía al mismo `billService` de `send` y
+devuelve un ticket; `ticket` pregunta por él hasta que la SUNAT lo procese.
+
+```php
+use Kembec\SunatSdk\Result\TicketResult;
+
+$credentials = new SolCredentials($rucAndSolUser, $solPassword);
+$built  = $sdk->build($summaryDocument);                      // RC o RA: el nombre es RUC-RC-AAAAMMDD-N o RUC-RA-…
+$signed = $sdk->sign($built->getXml(), new SigningKey('/secure/cert.pem', '/secure/key.pem'));
+$sent   = $sdk->summary($built->getFileName(), $signed->getXml(), $credentials, $sendBillEndpoint);
+
+if ($sent->isFault()) {
+    $sent->getFault()->getCode();                             // por ejemplo, "2223": ese archivo ya se presentó
+} else {
+    $ticket = $sent->getTicket();                             // guárdalo antes que nada: es lo único que lleva al resultado
+    $status = $sdk->ticket($ticket, $credentials, $sendBillEndpoint);
+    if ($status->getState() === TicketResult::PROCESSED) {
+        $status->getCdr()->isValidDocument();                 // la CDR del resumen o de la baja
+    } elseif ($status->isInProcess() || $status->isNoVerdict()) {
+        // 98 o sin respuesta: vuelve a consultar más tarde con el mismo ticket
+    }                                                         // PROCESSED_WITH_ERRORS (99): mira la CDR o el código
+}
+```
+
+- Un ticket en proceso (98) o sin veredicto (`isNoVerdict()`, un 401 incluido) se vuelve a consultar con el mismo ticket.
+  Nunca se reenvía el resumen: el ticket prueba que la SUNAT lo recibió.
+- Un `summary` sin respuesta lanza `SdkErrorException`, porque el resumen pudo haber llegado y no queda ticket: se
+  revisan los comprobantes con `validity` y se reenvía el mismo archivo con el mismo nombre; un duplicado se rechaza
+  (2223, 2324, 2282).
 
 ### Consultar el estado de un comprobante (Consulta Integrada)
 
@@ -218,9 +249,10 @@ Corren contra el binario real (`SUNAT_SDK_BIN`, o `target/debug/sunat-sdk` por d
 cada uno de los 38 documentos de
 [fixtures](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/fixtures) tiene que dar, con `build`
 y `sign`, el XML y la firma exactos de
-[tests/vectors](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/tests/vectors), y `validity`,
-`greSend` y `greTicket` se prueban contra respuestas grabadas de los manuales de la SUNAT y, en la GRE, de un cliente de
-terceros. El CI las corre en cada cambio en PHP 8.1.
+[tests/vectors](https://github.com/Kembec/facturacion-electronica-sunat-sdk/tree/main/tests/vectors); `summary` y
+`ticket` se prueban contra la salida del núcleo para cada respuesta de la SUNAT (ticket, rechazo, 0, 98, 99 y sin
+respuesta), y `validity`, `greSend` y `greTicket`, contra respuestas grabadas de los manuales de la SUNAT y, en la GRE,
+de un cliente de terceros. El CI las corre en cada cambio en PHP 8.1.
 
 ## Licencia
 

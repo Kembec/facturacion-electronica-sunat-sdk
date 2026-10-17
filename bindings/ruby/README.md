@@ -109,6 +109,11 @@ end
   físico) es observación aunque esté por debajo de 4000.
 - `summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `ticket` y `status`
   sin respuesta dan `:no_verdict`: se vuelve a consultar, nunca a enviar.
+- `send_bill`, `summary`, `ticket` y `status` traen `diagnosis`: por cada código de la respuesta (el del `:fault`, el de
+  la CDR si no es 0 y cada nota que empieza con un código), el campo de tu JSON de entrada que pudo causarlo. Con el
+  2800 de la beta: `sent.diagnosis.first.fields.first.input_path` es `"customer.document_type"` y
+  `sent.diagnosis.first.detail` da `node` `"cbc:ID/schemeID"` y `value` `"1"`. `fields` está vacío para un código que
+  la tabla no lista y para los resúmenes y las bajas; sin diagnóstico, `diagnosis` es una lista vacía.
 - Cada resultado guarda en `raw_json` la respuesta tal como la da el
   [contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md).
 

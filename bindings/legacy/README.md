@@ -81,6 +81,12 @@ Case "cdr"
 Case "fault"
     code = JsonText(sent, "code")              ' por ejemplo, "1033", con su class: already_registered
 End Select
+
+' En el rechazo o la observación, "diagnosis" dice qué campo de tu JSON de entrada causó cada código:
+diagnosis = JsonGet(sent, "diagnosis")         ' arreglo, un elemento por código; "" si la respuesta no lo trae
+first = JsonItem(diagnosis, 0)
+fields = JsonGet(first, "fields")              ' arreglo de candidatos
+inputPath = JsonText(JsonItem(fields, 0), "input_path")  ' "customer.document_type" con el 2800 de la beta
 ```
 
 - `JsonGet` devuelve el valor crudo, ya escrito como cadena JSON: el XML pasa de `build` a `sign` y de `sign` a `send`
@@ -158,6 +164,12 @@ un error con el mensaje del SDK, que nunca lleva una clave ni un secreto:
 | VB6 | `Err.Raise` con `Err.Number = vbObjectError + 513` (`SUNAT_SDK_FAILED`) y el mensaje en `Err.Description` |
 | Visual FoxPro | el error 1098, con el mensaje tras `sunat_sdk: ` |
 | PowerBuilder | un `RuntimeError`, con el mensaje tras `sunat_sdk: ` |
+
+`diagnosis` viene en la respuesta de `send`, `summary`, `ticket` y `status`, al lado de `outcome`: en un `fault` y en una
+CDR con código distinto de 0 o con notas, un elemento por código con `code`, `detail` (`node` y `value`, o `null`) y
+`fields` (cada uno con `input_path`, `xpath` y `certainty`). Con el 2800 de la beta, `input_path` del primer campo es
+`customer.document_type` y `detail` es `cbc:ID/schemeID` = `1`. Si la respuesta no lo trae, el miembro no existe: no hay
+nada que diagnosticar. Aquí no hay tipos de resultado: lees ese JSON con `JsonGet` y `JsonItem`, como el resto.
 
 Un error SOAP de la SUNAT o una consulta sin respuesta no es un error: es el `outcome` de la respuesta (`fault`,
 `no_verdict`), como en la línea de comandos. Un `send` sin respuesta sí es un error, porque el comprobante pudo haber

@@ -10,6 +10,14 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- `diagnosis` in the Ruby and Perl bindings: the `send_bill`, `summary`, `ticket` and `status` results add `diagnosis`
+  (Ruby `Diagnosis`, Perl `Kembec::SunatSdk::Diagnosis`), a list with `code`, `detail` (`node`, `value`) and `fields`
+  (`input_path`, `xpath`, `certainty`), empty when the answer has none; the beta's 2800 gives `customer.document_type`
+  on detail `cbc:ID/schemeID` = `1`. The legacy README (VB6, Visual FoxPro, PowerBuilder) says where `diagnosis` is in
+  the JSON and how to read it.
+
 ## [0.1.0-beta.6] - 2026-10-17
 
 ### Added

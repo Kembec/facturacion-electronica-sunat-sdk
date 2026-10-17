@@ -60,6 +60,15 @@ module Kembec
         field.map(&:freeze).freeze
       end
 
+      # The objects of a list; an absent list is empty.
+      def objects(value, name)
+        field = value[name]
+        return [].freeze if field.nil?
+        raise Native::ShapeError, "`#{name}` is not a list of objects" unless field.is_a?(Array) && field.all?(Hash)
+
+        field
+      end
+
       def optional_object(value, name)
         field = value[name]
         return nil if field.nil?

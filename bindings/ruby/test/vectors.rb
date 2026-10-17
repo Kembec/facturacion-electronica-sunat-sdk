@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
 # The battery of the gem as a consumer installs it: the 38 fixtures against their vectors (inclusive C14N, exact
-# DigestValue and SignatureValue), the native version, zip and CDR, the errors, no_verdict without an answer, concurrent
-# calls and the GVL released while a call waits. Exit code 0 only if every check passed.
+# DigestValue and SignatureValue), the native version, zip and CDR, the diagnosis of a rejected send, the errors,
+# no_verdict without an answer, concurrent calls and the GVL released while a call waits. Exit code 0 only if every
+# check passed.
 #
 #   ruby vectors.rb <repository> [--c14n-dump DIR]
 #
@@ -13,6 +14,7 @@
 require "kembec/sunat_sdk"
 require "json"
 require "socket"
+require_relative "diagnosis"
 
 module Vectors
   EXPECTED_FIXTURES = 38
@@ -41,6 +43,7 @@ module Vectors
       fixtures.each { |fixture| step(File.basename(fixture, ".json")) { vector(fixture) } }
       step("zip") { zip }
       step("cdr") { read_cdr }
+      step("diagnosis") { DiagnosisChecks.run(method(:check)) }
       step("errors") { errors }
       step("no_verdict") { no_verdicts }
       step("threads") { threads }

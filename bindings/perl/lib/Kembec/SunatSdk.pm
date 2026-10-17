@@ -18,6 +18,7 @@ use Scalar::Util ();
 
 use Kembec::SunatSdk::Arguments;
 use Kembec::SunatSdk::Credentials;
+use Kembec::SunatSdk::Diagnosis;
 use Kembec::SunatSdk::Error;
 use Kembec::SunatSdk::Fields;
 use Kembec::SunatSdk::Native;

@@ -1,10 +1,12 @@
 package com.kembec.sunatsdk;
 
+import java.util.List;
 import java.util.Map;
 
 /** {@code ticket} (getStatus): the state of a summary's or a void's ticket. */
 public final class TicketResult extends SdkResult {
     private final Outcome outcome;
+    private final List<Diagnosis> diagnosis;
     private final String ticket;
     private final String statusCode;
     private final TicketState state;
@@ -15,6 +17,7 @@ public final class TicketResult extends SdkResult {
 
     TicketResult(Map<String, Object> value, String rawJson) {
         super(rawJson);
+        diagnosis = Diagnosis.listFrom(value);
         outcome = Fields.outcome(value, Outcome.TICKET_STATUS, Outcome.FAULT, Outcome.NO_VERDICT);
         ticket = Fields.optionalText(value, "ticket");
         boolean status = outcome == Outcome.TICKET_STATUS;
@@ -96,5 +99,15 @@ public final class TicketResult extends SdkResult {
      */
     public NoVerdict getNoVerdict() {
         return noVerdict;
+    }
+
+    /**
+     * The input field each code in the answer points at, one per code: the fault's, a CDR's non-zero response code and
+     * each note that starts with a code.
+     *
+     * @return an unmodifiable list, empty when the answer has none
+     */
+    public List<Diagnosis> getDiagnosis() {
+        return diagnosis;
     }
 }

@@ -10,6 +10,13 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- `diagnosis` in the .NET and Java bindings: `SendResult`, `SummaryResult`, `TicketResult` and `StatusResult` add
+  `Diagnosis` (.NET) and `getDiagnosis()` (Java), a read-only list of `Diagnosis` (code, `Detail` with node and value,
+  `Fields` with `InputPath`, `Xpath` and `Certainty`), empty when the answer has none. Their batteries parse the beta's
+  real 2800 and a CDR with two coded notes (`bindings/dotnet/tests/data`, `bindings/java/tests/data`).
+
 ## [0.1.0-beta.6] - 2026-10-17
 
 ### Added

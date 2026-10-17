@@ -72,6 +72,25 @@ namespace Kembec.SunatSdk.Results
             return list;
         }
 
+        /// <summary>The objects of a list; absent or null is empty.</summary>
+        internal static IReadOnlyList<JsonElement> Objects(JsonElement value, string name)
+        {
+            var list = new List<JsonElement>();
+            if (!TryGet(value, name, out var field))
+            {
+                return list;
+            }
+            if (field.ValueKind != JsonValueKind.Array)
+            {
+                throw Missing(name, "a list of objects");
+            }
+            foreach (var item in field.EnumerateArray())
+            {
+                list.Add(item.ValueKind == JsonValueKind.Object ? item : throw Missing(name, "a list of objects"));
+            }
+            return list;
+        }
+
         internal static byte[]? OptionalBase64(JsonElement value, string name)
         {
             var text = OptionalText(value, name);

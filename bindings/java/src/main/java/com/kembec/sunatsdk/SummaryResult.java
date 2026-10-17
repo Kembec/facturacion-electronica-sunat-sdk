@@ -1,15 +1,18 @@
 package com.kembec.sunatsdk;
 
+import java.util.List;
 import java.util.Map;
 
 /** {@code summary} (sendSummary): the ticket, or SUNAT's fault. */
 public final class SummaryResult extends SdkResult {
     private final Outcome outcome;
+    private final List<Diagnosis> diagnosis;
     private final String ticket;
     private final Fault fault;
 
     SummaryResult(Map<String, Object> value, String rawJson) {
         super(rawJson);
+        diagnosis = Diagnosis.listFrom(value);
         outcome = Fields.outcome(value, Outcome.TICKET, Outcome.FAULT);
         ticket = outcome == Outcome.TICKET ? Fields.text(value, "ticket") : null;
         fault = outcome == Outcome.FAULT ? new Fault(value) : null;
@@ -40,5 +43,15 @@ public final class SummaryResult extends SdkResult {
      */
     public Fault getFault() {
         return fault;
+    }
+
+    /**
+     * The input field each code in the answer points at, one per code: the fault's, a CDR's non-zero response code and
+     * each note that starts with a code.
+     *
+     * @return an unmodifiable list, empty when the answer has none
+     */
+    public List<Diagnosis> getDiagnosis() {
+        return diagnosis;
     }
 }

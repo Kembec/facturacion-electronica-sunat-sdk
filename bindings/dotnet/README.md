@@ -117,6 +117,10 @@ else
   físico) es observación aunque esté por debajo de 4000.
 - `Summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `Ticket` y `Status`
   sin respuesta dan `Outcome.NoVerdict`: se vuelve a consultar, nunca a enviar.
+- `Diagnosis` (en `SendResult`, `SummaryResult`, `TicketResult` y `StatusResult`) dice qué campo de tu JSON de entrada
+  causó cada código de la respuesta: `sent.Diagnosis[0].Fields[0].InputPath` es, para el 2800 de un tipo de documento
+  del receptor no permitido, `customer.document_type`, y `Detail` trae el nodo y el valor que la SUNAT nombra
+  (`cbc:ID/schemeID` = `1`). Sin códigos que diagnosticar, o sin campos para el código, la lista viene vacía.
 - Cada resultado guarda en `RawJson` la respuesta tal como la da el
   [contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md).
 

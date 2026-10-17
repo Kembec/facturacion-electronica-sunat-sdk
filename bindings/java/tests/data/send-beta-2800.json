@@ -1,0 +1,22 @@
+{
+  "class": "rejected",
+  "code": "2800",
+  "diagnosis": [
+    {
+      "code": "2800",
+      "detail": {
+        "node": "cbc:ID/schemeID",
+        "value": "1"
+      },
+      "fields": [
+        {
+          "certainty": "fuente",
+          "input_path": "customer.document_type",
+          "xpath": "/Invoice/cac:AccountingCustomerParty/cac:Party/cac:PartyIdentification/cbc:ID@schemeID"
+        }
+      ]
+    }
+  ],
+  "message": "El dato ingresado en el tipo de documento de identidad del receptor no esta permitido. - Detalle: xxx.xxx.xxx value='ticket: 1792254855427 error: INFO : 2800 (nodo: \"cbc:ID/schemeID\" valor: \"1\")'",
+  "outcome": "fault"
+}

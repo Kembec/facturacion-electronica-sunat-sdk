@@ -92,6 +92,7 @@ public final class Vectors {
         run("cdr", () -> readCdr(client, repo));
         run("errors", () -> errors(client, key, repo));
         run("no_verdict", Vectors::noVerdicts);
+        run("diagnosis", () -> DiagnosisVectors.run(repo));
         run("threads", () -> threads(client, key, repo, fixtures));
 
         String runtime = System.getProperty("sun.arch.data.model") + "-bit Java " + System.getProperty("java.version")
@@ -329,7 +330,7 @@ public final class Vectors {
         }
     }
 
-    private static void check(boolean ok, String what) {
+    static void check(boolean ok, String what) {
         CHECKS.incrementAndGet();
         if (!ok) {
             FAILURES.incrementAndGet();

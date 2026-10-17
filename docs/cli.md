@@ -34,8 +34,14 @@ and the HTTP wait from `--timeout` or `SUNAT_HTTP_TIMEOUT_SECONDS`.
 - `ticket` and `status` are queries: when SUNAT answers an HTTP status other than 200/500 (it has
   answered 401 to a valid getStatus that succeeded when repeated) or the wait runs out, they print
   `{"outcome": "no_verdict", "reason": "http_status" | "timeout", "http_status": 401 | null, "message"}` (`ticket`
-  adds the same `ticket`) with exit 0. It says nothing about the document: ask again, never send again.
-  `send` and `summary` keep those cases as errors, since a send that got no answer may have arrived.
+  adds the same `ticket`) with exit 0. It says nothing about the document: ask again. For `ticket`, never send the
+  summary again — the ticket proves SUNAT received it. For `status`, if there is still no verdict, resend the same
+  signed XML with the same number while the sending deadline is open (SUNAT measures it at receipt): per SUNAT's
+  validation rules, a document already on record is not registered twice, it answers 1033 (accepted: fetch its CDR
+  with `status`), 1032 (rejected or voided) or 0140 (in process).
+  `send` and `summary` keep those cases as errors, since a send that got no answer may have arrived. A `summary`
+  with no answer leaves no ticket: check the documents with `validity`, then resend the same file under the same name;
+  a duplicate is rejected (2223, 2324, 2282).
 - A CDR's `class` is `observed` for code 0 with a note of 4000 and above.
 
 ## `validity` (Consulta Integrada)
@@ -61,7 +67,8 @@ stdin: `{"ruc", "document_type", "series", "number", "issue_date" (YYYY-MM-DD or
 
 Deciding without issuing again: no outcome is a reason to issue the operation with another number.
 `not_reported` does not prove the voucher never arrived (a summary's ticket may be in process): reconcile
-with `ticket` or `status` first; `voided` is spent; `printed_*` is outside the contract for an electronic
+with `ticket` or `status` first, and a voucher sent alone that stays without a verdict is resent as the same signed
+XML with the same number while the deadline is open (above); `voided` is spent; `printed_*` is outside the contract for an electronic
 series. The token and the secret never reach stdout or stderr.
 
 ## `gre-send` and `gre-ticket` (despatch advice, REST)

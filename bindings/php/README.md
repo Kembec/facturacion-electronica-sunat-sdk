@@ -133,6 +133,9 @@ if ($check->hasState()) {
   llegó (el ticket de un resumen puede seguir en proceso), así que antes se concilia con `status` o con el ticket.
 - Un token o una consulta sin respuesta, un 401 incluido, dan `isNoVerdict()`: se vuelve a consultar con los mismos
   datos.
+- Si una factura, boleta o nota enviada sola sigue sin veredicto, en `validity` o en `status`, se reenvía el mismo XML
+  firmado con el mismo número mientras el plazo de envío siga abierto, porque la SUNAT lo mide al recibirlo; según sus
+  reglas de validación, si ya lo tenía no lo registra dos veces y contesta 1033, 1032 o 0140.
 
 ### Guía de remisión remitente (09) por la API REST
 

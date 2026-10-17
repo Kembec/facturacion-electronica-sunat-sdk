@@ -183,8 +183,12 @@ La CDR es la constancia con la que la SUNAT responde a cada envío.
   la llave, RSA sin cifrar.
 - **Respuesta de la SUNAT**: el SDK lee la CDR y la clasifica (aceptada, observada, rechazada, excepción). Un error SOAP
   es un resultado, no una excepción.
-- **Sin respuesta**: si una consulta no recibe respuesta, el resultado es `no_verdict`; vuelve a consultar y nunca
-  reenvíes el documento.
+- **Sin respuesta**: si una consulta no recibe respuesta, el resultado es `no_verdict`; vuelve a consultar. Con el
+  ticket de un resumen o una baja, nunca reenvíes el archivo: el ticket prueba que llegó. Si una factura, boleta o nota
+  enviada sola sigue sin veredicto, reenvía el mismo XML firmado con el mismo número mientras el plazo de envío siga
+  abierto, porque la SUNAT lo mide al recibirlo; según sus reglas de validación, si ya lo tenía no lo registra dos
+  veces y contesta 1033, 1032 o 0140. Un `summary` sin respuesta no deja ticket: revisa los comprobantes con `validity`
+  y reenvía el mismo archivo con el mismo nombre ([contrato de la CLI](docs/cli.md)).
 - **Estado de un comprobante ya enviado** en la Consulta Integrada de la SUNAT (`validity`: aceptado, anulado o no
   informado), para facturas, boletas y notas.
 

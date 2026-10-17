@@ -162,8 +162,13 @@ Todas las funciones reciben y devuelven texto JSON, y lanzan un `Error` con el m
 - `soapTimeout(exchange, inputJson, seconds)`: el resultado cuando no llegó respuesta en `seconds` segundos.
 - Si `ticket` o `status` no reciben respuesta, el resultado es `{ outcome: 'no_verdict', reason, http_status, message }`
   (`ticket` agrega el mismo `ticket`). Cuenta como sin respuesta un estado HTTP distinto de 200 y 500, o que se acabe la
-  espera. No dice nada del documento: vuelve a consultar y nunca lo reenvíes.
-- En `send` y `summary`, ese mismo caso lanza un `Error`, porque el documento pudo haber llegado.
+  espera. No dice nada del documento: vuelve a consultar. Con `ticket`, nunca reenvíes el resumen: el ticket prueba que
+  llegó. Si `status` sigue sin veredicto, reenvía el mismo XML firmado con el mismo número mientras el plazo de envío
+  siga abierto, porque la SUNAT lo mide al recibirlo; según sus reglas de validación, si ya lo tenía no lo registra dos
+  veces y contesta 1033, 1032 o 0140.
+- En `send` y `summary`, ese mismo caso lanza un `Error`, porque el documento pudo haber llegado. Un `summary` sin
+  respuesta no deja ticket: revisa los comprobantes con la Consulta Integrada y reenvía el mismo archivo con el mismo
+  nombre.
 - `validityTokenRequest`, `validityTokenResponse`, `validityRequest`, `validityResponse` y `validityTimeout`: la
   Consulta Integrada, [arriba](#consultar-el-estado-de-un-comprobante-consulta-integrada).
 - El certificado, la llave y las credenciales SOL los pasa quien llama: el paquete no los busca en archivos ni en el entorno.

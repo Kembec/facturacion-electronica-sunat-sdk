@@ -137,8 +137,9 @@ if (sent == nil) {
   porque pudo haber llegado: se reenvía el mismo XML firmado con el mismo número, nunca otro.
 - Cada resultado de red tiene `outcome` y una propiedad por resultado posible: la que corresponde a `outcome` viene
   llena y las demás, `nil`.
-- `isAccepted` es verdadero solo con código 0 y sin observaciones; con código 0 y una nota de 4000 o más, la CDR queda
-  `KSSResponseClassObserved` e `isValidDocument` es verdadero en los dos casos.
+- `isAccepted` es verdadero solo con código 0 y sin notas. Con código 0 y cualquier nota, sea cual sea su código, la CDR
+  queda `KSSResponseClassObserved` e `isValidDocument` es verdadero en los dos casos. El 2404 (una nota que modifica un
+  comprobante físico) es observación aunque esté por debajo de 4000.
 - `sendSummaryXML:…` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada.
   `ticketStatus:…` y `statusForRUC:…` sin respuesta dan `KSSOutcomeNoVerdict`: se vuelve a consultar, nunca a enviar.
 - Cada resultado guarda en `rawJSON` la respuesta tal como la da el

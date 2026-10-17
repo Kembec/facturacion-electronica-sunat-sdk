@@ -123,8 +123,9 @@ case let .cdr(cdr, zip):
 - Un error SOAP de la SUNAT es un resultado (`.fault`), no un error. Un envío sin respuesta lanza
   `SunatSDKError.commandFailed`, porque pudo haber llegado: se reenvía el mismo XML firmado con el mismo número, nunca
   otro.
-- `isAccepted` es verdadero solo con código 0 y sin observaciones; con código 0 y una nota de 4000 o más, la CDR queda
-  `.observed` e `isValidDocument` es verdadero en los dos casos.
+- `isAccepted` es verdadero solo con código 0 y sin notas. Con código 0 y cualquier nota, sea cual sea su código, la CDR
+  queda `.observed` e `isValidDocument` es verdadero en los dos casos. El 2404 (una nota que modifica un comprobante
+  físico) es observación aunque esté por debajo de 4000.
 - `summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `ticket` y `status`
   sin respuesta dan `.noVerdict`: se vuelve a consultar, nunca a enviar.
 - Cada resultado es `Codable` con las claves del

@@ -99,6 +99,25 @@ is rejected with 3262.
 `ruc`, `legal_name`, `trade_name`, `email`, `telephone`, `address`: `ubigeo`, `country_code`,
 `department`, `province`, `district`, `urbanization`, `street`, `establishment_code`.
 
+In 01, 03, 07 and 08 the free-text fields SUNAT observes by format are refused before signing, with the field and the
+SUNAT code, and never trimmed or rewritten: SUNAT's sheet (2026-04-24) allows any character including the space and no
+other whitespace (line feed, carriage return, tab, vertical tab, form feed). An empty value writes no tag and is not
+checked. Beta observed 4094 on a receipt whose `issuer.address.street` had a line break (2026-10-18).
+
+| Field | Accepted | SUNAT |
+|---|---|---|
+| `issuer.legal_name` | 1 to 1500 characters in 01 and 03, 3 to 1500 in 07 and 08 | 4338 |
+| `issuer.trade_name` | 1 to 1500 characters in 01 and 03, 3 to 1500 in 07 and 08 | 4092 |
+| `issuer.address.street` | 3 to 200 characters | 4094 |
+| `issuer.address.urbanization` | 1 to 25 characters | 4095 |
+| `issuer.address.province` | 1 to 30 characters | 4096 |
+| `issuer.address.department` | 1 to 30 characters | 4097 |
+| `issuer.address.district` | 1 to 30 characters | 4098 |
+| `lines[].product_code` | 1 to 30 characters | 4269 in 01 and 03, 4234 in 07 and 08 |
+
+The delivery address of an itinerant sale (4236, 4238 to 4241) and the trip detail of operation 1004 (4270) are not
+written by the SDK, so they have no field here.
+
 ## Customer
 
 `document_type` (catalog 06), `document_number`, `legal_name`, optional `address` (same shape as the

@@ -23,6 +23,8 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   ([`docs/input-model.md`](docs/input-model.md#reversal-summary-kind-reversal-rr)). `summary` and `ticket` accept the
   name `RUC-RR-YYYYMMDD-N`; it goes to SUNAT's `otroscpe` service: in the beta (18/10/2026) the invoice `billService`
   answered 0151 and `otroscpe` gave a ticket with status 0 (`fixtures/self-billed/beta/v3-*`).
+- `diagnosis` of a reversal summary (`RUC-RR-...`) points 2220, 2671, 2308, 2345, 2958, 2312, 2348, 2315 and 4203 at
+  their `kind: "reversal"` field (`crates/sunat-sdk/data/error-fields.json`, 9 rows of type `RR`).
 
 ### Changed
 

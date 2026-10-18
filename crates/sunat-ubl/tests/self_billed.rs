@@ -1,4 +1,5 @@
-//! The purchase settlement (04): the valid vectors of its contract (`fixtures/self-billed/v1`, `v2`)
+//! The purchase settlement (04) and its reversal (RR): the valid vectors of its contract (`fixtures/self-billed/v1`,
+//! `v2`, `v3`)
 //! are built, signed with the test certificate, verified by this workspace's verifier and by the
 //! independent one (`sunat-xmldsig/tests/verify_independent.py`), and carry the nodes of the contract
 //! (§3). The SUNAT beta accepted both (`fixtures/self-billed/beta/`, 18/10/2026).
@@ -9,7 +10,9 @@ use std::process::Command;
 
 use sunat_model::Document;
 
-const VALID: &[&str] = &["v1-taxed-purchase", "v2-gold-retention-4"];
+const VALID: &[&str] = &["v1-taxed-purchase", "v2-gold-retention-4", "v3-reversal"];
+/// The ones the beta received with `sendBill`; the reversal goes with `sendSummary`.
+const SENT: &[&str] = &["v1-taxed-purchase", "v2-gold-retention-4"];
 const DECLARATION: &[u8] = b"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 
 fn repository() -> PathBuf {
@@ -136,7 +139,7 @@ fn gold_lines_carry_the_four_properties() {
 /// What the beta received is what the SDK builds today, apart from the signature.
 #[test]
 fn the_xml_sent_to_the_beta_is_the_xml_built() {
-    for case in VALID {
+    for case in SENT {
         let sent = read(repository().join("fixtures/self-billed/beta").join(format!("{case}.sent.xml")));
         let unsigned = String::from_utf8(built(case)).unwrap();
         let strip = |xml: &str| xml[xml.find("</ext:UBLExtensions>").unwrap()..].to_owned();
@@ -147,4 +150,19 @@ fn the_xml_sent_to_the_beta_is_the_xml_built() {
 #[test]
 fn file_name_is_ruc_04_series_number() {
     assert_eq!(document("v2-gold-retention-4").file_name(), "20000000001-04-L001-2");
+}
+
+/// The reversal is the void communication's `VoidedDocuments` with its own identifier and type 04 lines.
+#[test]
+fn reversal_is_voided_documents_named_rr_with_04_lines() {
+    let xml = text("v3-reversal");
+    for expected in [
+        "<VoidedDocuments xmlns=\"urn:sunat:names:specification:ubl:peru:schema:xsd:VoidedDocuments-1\"",
+        "<cbc:UBLVersionID>2.0</cbc:UBLVersionID><cbc:CustomizationID>1.0</cbc:CustomizationID><cbc:ID>RR-20261018-1</cbc:ID><cbc:ReferenceDate>2026-10-18</cbc:ReferenceDate><cbc:IssueDate>2026-10-18</cbc:IssueDate>",
+        "<cac:AccountingSupplierParty><cbc:CustomerAssignedAccountID>20000000001</cbc:CustomerAssignedAccountID><cbc:AdditionalAccountID>6</cbc:AdditionalAccountID>",
+        "<sac:VoidedDocumentsLine><cbc:LineID>1</cbc:LineID><cbc:DocumentTypeCode>04</cbc:DocumentTypeCode><sac:DocumentSerialID>L001</sac:DocumentSerialID><sac:DocumentNumberID>1</sac:DocumentNumberID><sac:VoidReasonDescription>ERROR EN LA CANTIDAD ACOPIADA</sac:VoidReasonDescription></sac:VoidedDocumentsLine>",
+    ] {
+        assert!(xml.contains(expected), "missing {expected}");
+    }
+    assert_eq!(document("v3-reversal").file_name(), "20000000001-RR-20261018-1");
 }

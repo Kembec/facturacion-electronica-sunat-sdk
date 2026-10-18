@@ -25,9 +25,11 @@ As implemented in `bindings/cli/src/commands.rs`; `send`, `summary` and `ticket`
 (billConsultService); all four read the credentials from flags or `SUNAT_SOL_USER`, `SUNAT_SOL_PASSWORD`,
 and the HTTP wait from `--timeout` or `SUNAT_HTTP_TIMEOUT_SECONDS`.
 
-- `summary`: stdin `{"name": "RUC-RC|RA-YYYYMMDD-N", "xml" | "xml_base64"}` (the signed daily summary or
-  void communication) → `{"outcome": "ticket", "ticket": "..."}` or a fault. Store the ticket before
-  anything else: it is the only handle on the outcome.
+- `summary`: stdin `{"name": "RUC-RC|RA|RR-YYYYMMDD-N", "xml" | "xml_base64"}` (the signed daily summary, void
+  communication or reversal summary of a purchase settlement) → `{"outcome": "ticket", "ticket": "..."}` or a fault.
+  Store the ticket before anything else: it is the only handle on the outcome. The reversal summary (RR) goes to
+  SUNAT's `otroscpe` service, with its `ticket` there too: the invoice `billService` answers 0151 («codigo cpe: RR no
+  es un cpe valido», beta 18/10/2026).
 - `ticket`: stdin `{"ticket"}` → `{"outcome": "ticket_status", "status_code", "state", "cdr"?,
   "cdr_zip_base64"?}`; `state` is `processed` (0), `in_process` (98: ask again with the same ticket,
   never send again) or `processed_with_errors` (99).

@@ -1,0 +1,18 @@
+{
+  "sent_at": "2026-10-18T01:36:43-05:00",
+  "endpoint": "e-beta otroscpe billService",
+  "document": "20000000001-RR-20261018-1",
+  "call": "getStatus",
+  "ticket": "1792305501937",
+  "cdr": {
+    "class": "accepted",
+    "description": "El Comprobante numero RR-20261018-1 ha sido aceptado",
+    "notes": [],
+    "reference_id": "RR-20261018-1",
+    "response_code": "0"
+  },
+  "diagnosis": [],
+  "outcome": "ticket_status",
+  "state": "processed",
+  "status_code": "0"
+}

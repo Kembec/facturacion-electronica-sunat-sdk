@@ -44,7 +44,7 @@ struct RawDocument {
 
 pub(crate) fn parse(json: &str) -> Result<Document, ModelError> {
     let value: Value = serde_json::from_str(json).map_err(|e| ModelError::Json(e.to_string()))?;
-    if let Some(kind @ ("summary" | "voided")) = value.get("kind").and_then(Value::as_str) {
+    if let Some(kind @ ("summary" | "voided" | "reversal")) = value.get("kind").and_then(Value::as_str) {
         let kind = kind.to_owned();
         return crate::daily::parse(&kind, value);
     }
@@ -103,7 +103,7 @@ impl RawDocument {
                 let reference = self.note.ok_or_else(|| ModelError::missing("$.note"))?;
                 Ok(Document::Note(Note { voucher, reference }))
             }
-            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\", \"note\", \"summary\", \"voided\", \"despatch\", \"retention\" or \"self_billed\"")),
+            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\", \"note\", \"summary\", \"voided\", \"despatch\", \"retention\", \"self_billed\" or \"reversal\"")),
         }
     }
 }

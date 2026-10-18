@@ -299,8 +299,8 @@ Vectors and the beta's answers: `fixtures/export/`, `fixtures/export/beta/`; the
 
 # Daily summary (RC) and void communication (RA)
 
-Not supported, rejected with an explicit error: perception, ISC and IVAP in summary lines;
-reversal summaries (RR); despatch (GRE).
+Not supported, rejected with an explicit error: perception, ISC and IVAP in summary lines; despatch (GRE). The
+reversal summary (RR) of a purchase settlement is under [Purchase settlement (04)](#reversal-summary-kind-reversal-rr).
 
 ## Summary (`kind: "summary"`, RC)
 
@@ -532,7 +532,7 @@ that query SUNAT's registries (the seller's DNI 2450 to 2462, the buyer's RUC 20
 SUNAT's. As everywhere else, the caller gives every amount and the SDK reconciles them.
 
 Not supported, rejected with an explicit error: operation type `0502` (advances) and `totals.prepaid`; a series that
-starts with a digit (printed settlements); free lines (9996) and other taxes (9999); the reversal summary (RR).
+starts with a digit (printed settlements); free lines (9996) and other taxes (9999).
 
 ## Settlement (`kind: "self_billed"`)
 
@@ -577,3 +577,27 @@ independent verifier (`crates/sunat-ubl/tests/self_billed.rs`); `n1` (a seller w
 (no `operation_place`) with 2458. On 18/10/2026 the SUNAT beta accepted `v1` with code 0 and observation 4337 (the
 vector's product code) and `v2` with code 0 and no notes, rejected `n1` with 2800, and rejected `n2` with 2458, the code the SDK gives: the
 beta checks the place's location type before its address (`fixtures/self-billed/beta/`).
+
+## Reversal summary (`kind: "reversal"`, RR)
+
+The baja of a purchase settlement: the void communication's UBL 2.0 `VoidedDocuments` (same fields as
+[`voided`](#void-communication-kind-voided-ra)) with identifier `RR-YYYYMMDD-<number>` (communication date) and
+`file_name` `RUC-RR-YYYYMMDD-N`. In Rust it is `Document::Reversal(Voided)`. The CLI sends it with `summary` to SUNAT's
+**`otroscpe`** service and asks its `ticket` there: on 18/10/2026 the beta's invoice `billService` answered 0151 to
+the RR, and `otroscpe` gave a ticket whose `getStatus` was code 0 (`fixtures/self-billed/beta/v3-*`).
+
+| Field | Notes |
+|---|---|
+| `number` | 1 to 5 digits (2220) |
+| `generation_date` | date of issue of the settlement it reverses (`ReferenceDate`); not after `communication_date` (2671) |
+| `communication_date` | date the summary is sent (`IssueDate`); at most 6 days after `generation_date` (2958, below) |
+| `issuer` | the buyer that issued the settlement, see Issuer |
+| `lines` | `[{ "document_type": "04", "series": "L001", "number": "1", "reason": "..." }]`: type `04` (2308), series `L` and 3 uppercase letters or digits (2345), number 1 to 8 digits (2312), each settlement once (2348), `reason` not blank (2315) and of 3 characters or more (4203) |
+
+The deadline: SUNAT's sheet «ResumenReversiones1_0» (ERR-2958, from 01/08/2026) allows 5 days from the settlement's
+accepted CDR, where RS 244-2019 art. 3.2 says 7 from its issue. The SDK does not know the CDR's date, which may be the
+day after the issue (2108), so it rejects with 2958 only when `communication_date` is more than 6 days after
+`generation_date`; a summary sent on day 6 may still be rejected by SUNAT. Only SUNAT checks that the settlement
+exists, was accepted, is not already reversed and has no payments registered (2750, 2398, 2751, 2471). One test per
+code in `crates/sunat-model/tests/reversal_rules.rs`; `v3` builds, signs and passes the independent verifier
+(`crates/sunat-ubl/tests/self_billed.rs`), and `n3` (7 days) fails with 2958.

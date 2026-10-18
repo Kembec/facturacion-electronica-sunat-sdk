@@ -1,0 +1,28 @@
+{
+  "kind": "reversal",
+  "number": "1",
+  "generation_date": "2026-10-18",
+  "communication_date": "2026-10-18",
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "lines": [
+    {
+      "document_type": "04",
+      "series": "L001",
+      "number": "1",
+      "reason": "ERROR EN LA CANTIDAD ACOPIADA"
+    }
+  ]
+}

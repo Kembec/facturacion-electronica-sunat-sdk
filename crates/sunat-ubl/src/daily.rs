@@ -26,9 +26,11 @@ pub(crate) fn summary_body(w: &mut XmlWriter, summary: &Summary, options: &Optio
     w.close();
 }
 
-pub(crate) fn voided_body(w: &mut XmlWriter, voided: &Voided, options: &Options) {
+/// The void communication (RA) and the reversal summary (RR) of a purchase settlement share this body; only
+/// the identifier changes (`identifier` is `RA-…` or `RR-…`).
+pub(crate) fn voided_body(w: &mut XmlWriter, voided: &Voided, identifier: &str, options: &Options) {
     root(w, "VoidedDocuments", "urn:sunat:names:specification:ubl:peru:schema:xsd:VoidedDocuments-1", true);
-    header(w, VOIDED_CUSTOMIZATION, &voided.identifier(), &voided.generation_date, &voided.communication_date);
+    header(w, VOIDED_CUSTOMIZATION, identifier, &voided.generation_date, &voided.communication_date);
     signature_reference(w, &voided.issuer, options);
     supplier(w, &voided.issuer);
     for (index, line) in voided.lines.iter().enumerate() {

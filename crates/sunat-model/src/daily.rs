@@ -77,7 +77,8 @@ pub struct DocumentReference {
     pub document_number: String,
 }
 
-/// Void communication (RA).
+/// Void communication (RA) and, as `Document::Reversal`, the reversal summary (RR) of a purchase
+/// settlement (04): the same document with another identifier.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Voided {
@@ -91,7 +92,7 @@ pub struct Voided {
     pub lines: Vec<VoidedLine>,
 }
 
-/// One invoice (01) or note (07, 08) to void.
+/// One invoice (01) or note (07, 08) to void, or one purchase settlement (04) to reverse.
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct VoidedLine {
@@ -113,9 +114,14 @@ impl Voided {
     pub fn identifier(&self) -> String {
         format!("RA-{}-{}", self.communication_date.compact(), self.number)
     }
+
+    /// `RR-YYYYMMDD-N`, with the communication date: the identifier when it reverses a purchase settlement.
+    pub fn reversal_identifier(&self) -> String {
+        format!("RR-{}-{}", self.communication_date.compact(), self.number)
+    }
 }
 
-/// `kind` is `"summary"` or `"voided"`; the caller has already read it.
+/// `kind` is `"summary"`, `"voided"` or `"reversal"`; the caller has already read it.
 pub(crate) fn parse(kind: &str, mut value: Value) -> Result<Document, ModelError> {
     check_text(&value, "$")?;
     if let Value::Object(map) = &mut value {
@@ -123,6 +129,9 @@ pub(crate) fn parse(kind: &str, mut value: Value) -> Result<Document, ModelError
     }
     if kind == "voided" {
         return typed(value).map(Document::Voided);
+    }
+    if kind == "reversal" {
+        return typed(value).map(Document::Reversal);
     }
     if let Some(Value::Array(lines)) = value.get("lines") {
         for (index, line) in lines.iter().enumerate() {

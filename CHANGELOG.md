@@ -15,12 +15,15 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 - Advances (F04) in invoices and receipts: `advances[]` and `totals.prepaid` render the `cac:AdditionalDocumentReference`,
   the `cac:PrepaidPayment`, the discount 04, 05 or 06 and the `PrepaidAmount`, with the SUNAT checks (2505, 2521, 3217,
   2503, 2968, 3307, 3220, 2509, 3275, 3274, 3277, 3279, 3280, 3291) and, in the beta, vectors accepted with code 0
-  (`fixtures/advances/beta/`). `advances` no longer fails as out of scope; in a note it still does.
+  (`fixtures/advances/beta/`). `advances` no longer fails as out of scope; in a note it still does (#67).
 - The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native
   builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment.
 
 ### Changed
 
+- **Breaking** — Rust only: `Invoice` gains `advances` and `Totals` gains `prepaid`. The JSON input and the
+  other bindings are unchanged for a document without advances. Migration: add `advances: vec![]` and `prepaid: None`
+  where you build these structs (#67).
 - **Breaking**: `igv_rate` is required on every summary (RC) line. The writer always puts tax 1000 on the line, and the
   SUNAT Resumen Diario sheet rejects it without `cbc:Percent` (error 2992, «Tasa del tributo faltante para código
   1000»; the beta rejected a line without it on 17/10/2026). A line without it now fails before sending with SUNAT code

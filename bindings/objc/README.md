@@ -68,7 +68,7 @@ o con CocoaPods, en tu `Podfile`:
 pod 'KembecSunatSDKObjC', :path => '../facturacion-electronica-sunat-sdk'
 ```
 
-Es una versión beta (0.1.0-beta.8, la de `KSSPackageVersion`). Corre en macOS 10.15 o posterior (Apple Silicon e
+Es una versión beta (1.0.0-rc.1, la de `KSSPackageVersion`). Corre en macOS 10.15 o posterior (Apple Silicon e
 Intel) y en iOS 13 o posterior, dispositivo y simulador (arm64 y x86_64); no en Linux. Está escrito para ARC y no
 compila sin él. El núcleo en Rust queda enlazado dentro de tu binario como biblioteca estática: no hay framework que
 embeber ni firmar, ni programa externo al que llamar.
@@ -79,7 +79,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.8
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.1
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"

@@ -2,6 +2,9 @@ Revision history for Kembec-SunatSdk
 
 Unreleased
 
+0.999999_101  (SDK 1.0.0-rc.1, not released to CPAN)
+    - Version bump with the SDK, the first release candidate; no change to the binding.
+
 0.000999_008  (SDK 0.1.0-beta.8, not released to CPAN)
     - Version bump with the SDK; no change to the binding.
 

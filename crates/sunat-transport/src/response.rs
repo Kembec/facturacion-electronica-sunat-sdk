@@ -11,7 +11,8 @@ use crate::TransportError;
 pub enum SendBillOutcome {
     Cdr(Vec<u8>),
     /// `code` holds only the digits of `faultcode` (or of `faultstring` when the code has none),
-    /// so `soap-env:Client.1033` gives `1033`; `message` is `faultstring`.
+    /// so `soap-env:Client.1033` gives `1033`; `message` is the text of `detail` when it has one (an
+    /// OSE writes the code in `faultstring` and the description there), else `faultstring`.
     Fault { code: String, message: String },
 }
 
@@ -110,11 +111,12 @@ fn fault(nodes: &[Node]) -> Option<(String, String)> {
         return None;
     }
     let raw_code = text_by_suffix(nodes, &["Fault", "faultcode"]).unwrap_or_default();
-    let message = text_by_suffix(nodes, &["Fault", "faultstring"]).unwrap_or_default();
+    let fault_string = text_by_suffix(nodes, &["Fault", "faultstring"]).unwrap_or_default();
     let mut code = digits(&raw_code);
     if code.is_empty() {
-        code = digits(&message);
+        code = digits(&fault_string);
     }
+    let message = text_by_suffix(nodes, &["Fault", "detail"]).unwrap_or(fault_string);
     Some((code, message))
 }
 

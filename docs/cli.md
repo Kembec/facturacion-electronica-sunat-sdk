@@ -44,6 +44,7 @@ and the HTTP wait from `--timeout` or `SUNAT_HTTP_TIMEOUT_SECONDS`.
   a duplicate is rejected (2223, 2324, 2282).
 - A CDR's `class` is `observed` for code 0 with any note, whatever its code: SUNAT's validation sheet turned 2404 (a note
   that modifies a paper voucher) and 2988 (a summary line) into observations without renumbering them.
+- An OSE's answer reads the same: its CDR's number (`DocumentReference/ID`) is `reference_id` and each `Status` enters `notes` as `"<code> - <reason>"`; its fault's `message` is `detail`.
 
 ### `diagnosis`
 

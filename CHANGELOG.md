@@ -20,6 +20,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   what is an export. In the beta (18/10/2026) 0200, 0201, 0208 and 0202 were accepted with code 0 and no notes, and
   2800 and 3145 came back as the SDK says; 0208 without the country was accepted, and the SDK keeps 3098 as the
   validation sheet says. Answers in `fixtures/export/beta/` (#72).
+- An OSE's answer reads like SUNAT's (`read_cdr`, the fault parsers): the CDR's number comes from
+  `cac:DocumentReference/cbc:ID` when `cac:Response/cbc:ReferenceID` is missing, each `cac:Response/cac:Status` enters
+  `notes` as `"<code> - <reason>"` (so a code 0 with an observation is `observed` and gets its `diagnosis`), and a
+  fault's `message` is the text of `detail` when it has one. SUNAT's own answers read as before. Synthetic vectors in
+  `fixtures/ose/` (#69).
 
 ### Changed
 

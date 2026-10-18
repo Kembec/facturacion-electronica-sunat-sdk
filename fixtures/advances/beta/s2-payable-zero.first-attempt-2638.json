@@ -1,0 +1,25 @@
+{
+  "sent_at": "2026-10-17T21:28:14-05:00",
+  "endpoint": "e-beta billService",
+  "note": "first attempt, before the IGV subtotal with a zero base was written",
+  "class": "rejected",
+  "code": "2638",
+  "diagnosis": [
+    {
+      "code": "2638",
+      "detail": {
+        "node": "/",
+        "value": ""
+      },
+      "fields": [
+        {
+          "certainty": "fuente",
+          "input_path": "totals.total_taxes",
+          "xpath": "/Invoice/cac:TaxTotal/cbc:TaxAmount"
+        }
+      ]
+    }
+  ],
+  "message": "Si tiene operaciones de un tributo en alguna línea, debe consignar el tag del total del tributo  - Detalle: xxx.xxx.xxx value='ticket: 1792290597964 error: INFO : 2638 (nodo: \"/\" valor: \"\")'",
+  "outcome": "fault"
+}

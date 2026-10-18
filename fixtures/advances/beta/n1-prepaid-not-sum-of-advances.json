@@ -1,0 +1,24 @@
+{
+  "sent_at": "2026-10-17T21:27:50-05:00",
+  "endpoint": "e-beta billService",
+  "class": "rejected",
+  "code": "2509",
+  "diagnosis": [
+    {
+      "code": "2509",
+      "detail": {
+        "node": "cac:PrepaidPayment/cbc:PaidAmount",
+        "value": "590.00"
+      },
+      "fields": [
+        {
+          "certainty": "fuente",
+          "input_path": null,
+          "xpath": "/Invoice/cac:MonetaryTotal/cbc:PrepaidAmount"
+        }
+      ]
+    }
+  ],
+  "message": "Total de anticipos diferente a los montos anticipados por documento. - Detalle: xxx.xxx.xxx value='ticket: 1792290574060 error: INFO : 2509 (nodo: \"cac:PrepaidPayment/cbc:PaidAmount\" valor: \"590.00\")'",
+  "outcome": "fault"
+}

@@ -29,6 +29,9 @@ impl Document {
                     return Err(ModelError::OutOfScope { path, feature: "line charges in credit and debit notes" });
                 }
                 let totals = &note.voucher.totals;
+                if totals.prepaid.is_some() {
+                    return Err(ModelError::OutOfScope { path: "$.totals.prepaid".into(), feature: "advances in credit and debit notes" });
+                }
                 if totals.allowance_total.is_some() || totals.charge_total.is_some() {
                     let feature = "discount and charge totals in credit and debit notes";
                     return Err(ModelError::OutOfScope { path: "$.totals".into(), feature });

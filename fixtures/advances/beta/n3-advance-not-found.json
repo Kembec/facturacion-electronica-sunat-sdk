@@ -1,0 +1,13 @@
+{
+  "sent_at": "2026-10-17T21:27:54-05:00",
+  "endpoint": "e-beta billService",
+  "cdr": {
+    "class": "accepted",
+    "description": "La Factura numero F001-8193, ha sido aceptada",
+    "notes": [],
+    "reference_id": "F001-8193",
+    "response_code": "0"
+  },
+  "diagnosis": [],
+  "outcome": "cdr"
+}

@@ -16,7 +16,7 @@ fn file_name_is_ruc_type_series_number() {
 #[test]
 fn out_of_scope_features_get_named_errors() {
     let cases: [(&str, fn(&mut serde_json::Value)); 5] = [
-        ("advances", |v| v["advances"] = serde_json::json!([])),
+        ("advances", |v| v["prepayments"] = serde_json::json!([])),
         ("perception", |v| v["perception"] = serde_json::json!({})),
         ("global discounts", |v| v["discounts"] = serde_json::json!([])),
         ("other taxes", |v| v["lines"][0]["other_tax"] = serde_json::json!("0.50")),

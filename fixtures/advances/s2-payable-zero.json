@@ -1,0 +1,80 @@
+{
+  "kind": "invoice",
+  "ubl_version": "2.1",
+  "operation_type": "0101",
+  "document_type": "01",
+  "series": "F001",
+  "number": "8196",
+  "issue_date": "2026-10-17T10:00:00-05:00",
+  "currency": "PEN",
+  "payment_terms": {
+    "type": "Contado"
+  },
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "6",
+    "document_number": "20100066603",
+    "legal_name": "CLIENTE DE PRUEBA SAC",
+    "address": {
+      "ubigeo": "150122",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "MIRAFLORES",
+      "street": "CALLE CLIENTE 456"
+    }
+  },
+  "lines": [
+    {
+      "unit": "NIU",
+      "quantity": "1",
+      "product_code": "SRV09",
+      "description": "Servicio cubierto 100% por anticipo",
+      "unit_value": "500.00",
+      "igv_base": "500.00",
+      "igv_rate": "18.00",
+      "igv": "90.00",
+      "affectation": "10",
+      "total_taxes": "90.00",
+      "unit_price": "590.00",
+      "line_value": "500.00"
+    }
+  ],
+  "advances": [
+    {
+      "document_type": "02",
+      "document_number": "F001-8101",
+      "paid_amount": "590.00",
+      "affectation": "10",
+      "value": "500.00"
+    }
+  ],
+  "totals": {
+    "taxed": "0.00",
+    "igv": "0.00",
+    "total_taxes": "0.00",
+    "sale_value": "500.00",
+    "subtotal": "590.00",
+    "prepaid": "590.00",
+    "payable": "0.00"
+  },
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON CERO CON 00/100 SOLES"
+    }
+  ]
+}

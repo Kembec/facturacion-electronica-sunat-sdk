@@ -97,6 +97,9 @@ pub struct Totals {
     /// do not raise the IGV base (SUNAT 3301).
     pub charge_total: Option<Decimal>,
     pub rounding: Option<Decimal>,
+    /// `cbc:PrepaidAmount`: Σ `advances[].paid_amount`, advances included (SUNAT 3220, 2509); it comes
+    /// off `payable`, invoice and receipt only.
+    pub prepaid: Option<Decimal>,
     pub payable: Option<Decimal>,
 }
 
@@ -155,6 +158,42 @@ impl AllowanceCharge {
     /// `ChargeIndicator`: true for the charges of catalog 53 (45 to 50), false for the discounts.
     pub fn is_charge(&self) -> bool {
         matches!(self.code.as_str(), "45" | "46" | "47" | "48" | "49" | "50")
+    }
+}
+
+/// An advance payment (anticipo) the final invoice or receipt discounts: the invoice (`"02"`) or receipt
+/// (`"03"`) issued when it was received. One entry renders a `cac:AdditionalDocumentReference`, a
+/// `cac:PrepaidPayment` and a `cac:AllowanceCharge` with catalog 53 code `04`, `05` or `06`; the payment
+/// number is its position, so SUNAT's 3211 to 3216 cannot be built.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Advance {
+    /// Catalog 12: `"02"` invoice or `"03"` receipt of the advance (SUNAT 2505).
+    pub document_type: String,
+    /// `SERIES-NUMBER` of that document (SUNAT 2521).
+    pub document_number: String,
+    /// What was received, IGV included: `PrepaidPayment/PaidAmount` (SUNAT 2503).
+    pub paid_amount: Decimal,
+    /// Catalog 07 of the advance: `"10"` taxed (discount `04`), `"20"` exempt (`05`), `"30"` unaffected (`06`).
+    pub affectation: String,
+    /// Sale value of the advance, without IGV: the `Amount` of the discount (SUNAT 2968).
+    pub value: Decimal,
+    /// RUC that issued the advance; the document's issuer when absent.
+    pub issuer_ruc: Option<String>,
+    /// With `factor`, both or neither: `base_amount` × `factor` = `value`, within 1 (SUNAT 3307).
+    pub base_amount: Option<Decimal>,
+    pub factor: Option<Decimal>,
+}
+
+impl Advance {
+    /// Catalog 53 code of the discount this advance renders; `None` for an affectation it does not take.
+    pub fn discount_code(&self) -> Option<&'static str> {
+        match self.affectation.as_str() {
+            "10" => Some("04"),
+            "20" => Some("05"),
+            "30" => Some("06"),
+            _ => None,
+        }
     }
 }
 
@@ -274,6 +313,8 @@ pub struct Invoice {
     /// Global discounts and charges (catalog 53 `02`, `03`, `45`, `46`, `49`, `50`). `02` and `49`
     /// change the IGV base and the totals already carry them; see `docs/input-model.md`.
     pub global_adjustments: Vec<AllowanceCharge>,
+    /// Advances the document discounts (catalog 53 `04`, `05`, `06`); they are not `global_adjustments`.
+    pub advances: Vec<Advance>,
 }
 
 /// Credit (07) or debit (08) note.

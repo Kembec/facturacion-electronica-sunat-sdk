@@ -10,6 +10,8 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+## [1.0.0-rc.3] - 2026-10-18
+
 ### Added
 
 - The purchase settlement (04), UBL 2.1 `SelfBilledInvoice`, operation types 0501 and 0503: `kind: "self_billed"` with
@@ -22,14 +24,14 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   than 6 days after `generation_date`: SUNAT allows 5 from the settlement's CDR)
   ([`docs/input-model.md`](docs/input-model.md#reversal-summary-kind-reversal-rr)). `summary` and `ticket` accept the
   name `RUC-RR-YYYYMMDD-N`; it goes to SUNAT's `otroscpe` service: in the beta (18/10/2026) the invoice `billService`
-  answered 0151 and `otroscpe` gave a ticket with status 0 (`fixtures/self-billed/beta/v3-*`).
+  answered 0151 and `otroscpe` gave a ticket with status 0 (`fixtures/self-billed/beta/v3-*`) (#75).
 - `diagnosis` of a reversal summary (`RUC-RR-...`) points 2220, 2671, 2308, 2345, 2958, 2312, 2348, 2315 and 4203 at
-  their `kind: "reversal"` field (`crates/sunat-sdk/data/error-fields.json`, 9 rows of type `RR`).
+  their `kind: "reversal"` field (`crates/sunat-sdk/data/error-fields.json`, 9 rows of type `RR`) (#75).
 - Vectors for the export types 0203 to 0207 in `fixtures/export/` (v5 to v9), built, signed and checked by the
-  independent verifier; in the beta (18/10/2026) all five were accepted with code 0 and no notes.
+  independent verifier; in the beta (18/10/2026) all five were accepted with code 0 and no notes (#76).
 - 3272 and 4294: `lines[].igv_base` must equal `lines[].line_value` to the cent, in every operation type (the SDK does
   not model ISC). 3272 in an invoice and in a note that modifies one; 4294 in a receipt and in a note that modifies one,
-  an observation for SUNAT that the SDK rejects.
+  an observation for SUNAT that the SDK rejects (#76).
 - Swift Package Manager from a tag: a release attaches `SunatSDKFFI.xcframework.zip`, the zip `swift.yml` built and
   whose URL and checksum the tagged `Package.swift` names (`bindings/swift/scripts/pin-release.sh`) (#77).
 
@@ -38,18 +40,18 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 - **Breaking** — Rust only: `Document` gains the variant `SelfBilled`. A `match` on `Document` adds the arm (or `_`);
   the JSON input and the bindings do not change (#74).
 - **Breaking** — Rust only: `Document` gains the variant `Reversal(Voided)` for the reversal summary (RR). A `match` on
-  `Document` adds the arm (or `_`); `Voided` gains `reversal_identifier()`. The JSON input only adds the kind.
+  `Document` adds the arm (or `_`); `Voided` gains `reversal_identifier()`. The JSON input only adds the kind (#75).
 - Catalog 04 is a list, not a format: `service_use_country` (3099) and the guest's `passport_country` and
   `residence_country` (4280) take ISO 3166-1 alpha-2 in force (`crates/sunat-model/data/catalog-04.json`, with its
   sources). A two-letter code outside it, such as `ZZ` or the withdrawn `AN` and `CS`, is now rejected. In the beta,
-  `RS` was accepted and `AN` came back as 3099.
-- `diagnose` maps 3098 and 3099 to `service_use_country`.
+  `RS` was accepted and `AN` came back as 3099 (#76).
+- `diagnose` maps 3098 and 3099 to `service_use_country` (#76).
 
 ### Fixed
 
 - Every invoice and receipt is checked before signing for `totals.total_taxes` = `igv` + `ivap` + `icbper`, within 1
   (one unit of the currency, like the other totals): SUNAT answers 3294 for an invoice and 4301 for a receipt (rejected here like the errors). Until now only exports
-  and ICBPER documents were checked, so a plain invoice with a mismatched total was signed and rejected by SUNAT.
+  and ICBPER documents were checked, so a plain invoice with a mismatched total was signed and rejected by SUNAT (#78).
 
 ## [1.0.0-rc.2] - 2026-10-18
 
@@ -326,7 +328,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.2...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.3...HEAD
+[1.0.0-rc.3]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.2...v1.0.0-rc.3
 [1.0.0-rc.2]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.1...v1.0.0-rc.2
 [1.0.0-rc.1]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.8...v1.0.0-rc.1
 [0.1.0-beta.8]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.7...v0.1.0-beta.8

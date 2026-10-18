@@ -11,6 +11,8 @@ mod despatch;
 mod despatch_rules;
 mod despatch_transport;
 mod error;
+mod export;
+mod export_lodging;
 mod icbper;
 mod icbper_rates;
 mod ivap;
@@ -34,7 +36,7 @@ pub use error::ModelError;
 pub use retention::{ExchangeRate, RetainedDocument, Retention, RetentionAmounts, RetentionLine, RetentionPayment, RetentionSupplier};
 pub use scope::is_xml_text;
 pub use types::{
-    Address, Advance, AllowanceCharge, Client, Company, DespatchReference, Detraction, DocumentType, IgvRetention, Installment, Invoice, Legend, Line, LineDiscount, Note, NoteReference, PaymentTerms,
+    Address, Advance, AllowanceCharge, Client, Company, DespatchReference, Detraction, DocumentType, IgvRetention, Installment, Invoice, Legend, Line, LineDiscount, Lodging, Note, NoteReference, PaymentTerms,
     Totals, Voucher,
 };
 

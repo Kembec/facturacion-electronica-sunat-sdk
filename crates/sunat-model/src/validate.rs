@@ -13,6 +13,7 @@ impl Document {
             Document::Invoice(invoice) => {
                 check_voucher(&invoice.voucher, &[DocumentType::Invoice, DocumentType::Receipt])?;
                 require_text("$.operation_type", &invoice.operation_type)?;
+                crate::export::check(invoice)?;
                 check_detraction(invoice)?;
                 require(invoice.voucher.totals.sale_value.is_some(), "$.totals.sale_value")?;
                 crate::allowances::check(invoice)?;
@@ -28,6 +29,7 @@ impl Document {
                     let path = format!("$.lines[{index}].charges");
                     return Err(ModelError::OutOfScope { path, feature: "line charges in credit and debit notes" });
                 }
+                crate::export_lodging::reject_any(&note.voucher.lines, "applies to invoices only (operation_type 0202 or 0205)")?;
                 let totals = &note.voucher.totals;
                 if totals.prepaid.is_some() {
                     return Err(ModelError::OutOfScope { path: "$.totals.prepaid".into(), feature: "advances in credit and debit notes" });

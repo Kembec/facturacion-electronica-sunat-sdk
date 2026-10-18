@@ -22,26 +22,16 @@ pub enum PostError {
 /// so the caller can parse them. `timeout` bounds the whole exchange; when it runs out the
 /// voucher may or may not have reached SUNAT.
 pub fn post_soap(endpoint: &str, soap_action: &str, envelope: &str, timeout: Duration) -> Result<Vec<u8>, PostError> {
-    let agent = ureq::AgentBuilder::new().timeout(timeout).build();
-    let response = agent
+    let response = agent(timeout)
         .post(endpoint)
-        .set("Content-Type", "text/xml; charset=utf-8")
-        .set("SOAPAction", &format!("\"{soap_action}\""))
-        .send_string(envelope);
-    let response = match response {
-        Ok(response) => response,
-        Err(ureq::Error::Status(500, response)) => response,
-        Err(ureq::Error::Status(code, _)) => return Err(PostError::Status(code)),
-        Err(ureq::Error::Transport(err)) if is_timeout(&err) => return Err(PostError::Timeout(timeout.as_secs())),
-        Err(ureq::Error::Transport(err)) => return Err(PostError::Other(format!("transport error: {}", err.kind()))),
-    };
-    let mut body = Vec::new();
-    response
-        .into_reader()
-        .take(MAX_RESPONSE_BYTES)
-        .read_to_end(&mut body)
-        .map_err(|e| PostError::Other(format!("reading response: {e}")))?;
-    Ok(body)
+        .header("Content-Type", "text/xml; charset=utf-8")
+        .header("SOAPAction", format!("\"{soap_action}\""))
+        .send(envelope)
+        .map_err(|e| failure(e, timeout))?;
+    match response.status().as_u16() {
+        code if code < 400 || code == 500 => read_body(response),
+        code => Err(PostError::Status(code)),
+    }
 }
 
 /// Sends a REST call built by `sunat_sdk::validity` or `sunat_sdk::gre` (`{"method", "url", "headers",
@@ -50,32 +40,65 @@ pub fn post_soap(endpoint: &str, soap_action: &str, envelope: &str, timeout: Dur
 pub fn post_rest(request: &serde_json::Value, timeout: Duration) -> Result<(u16, Vec<u8>), PostError> {
     let url = request["url"].as_str().ok_or_else(|| PostError::Other("request without url".into()))?;
     let method = request["method"].as_str().unwrap_or("POST");
-    if method != "POST" && method != "GET" {
-        return Err(PostError::Other(format!("unsupported method {method}")));
+    let agent = agent(timeout);
+    let headers = request["headers"].as_object().into_iter().flatten();
+    let response = match method {
+        "GET" => {
+            let mut call = agent.get(url);
+            for (name, value) in headers {
+                call = call.header(name, value.as_str().unwrap_or_default());
+            }
+            call.call()
+        }
+        "POST" => {
+            let mut call = agent.post(url);
+            for (name, value) in headers {
+                call = call.header(name, value.as_str().unwrap_or_default());
+            }
+            call.send(request["body"].as_str().unwrap_or_default())
+        }
+        other => return Err(PostError::Other(format!("unsupported method {other}"))),
     }
-    let agent = ureq::AgentBuilder::new().timeout(timeout).build();
-    let mut call = agent.request(method, url);
-    for (name, value) in request["headers"].as_object().into_iter().flatten() {
-        call = call.set(name, value.as_str().unwrap_or_default());
-    }
-    let sent = if method == "GET" { call.call() } else { call.send_string(request["body"].as_str().unwrap_or_default()) };
-    let response = match sent {
-        Ok(response) | Err(ureq::Error::Status(_, response)) => response,
-        Err(ureq::Error::Transport(err)) if is_timeout(&err) => return Err(PostError::Timeout(timeout.as_secs())),
-        Err(ureq::Error::Transport(err)) => return Err(PostError::Other(format!("transport error: {}", err.kind()))),
-    };
-    let status = response.status();
+    .map_err(|e| failure(e, timeout))?;
+    let status = response.status().as_u16();
+    Ok((status, read_body(response)?))
+}
+
+/// One agent per call. A status other than 2xx is not an error of the client: the caller reads the body and decides.
+/// The status line is read by `httparse`, which accepts the non-ASCII reason phrase RFC 9112 allows (`obs-text`) and
+/// the SUNAT beta uses to carry its rejection text; the SOAP fault is in the body.
+fn agent(timeout: Duration) -> ureq::Agent {
+    ureq::Agent::config_builder().timeout_global(Some(timeout)).http_status_as_error(false).build().into()
+}
+
+fn read_body(response: ureq::http::Response<ureq::Body>) -> Result<Vec<u8>, PostError> {
     let mut body = Vec::new();
     response
-        .into_reader()
+        .into_body()
+        .into_with_config()
+        .limit(MAX_RESPONSE_BYTES)
+        .reader()
         .take(MAX_RESPONSE_BYTES)
         .read_to_end(&mut body)
         .map_err(|e| PostError::Other(format!("reading response: {e}")))?;
-    Ok((status, body))
+    Ok(body)
 }
 
-fn is_timeout(err: &ureq::Transport) -> bool {
-    std::error::Error::source(err)
-        .and_then(|e| e.downcast_ref::<std::io::Error>())
-        .is_some_and(|e| matches!(e.kind(), std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock))
+fn failure(err: ureq::Error, timeout: Duration) -> PostError {
+    if is_timeout(&err) {
+        return PostError::Timeout(timeout.as_secs());
+    }
+    PostError::Other(format!("transport error: {err}"))
 }
+
+fn is_timeout(err: &ureq::Error) -> bool {
+    match err {
+        ureq::Error::Timeout(_) => true,
+        ureq::Error::Io(e) => matches!(e.kind(), std::io::ErrorKind::TimedOut | std::io::ErrorKind::WouldBlock),
+        _ => false,
+    }
+}
+
+#[cfg(test)]
+#[path = "http_tests.rs"]
+mod tests;

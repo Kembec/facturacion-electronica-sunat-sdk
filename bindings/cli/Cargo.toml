@@ -24,7 +24,7 @@ sunat-sdk = { package = "kembec-sunat-sdk", path = "../../crates/sunat-sdk" }
 sunat-ubl = { package = "kembec-sunat-ubl", path = "../../crates/sunat-ubl" }
 sunat-xmldsig = { package = "kembec-sunat-xmldsig", path = "../../crates/sunat-xmldsig" }
 # Default features: TLS through rustls with webpki roots; certificate verification stays on.
-ureq = "2"
+ureq = "3"
 
 [dev-dependencies]
 base64 = "0.22"

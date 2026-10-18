@@ -216,6 +216,31 @@ fn summary_line_rate_and_customer_name_are_checked() {
     }
 }
 
+const SUMMARY_VOID: &str = include_str!("../../../fixtures/rc-receipt-void.json");
+const SUMMARY_EXEMPT: &str = include_str!("../../../fixtures/rc-exempt-and-unaffected.json");
+
+/// SUNAT 2992 (Resumen Diario sheet: tax code 1000 without `cbc:Percent`): the writer puts tax 1000 on every line,
+/// so every line needs `igv_rate`, whatever its status or its taxed amounts.
+#[test]
+fn every_summary_line_needs_its_igv_rate() {
+    for base in [SUMMARY_RECEIPTS, SUMMARY, SUMMARY_VOID, SUMMARY_EXEMPT] {
+        assert!(Document::from_json(base).is_ok());
+        let lines = serde_json::from_str::<serde_json::Value>(base).unwrap()["lines"].as_array().unwrap().len();
+        for index in 0..lines {
+            let result = edited(base, |v| {
+                v["lines"][index].as_object_mut().unwrap().remove("igv_rate");
+            });
+            match result {
+                Err(error @ ModelError::Rule { .. }) => {
+                    assert_eq!(error.sunat_code(), Some("2992"));
+                    assert!(error.to_string().contains(&format!("$.lines[{index}].igv_rate")), "{error}");
+                }
+                other => panic!("line {index}: {other:?}"),
+            }
+        }
+    }
+}
+
 const REFERENCES: &str = include_str!("../../../fixtures/01-invoice-references.json");
 
 /// SUNAT beta, 16/10/2026: what it observed (4005, 4006, 4233) or rejected (2364) on a cited guide or order.

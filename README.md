@@ -21,7 +21,7 @@ cualquiera de ellos. Guías y ejemplos: **https://fe.kembec.com**
 | Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) | crates, sin red |
 | Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` | binario estático |
 
-La versión publicada es la 1.0.0-rc.1. Qué trae, en [Versiones](#versiones).
+La versión publicada es la 1.0.0-rc.2. Qué trae, en [Versiones](#versiones).
 
 ## Tu primer comprobante firmado
 
@@ -29,7 +29,7 @@ Baja a una carpeta vacía una factura de ejemplo y el certificado de prueba del 
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.1
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.2
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -107,9 +107,9 @@ del tag, con la clave corta para que el código diga `sunat_model::…`. `sunat-
 
 ```toml
 [dependencies]
-sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.1" }
-sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.1" }
-sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.1" }
+sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.2" }
+sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.2" }
+sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.2" }
 ```
 
 ```rust
@@ -136,7 +136,7 @@ tú. Lo que expone cada crate está en la [arquitectura](docs/architecture.md).
 En Linux x86_64, el binario estático del release:
 
 ```bash
-url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v1.0.0-rc.1
+url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v1.0.0-rc.2
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl"
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl.sha256"
 sha256sum -c sunat-sdk-x86_64-unknown-linux-musl.sha256
@@ -181,6 +181,7 @@ La CDR es la constancia con la que la SUNAT responde a cada envío.
 - **Descuentos y cargos** del catálogo 53, por línea y globales, en facturas y boletas.
 - **ICBPER** (bolsas plásticas, tributo 7152), en comprobantes, notas y líneas del resumen diario.
 - **Anticipos** en facturas y boletas: el comprobante del anticipo y el final que lo descuenta.
+- **Exportación** de bienes y servicios (tipos de operación 0200 a 0208), en facturas y boletas.
 - **Firma** XML-DSig enveloped como la pide la SUNAT (RSA-SHA1, C14N inclusiva), con tu certificado y tu llave en PEM;
   la llave, RSA sin cifrar.
 - **Respuesta de la SUNAT**: el SDK lee la CDR y la clasifica (aceptada, observada, rechazada, excepción). Un error SOAP
@@ -243,6 +244,13 @@ El comprobante de percepción no forma parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).
 
 ## Versiones
+
+La 1.0.0-rc.2 suma frente a la 1.0.0-rc.1, sin cambiar el contrato JSON:
+
+- la factura y la boleta de exportación en los nueve tipos de operación (0200 a 0208), con el país de uso del servicio
+  y los datos del huésped en el hospedaje; la beta de la SUNAT aceptó los cuatro vectores válidos. En el modelo de
+  Rust, `Line` e `Invoice` ganan campos;
+- la respuesta de un OSE se lee como la de la SUNAT: número, código, observaciones y `diagnosis`.
 
 La 1.0.0-rc.1 es la candidata a la primera versión estable: el mismo contrato que la 0.1.0-beta.8, con el paquete .NET
 ya en NuGet (`Kembec.SunatSdk`). La 1.0.0 sale tras 15 días de uso en producción por un emisor real, con sus CDR

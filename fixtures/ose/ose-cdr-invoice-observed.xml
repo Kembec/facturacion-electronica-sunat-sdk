@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ApplicationResponse xmlns="urn:oasis:names:specification:ubl:schema:xsd:ApplicationResponse-2" xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">
+<cbc:UBLVersionID>2.1</cbc:UBLVersionID><cbc:CustomizationID>1.0</cbc:CustomizationID>
+<cbc:ID>3f2b8c1e-5a4d-4e7b-9c3a-1d2e3f4a5b6c</cbc:ID>
+<cbc:IssueDate>2026-10-17</cbc:IssueDate><cbc:IssueTime>10:15:30.00000</cbc:IssueTime>
+<cbc:ResponseDate>2026-10-17</cbc:ResponseDate><cbc:ResponseTime>10:15:31.00000</cbc:ResponseTime>
+<cac:SenderParty><cac:PartyLegalEntity><cbc:CompanyID schemeID="6" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo6">20000000001</cbc:CompanyID></cac:PartyLegalEntity></cac:SenderParty>
+<cac:ReceiverParty><cac:PartyLegalEntity><cbc:CompanyID schemeID="6" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo6">20999999991</cbc:CompanyID></cac:PartyLegalEntity></cac:ReceiverParty>
+<cac:DocumentResponse>
+<cac:Response><cbc:ResponseCode listAgencyName="PE:SUNAT">0</cbc:ResponseCode><cbc:Description>La Factura numero F001-2, ha sido aceptada</cbc:Description><cac:Status><cbc:StatusReasonCode listURI="urn:pe:gob:sunat:cpe:see:gem:codigos:codigoretorno">4252</cbc:StatusReasonCode><cbc:StatusReason>El dato ingresado como atributo @listName es incorrecto.</cbc:StatusReason></cac:Status></cac:Response>
+<cac:DocumentReference><cbc:ID>F001-2</cbc:ID><cbc:IssueDate>2026-10-17</cbc:IssueDate><cbc:IssueTime>09:58:00</cbc:IssueTime><cbc:DocumentTypeCode>01</cbc:DocumentTypeCode><cac:Attachment><cac:ExternalReference><cbc:DocumentHash>cmFuZG9tLWRpZ2VzdC12YWx1ZQ==</cbc:DocumentHash></cac:ExternalReference></cac:Attachment></cac:DocumentReference>
+<cac:IssuerParty><cac:PartyLegalEntity><cbc:CompanyID schemeID="6" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo6">20000000001</cbc:CompanyID></cac:PartyLegalEntity></cac:IssuerParty>
+<cac:RecipientParty><cac:PartyLegalEntity><cbc:CompanyID schemeID="6" schemeAgencyName="PE:SUNAT" schemeURI="urn:pe:gob:sunat:cpe:see:gem:catalogos:catalogo6">20100066603</cbc:CompanyID></cac:PartyLegalEntity></cac:RecipientParty>
+</cac:DocumentResponse>
+</ApplicationResponse>

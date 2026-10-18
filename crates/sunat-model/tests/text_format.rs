@@ -15,10 +15,14 @@ fn set(base: &str, pointer: &str, value: &str) -> Result<Document, ModelError> {
 }
 
 fn refused(base: &str, pointer: &str, path: &str, code: &str, value: &str) {
+    refused_with(base, pointer, path, &format!("SUNAT {code}"), value);
+}
+
+fn refused_with(base: &str, pointer: &str, path: &str, needle: &str, value: &str) {
     match set(base, pointer, value) {
         Err(ModelError::Invalid { path: got, reason }) => {
             assert_eq!(got, path, "{value:?}");
-            assert!(reason.contains(&format!("SUNAT {code}")), "{reason}");
+            assert!(reason.contains(needle), "{reason}");
         }
         other => panic!("{path} {value:?}: {other:?}"),
     }
@@ -34,11 +38,15 @@ fn assert_borders(base: &str, pointer: &str, path: &str, code: &str, min: usize,
     if min > 1 {
         bad.push(filler(min - 1));
     }
-    for ws in ['\n', '\r', '\t', '\u{0B}', '\u{0C}'] {
+    for ws in ['\n', '\r', '\t'] {
         bad.push(format!("AB{ws}C"));
     }
     for value in bad {
         refused(base, pointer, path, code, &value);
+    }
+    // Vertical tab and form feed never reach the format rule: XML 1.0 does not allow them (scope.rs).
+    for ws in ['\u{0B}', '\u{0C}'] {
+        refused_with(base, pointer, path, "XML 1.0", &format!("AB{ws}C"));
     }
     assert!(set(base, pointer, "").is_ok(), "{path}: an empty value writes no tag");
 }

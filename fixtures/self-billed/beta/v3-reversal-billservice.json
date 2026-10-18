@@ -1,0 +1,17 @@
+{
+  "sent_at": "2026-10-18T01:36:11-05:00",
+  "endpoint": "e-beta itcpfegem billService",
+  "document": "20000000001-RR-20261018-1",
+  "call": "sendSummary",
+  "class": "exception",
+  "code": "0151",
+  "diagnosis": [
+    {
+      "code": "0151",
+      "detail": null,
+      "fields": []
+    }
+  ],
+  "message": "El nombre del archivo ZIP es incorrecto - Detalle: xxx.xxx.xxx value='ticket:  error: Error de nombre archivo \"20000000001-RR-20261018-1.zip codigo cpe: RR\" no es un cpe valido'",
+  "outcome": "fault"
+}

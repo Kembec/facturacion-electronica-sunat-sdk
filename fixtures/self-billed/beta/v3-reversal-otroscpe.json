@@ -1,0 +1,8 @@
+{
+  "sent_at": "2026-10-18T01:36:37-05:00",
+  "endpoint": "e-beta otroscpe billService",
+  "document": "20000000001-RR-20261018-1",
+  "call": "sendSummary",
+  "outcome": "ticket",
+  "ticket": "1792305501937"
+}

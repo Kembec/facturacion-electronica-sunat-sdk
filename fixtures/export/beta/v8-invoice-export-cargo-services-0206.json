@@ -1,0 +1,13 @@
+{
+  "sent_at": "2026-10-18T01:47:11-05:00",
+  "endpoint": "e-beta billService",
+  "cdr": {
+    "class": "accepted",
+    "description": "La Factura numero F001-8208, ha sido aceptada",
+    "notes": [],
+    "reference_id": "F001-8208",
+    "response_code": "0"
+  },
+  "diagnosis": [],
+  "outcome": "cdr"
+}

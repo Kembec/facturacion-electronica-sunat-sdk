@@ -13,7 +13,7 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 ### Added
 
 - `sunat-sdk --version` and `-V` print `sunat-sdk <version>` on one line and exit 0; they used to answer with the
-  usage and exit 1 (`docs/cli.md`, `--version`).
+  usage and exit 1 (`docs/cli.md`, `--version`) (#87).
 
 ## [1.0.0-rc.4] - 2026-10-18
 

@@ -135,6 +135,10 @@ and 10 (3230: beta rejected a credit note with type 07 and a debit note with typ
 receipt only, see Discounts and charges), `icbper` and `icbper_factor` (see ICBPER), `lodging` (operation types
 0202 and 0205, see Export).
 
+`igv_base` equals `line_value` to the cent on every line, in every operation type: the SDK does not model ISC, and
+without it SUNAT compares the two exactly. Otherwise 3272 in an invoice and in a note that modifies one, and 4294 in a
+receipt and in a note that modifies one (an observation for SUNAT, rejected here).
+
 ## ICBPER
 
 The tax on plastic bags (Ley 30884, art. 12; tax 7152 `ICBPER` `OTH`), in invoices, receipts and both
@@ -273,6 +277,10 @@ are invoice only (3206). Advances, IGV retention, free lines and ICBPER in an ex
 | `0205` tour package | `lines[].lodging` with `guest_name`, `guest_document_type`, `guest_document_number` and `passport_country` only (3136 to 3139) |
 | `0200`, `0203`, `0204`, `0206`, `0207` | nothing beyond the shared rules |
 
+Catalog 04 is the list in `crates/sunat-model/data/catalog-04.json`: SUNAT points to ISO 3166-1 without listing it,
+and the SDK takes ISO 3166-1 alpha-2 in force (249 codes), the list the beta applied: it rejected `AN`, withdrawn but
+on the page the SUNAT sheet cites, with 3099. `PE` is in it: only 3099 excludes it.
+
 | Field of `lines[].lodging` | Catalog 55 | |
 |---|---|---|
 | `passport_country` | 4000 | catalog 04 (4280) |
@@ -290,7 +298,8 @@ part apart; the SDK does not reject `stay_days` above 60, because SUNAT does not
 (the customer's domicile, where the service is used, the exporters' register SUNAT checks with 0201) stays with the
 caller. `service_use_country` outside 0201 and 0208, and `lodging` outside 0202 and 0205 or in a note, are rejected.
 Vectors and the beta's answers: `fixtures/export/`, `fixtures/export/beta/`; the beta accepted 0208 without the country
-(n1), the SDK still rejects it with 3098, as the validation sheet says.
+(n1), the SDK still rejects it with 3098, as the validation sheet says. 0203 to 0207 were accepted with code 0 and no
+notes; as the country of use, `RS` was accepted and `AN` came back as 3099.
 
 ## Note (07, 08)
 

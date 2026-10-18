@@ -6464,7 +6464,7 @@
    "03"
   ],
   "xpath": "/Invoice/cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode",
-  "input_path": null,
+  "input_path": "service_use_country",
   "also": [
    "operation_type"
   ],
@@ -6473,7 +6473,7 @@
    "ERROR"
   ],
   "message": "El XML no contiene el tag o no existe información del pais de uso, exploración o aprovechamiento",
-  "note": "cac:Delivery de cabecera: el SDK no lo modela ni lo escribe; sin campo en el modelo de entrada; cond: Si 'Tipo de operación' es '0201' o '0208', si el Tag UBL no existe o es vacio. // Si 'Tipo de operación' es '0201' o '0208', y el Tag UBL no existe o es vacio.",
+  "note": "cac:Delivery de cabecera: el SDK lo escribe desde service_use_country; cond: Si 'Tipo de operación' es '0201' o '0208', si el Tag UBL no existe o es vacio. // Si 'Tipo de operación' es '0201' o '0208', y el Tag UBL no existe o es vacio.",
   "source_rows": [
    "Factura2_0!75",
    "Boleta2_0!73"
@@ -6487,7 +6487,7 @@
    "03"
   ],
   "xpath": "/Invoice/cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode",
-  "input_path": null,
+  "input_path": "service_use_country",
   "also": [
    "operation_type"
   ],
@@ -6496,7 +6496,7 @@
    "ERROR"
   ],
   "message": "El dato ingresado como pais de uso, exploracion o aprovechamiento es incorrecto.",
-  "note": "cac:Delivery de cabecera: el SDK no lo modela ni lo escribe; sin campo en el modelo de entrada; cond: Si 'Tipo de operación' es '0201' o '0208' y el Tag UBL existe, el valor es diferente al Catálogo 04  o el valor es igual a 'PE' // Si 'Tipo de operación' es '0201' o '0208' y el Tag UBL existe, el valor es diferente al Catálogo 04 o el valor es igual a 'PE'",
+  "note": "cac:Delivery de cabecera: el SDK lo escribe desde service_use_country; cond: Si 'Tipo de operación' es '0201' o '0208' y el Tag UBL existe, el valor es diferente al Catálogo 04  o el valor es igual a 'PE' // Si 'Tipo de operación' es '0201' o '0208' y el Tag UBL existe, el valor es diferente al Catálogo 04 o el valor es igual a 'PE'",
   "source_rows": [
    "Factura2_0!76",
    "Boleta2_0!74"

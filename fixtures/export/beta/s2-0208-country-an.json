@@ -1,0 +1,24 @@
+{
+  "sent_at": "2026-10-18T01:47:26-05:00",
+  "endpoint": "e-beta billService",
+  "class": "rejected",
+  "code": "3099",
+  "diagnosis": [
+    {
+      "code": "3099",
+      "detail": {
+        "node": "cac:Country/cbc:IdentificationCode",
+        "value": "AN"
+      },
+      "fields": [
+        {
+          "certainty": "fuente",
+          "input_path": "service_use_country",
+          "xpath": "/Invoice/cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode"
+        }
+      ]
+    }
+  ],
+  "message": "El dato ingresado como pais de uso, exploracion o aprovechamiento es incorrecto. - Detalle: xxx.xxx.xxx value='ticket: 1792306150439 error: : 3099: Valor no se encuentra en el catalogo: 04 (nodo: \"cac:Country/cbc:IdentificationCode\" valor: \"AN\")'",
+  "outcome": "fault"
+}

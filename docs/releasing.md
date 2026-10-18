@@ -11,9 +11,11 @@ PyPI, the PHP package on Packagist, the .NET package on NuGet, and the five libr
    `## [<version>] - YYYY-MM-DD` above a new empty `## [Unreleased]`, and update the compare links at the end: the
    `changelog` job of `release.yml` fails, on the tag and on the pull requests that run `release.yml`, if the
    version has no such section, and every publish job waits on it.
-2. Merge to `main` and push the tag `v<version>`. A version with `-` (`0.1.0-beta.4`, `1.0.0-rc.1`) is a prerelease
+2. Once `swift.yml` passes on `release/<version>`, run `bindings/swift/scripts/pin-release.sh <version> <run-id>` and commit
+   `Package.swift` and `bindings/swift/release-source.json`: the `swift-xcframework` job uploads that same zip.
+3. Merge to `main` and push the tag `v<version>`. A version with `-` (`0.1.0-beta.4`, `1.0.0-rc.1`) is a prerelease
    and goes to npm under the `beta` dist-tag.
-3. `release.yml` builds and tests the artifacts, then waits on the `release` environment (only `v*` tags, the owner
+4. `release.yml` builds and tests the artifacts, then waits on the `release` environment (only `v*` tags, the owner
    approves).
 
 ## Versions

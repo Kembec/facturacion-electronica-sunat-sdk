@@ -94,8 +94,12 @@ fn check_totals(voucher: &Voucher, codes: &Codes, note: bool) -> Result<(), Mode
     let totals = &voucher.totals;
     let Some(total) = &totals.icbper else { return Err(ModelError::missing("$.totals.icbper")) };
     positive("$.totals.icbper", total, 12, 2, "2048")?;
-    let taxes = opt(&totals.igv) + opt(&totals.ivap) + amount(total);
-    within_one(codes.total_taxes, "$.totals.total_taxes", totals.total_taxes.as_ref().expect("checked"), taxes, "igv + ivap + icbper")?;
+    if !note {
+        crate::total_taxes::check_sum(voucher, codes.total_taxes)?;
+    } else {
+        let taxes = opt(&totals.igv) + opt(&totals.ivap) + amount(total);
+        within_one(codes.total_taxes, "$.totals.total_taxes", totals.total_taxes.as_ref().expect("checked"), taxes, "igv + ivap + icbper")?;
+    }
     let lines: i128 = voucher.lines.iter().filter_map(|l| l.icbper.as_ref()).map(amount).sum();
     if cents(amount(total)) != cents(lines) {
         let reason = format!("must be Σ lines[].icbper ({})", show_cents(cents(lines)));

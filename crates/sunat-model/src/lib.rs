@@ -4,6 +4,7 @@
 mod advances;
 mod allowance_totals;
 mod allowances;
+mod countries;
 mod daily;
 mod datetime;
 mod decimal;
@@ -16,6 +17,7 @@ mod export_lodging;
 mod icbper;
 mod icbper_rates;
 mod ivap;
+mod line_base;
 mod raw;
 mod references;
 mod retention;
@@ -29,6 +31,7 @@ mod self_billed;
 mod self_billed_lines;
 mod self_billed_rules;
 mod reversal_rules;
+mod total_taxes;
 mod types;
 mod validate;
 

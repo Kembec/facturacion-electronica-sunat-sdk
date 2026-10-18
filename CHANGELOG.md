@@ -25,6 +25,13 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   answered 0151 and `otroscpe` gave a ticket with status 0 (`fixtures/self-billed/beta/v3-*`).
 - `diagnosis` of a reversal summary (`RUC-RR-...`) points 2220, 2671, 2308, 2345, 2958, 2312, 2348, 2315 and 4203 at
   their `kind: "reversal"` field (`crates/sunat-sdk/data/error-fields.json`, 9 rows of type `RR`).
+- Vectors for the export types 0203 to 0207 in `fixtures/export/` (v5 to v9), built, signed and checked by the
+  independent verifier; in the beta (18/10/2026) all five were accepted with code 0 and no notes.
+- 3272 and 4294: `lines[].igv_base` must equal `lines[].line_value` to the cent, in every operation type (the SDK does
+  not model ISC). 3272 in an invoice and in a note that modifies one; 4294 in a receipt and in a note that modifies one,
+  an observation for SUNAT that the SDK rejects.
+- Swift Package Manager from a tag: a release attaches `SunatSDKFFI.xcframework.zip`, the zip `swift.yml` built and
+  whose URL and checksum the tagged `Package.swift` names (`bindings/swift/scripts/pin-release.sh`) (#77).
 
 ### Changed
 
@@ -32,6 +39,17 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   the JSON input and the bindings do not change (#74).
 - **Breaking** — Rust only: `Document` gains the variant `Reversal(Voided)` for the reversal summary (RR). A `match` on
   `Document` adds the arm (or `_`); `Voided` gains `reversal_identifier()`. The JSON input only adds the kind.
+- Catalog 04 is a list, not a format: `service_use_country` (3099) and the guest's `passport_country` and
+  `residence_country` (4280) take ISO 3166-1 alpha-2 in force (`crates/sunat-model/data/catalog-04.json`, with its
+  sources). A two-letter code outside it, such as `ZZ` or the withdrawn `AN` and `CS`, is now rejected. In the beta,
+  `RS` was accepted and `AN` came back as 3099.
+- `diagnose` maps 3098 and 3099 to `service_use_country`.
+
+### Fixed
+
+- Every invoice and receipt is checked before signing for `totals.total_taxes` = `igv` + `ivap` + `icbper`, within 1
+  (one unit of the currency, like the other totals): SUNAT answers 3294 for an invoice and 4301 for a receipt (rejected here like the errors). Until now only exports
+  and ICBPER documents were checked, so a plain invoice with a mismatched total was signed and rejected by SUNAT.
 
 ## [1.0.0-rc.2] - 2026-10-18
 

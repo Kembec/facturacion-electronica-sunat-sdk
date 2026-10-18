@@ -1,4 +1,4 @@
-//! Export (0200 to 0208): the valid vectors of `fixtures/export/` are built, signed with the test certificate
+//! Export (0200 to 0208): the valid vectors of `fixtures/export/`, one per operation type, are built, signed with the test certificate
 //! and verified by this workspace's verifier and by the independent one
 //! (`sunat-xmldsig/tests/verify_independent.py`); the negative ones are rejected before building with the
 //! SUNAT code of the contract, and the country of use and the guest data come out in UBL order.
@@ -14,6 +14,11 @@ const VALID: &[&str] = &[
     "v2-invoice-export-saas-hosting-0201",
     "v3-invoice-export-consulting-0208",
     "v4-invoice-export-lodging-0202",
+    "v5-invoice-export-shipping-0203",
+    "v6-invoice-export-foreign-vessel-0204",
+    "v7-invoice-export-tour-package-0205",
+    "v8-invoice-export-cargo-services-0206",
+    "v9-invoice-export-electricity-zed-0207",
 ];
 const DECLARATION: &[u8] = b"<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
 

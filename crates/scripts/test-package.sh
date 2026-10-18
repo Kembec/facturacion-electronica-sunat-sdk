@@ -16,7 +16,7 @@ trap 'rm -rf "$work"' EXIT
 version="$(cargo metadata --no-deps --locked --format-version 1 --manifest-path "$root/Cargo.toml" \
   | jq -r --arg name "$1" '.packages[] | select(.name == $name) | .version')"
 
-allowed='^(\.cargo_vcs_info\.json|Cargo\.toml|Cargo\.toml\.orig|Cargo\.lock|LICENSE|NOTICE|README\.md|src/.+\.rs|data/error-fields\.json|tests/[^/]+\.(rs|py)|tests/.+\.rs)$'
+allowed='^(\.cargo_vcs_info\.json|Cargo\.toml|Cargo\.toml\.orig|Cargo\.lock|LICENSE|NOTICE|README\.md|src/.+\.rs|data/(error-fields|catalog-04)\.json|tests/[^/]+\.(rs|py)|tests/.+\.rs)$'
 members=""
 patches=""
 mkdir "$work/crates"

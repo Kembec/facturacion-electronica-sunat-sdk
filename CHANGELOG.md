@@ -16,9 +16,9 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   `seller` (DNI, carné de extranjería or passport), `operation_place`, the income tax retention per line (tax 3000) and
   the four gold properties, with the SUNAT checks that read only the document
   ([`docs/input-model.md`](docs/input-model.md#purchase-settlement-04)). In the beta, `v1` and `v2` were accepted with
-  code 0 (`fixtures/self-billed/beta/`).
+  code 0 (`fixtures/self-billed/beta/`) (#74).
 - **Breaking** — Rust only: `Document` gains the variant `SelfBilled`. A `match` on `Document` adds the arm (or `_`);
-  the JSON input and the bindings do not change.
+  the JSON input and the bindings do not change (#74).
 
 - An OSE's answer reads like SUNAT's (`read_cdr`, the fault parsers): the CDR's number comes from
   `cac:DocumentReference/cbc:ID` when `cac:Response/cbc:ReferenceID` is missing, each `cac:Response/cac:Status` enters

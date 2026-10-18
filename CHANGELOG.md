@@ -21,9 +21,9 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 ### Changed
 
 - Catalog 04 is a list, not a format: `service_use_country` (3099) and the guest's `passport_country` and
-  `residence_country` (4280) take ISO 3166-1 alpha-2 in force plus `AN` and `CS`
-  (`crates/sunat-model/data/catalog-04.json`, with its sources). A two-letter code outside it, such as `ZZ`, is now
-  rejected. In the beta, `RS` was accepted and `AN` came back as 3099.
+  `residence_country` (4280) take ISO 3166-1 alpha-2 in force (`crates/sunat-model/data/catalog-04.json`, with its
+  sources). A two-letter code outside it, such as `ZZ` or the withdrawn `AN` and `CS`, is now rejected. In the beta,
+  `RS` was accepted and `AN` came back as 3099.
 - `diagnose` maps 3098 and 3099 to `service_use_country`.
 
 ## [1.0.0-rc.2] - 2026-10-18

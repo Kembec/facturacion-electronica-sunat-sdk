@@ -278,8 +278,8 @@ are invoice only (3206). Advances, IGV retention, free lines and ICBPER in an ex
 | `0200`, `0203`, `0204`, `0206`, `0207` | nothing beyond the shared rules |
 
 Catalog 04 is the list in `crates/sunat-model/data/catalog-04.json`: SUNAT points to ISO 3166-1 without listing it,
-and the SDK takes ISO 3166-1 alpha-2 in force (249 codes) plus `AN` and `CS`, the two withdrawn codes on the page the
-SUNAT sheet cites. `PE` is in it: only 3099 excludes it.
+and the SDK takes ISO 3166-1 alpha-2 in force (249 codes), the list the beta applied: it rejected `AN`, withdrawn but
+on the page the SUNAT sheet cites, with 3099. `PE` is in it: only 3099 excludes it.
 
 | Field of `lines[].lodging` | Catalog 55 | |
 |---|---|---|

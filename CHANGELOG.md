@@ -10,6 +10,8 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+## [1.0.0-rc.2] - 2026-10-18
+
 ### Added
 
 - Export in invoices and receipts, operation types 0200 to 0208 of catalog 51: `service_use_country` (0201, 0208)
@@ -31,6 +33,12 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 - **Breaking** — Rust only: `Line` gains `lodging` and `Invoice` gains `service_use_country`. The JSON input and the
   other bindings are unchanged for a document without them. Migration: add `lodging: None` and
   `service_use_country: None` where you build these structs (#72).
+
+### Fixed
+
+- `docs/cli.md` no longer tells you to send a despatch advice again after a `gre-send` with no answer as if SUNAT
+  documented it: its GRE API manual does not say what a repeated send returns; the guide's rules reject a number
+  already registered (1033, 1032), and the first CDR is looked up in SUNAT Operaciones en Línea (#PR).
 
 ## [1.0.0-rc.1] - 2026-10-18
 
@@ -277,7 +285,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.1...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.2...HEAD
+[1.0.0-rc.2]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.1...v1.0.0-rc.2
 [1.0.0-rc.1]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.8...v1.0.0-rc.1
 [0.1.0-beta.8]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.7...v0.1.0-beta.8
 [0.1.0-beta.7]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.6...v0.1.0-beta.7

@@ -3,8 +3,8 @@
 Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **Rust, JavaScript y TypeScript, Python y PHP**, o
 desde la línea de comandos. Tu sistema decide qué emitir y calcula los importes; el SDK convierte esos datos en el
 archivo XML que pide la SUNAT, lo firma con tu certificado digital, lo envía y te dice si la SUNAT lo aceptó. Sirve
-para facturas, boletas, notas de crédito y de débito, resúmenes diarios de boletas y comunicaciones de baja para anular
-comprobantes ya enviados. Es para quien programa el sistema de facturación de una empresa.
+para facturas, boletas, notas de crédito y de débito, liquidaciones de compra, resúmenes diarios de boletas y
+comunicaciones de baja para anular comprobantes ya enviados. Es para quien programa el sistema de facturación de una empresa.
 
 SUNAT (Peru) electronic invoicing SDK for Rust, JavaScript/TypeScript, Python and PHP.
 
@@ -169,6 +169,8 @@ completo está en [`docs/cli.md`](docs/cli.md).
 | Factura (01), boleta (03), nota de crédito (07) y nota de débito (08) | UBL 2.1 | arma, firma, comprime, envía (`sendBill`) y consulta la CDR (`getStatusCdr`) |
 | Resumen diario (RC) de boletas y sus notas | UBL 2.0 | arma, firma, envía (`sendSummary`) y consulta el ticket (`getStatus`) |
 | Comunicación de baja (RA) de facturas y sus notas | UBL 2.0 | arma, firma, envía (`sendSummary`) y consulta el ticket (`getStatus`) |
+| Liquidación de compra (04) | UBL 2.1 | arma, firma y envía con `send` ([abajo](#alcance)) |
+| Resumen de reversión (RR) de liquidaciones de compra | UBL 2.0 | arma, firma, envía con `summary` al servicio `otroscpe` y consulta su ticket ([abajo](#alcance)) |
 | Guía de remisión remitente (09) | UBL 2.1 | arma, firma y envía por la API REST de la SUNAT ([abajo](#alcance)) |
 | Comprobante de retención (20) | UBL 2.0 | arma, firma y valida con los códigos de la SUNAT; la CLI lo envía a la beta ([abajo](#alcance)) |
 
@@ -216,7 +218,19 @@ observa la boleta (4288).
 
 - en comprobantes: ISC y otros tributos, descuentos y cargos en notas de crédito y débito, los códigos del catálogo 53
   que no son de descuentos y cargos, anticipos en notas, detracción en operaciones 1002 y 1004 y percepción;
-- en resúmenes diarios: percepción, ISC e IVAP en las líneas, y los resúmenes de reversión (RR).
+- en resúmenes diarios: percepción, ISC e IVAP en las líneas;
+- en la liquidación de compra: el tipo de operación 0502 (anticipos) y `totals.prepaid`, las series que empiezan con un
+  dígito (las impresas), las líneas gratuitas (9996) y otros tributos (9999).
+
+**Liquidación de compra (04)**: la emite el comprador, con su RUC, por una compra a una persona natural sin RUC; tipos
+de operación 0501 y 0503 (compra de oro). Va con `kind: "self_billed"`, el vendedor (`seller`: DNI, carné de
+extranjería o pasaporte), el lugar de la operación (`operation_place`) y la retención del impuesto a la renta en cada
+línea. El SDK aplica las reglas de la SUNAT que solo leen el documento; las que consultan sus padrones (la condición
+del vendedor, el tope de 75 UIT) las valida la SUNAT. Para darla de baja, el resumen de reversión (RR) es
+`kind: "reversal"`: el nombre es `RUC-RR-YYYYMMDD-N` y la CLI lo envía con `summary` y lo consulta con `ticket` en el
+servicio `otroscpe`, no en el de facturas, que lo rechaza con 0151. La SUNAT da 5 días desde la CDR de la liquidación;
+el SDK solo ve la fecha de generación, así que rechaza con 2958 pasados 6 días, y un resumen enviado el día 6 aún puede
+ser rechazado por ella. Los campos, en el [modelo de entrada](docs/input-model.md#purchase-settlement-04).
 
 **Referencias**: la orden de compra (`order_reference`) y las guías de remisión que el comprobante cita
 (`despatch_references`, tipo 09 o 31), en facturas, boletas y notas. Antes de enviar, el SDK rechaza lo que la SUNAT
@@ -244,6 +258,24 @@ El comprobante de percepción no forma parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).
 
 ## Versiones
+
+La 1.0.0-rc.3 suma frente a la 1.0.0-rc.2; el JSON de entrada solo gana los tipos `self_billed` y `reversal`:
+
+- la liquidación de compra (04), con los tipos de operación 0501 y 0503; la beta de la SUNAT aceptó con código 0 los dos
+  vectores válidos;
+- su baja por resumen de reversión (RR), que va por el servicio `otroscpe`: en la beta, el de facturas contestó 0151 y
+  `otroscpe` dio un ticket con estado 0;
+- el cierre de la exportación: los tipos de operación 0203 a 0207 con vectores propios, que la beta aceptó con código 0
+  y sin notas; el catálogo 04 es la lista ISO 3166-1 alpha-2 vigente, así que un código como `ZZ`, `AN` o `CS` ahora se
+  rechaza (3099 y 4280); y `igv_base` igual a `line_value` en todos los tipos de operación (3272 en facturas, 4294 en
+  boletas);
+- en toda factura y boleta, `totals.total_taxes` igual a `igv` + `ivap` + `icbper` antes de firmar (3294 en facturas, 4301
+  en boletas); antes solo se revisaba en exportaciones y con ICBPER, y una factura común con el total descuadrado se
+  firmaba y la SUNAT la rechazaba;
+- el release adjunta `SunatSDKFFI.xcframework.zip`, el archivo cuya URL y huella nombra el `Package.swift` del tag, para
+  Swift Package Manager;
+- en el modelo de Rust, `Document` gana las variantes `SelfBilled` y `Reversal(Voided)`: un `match` sobre `Document`
+  necesita sus brazos (o `_`). Cambio que rompe compatibilidad ([CHANGELOG](CHANGELOG.md)).
 
 La 1.0.0-rc.2 suma frente a la 1.0.0-rc.1, sin cambiar el contrato JSON:
 

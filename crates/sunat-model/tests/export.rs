@@ -8,6 +8,13 @@ const V1: &str = include_str!("../../../fixtures/export/v1-invoice-export-goods-
 const V2: &str = include_str!("../../../fixtures/export/v2-invoice-export-saas-hosting-0201.json");
 const V3: &str = include_str!("../../../fixtures/export/v3-invoice-export-consulting-0208.json");
 const V4: &str = include_str!("../../../fixtures/export/v4-invoice-export-lodging-0202.json");
+const NEW_TYPES: &[&str] = &[
+    include_str!("../../../fixtures/export/v5-invoice-export-shipping-0203.json"),
+    include_str!("../../../fixtures/export/v6-invoice-export-foreign-vessel-0204.json"),
+    include_str!("../../../fixtures/export/v7-invoice-export-tour-package-0205.json"),
+    include_str!("../../../fixtures/export/v8-invoice-export-cargo-services-0206.json"),
+    include_str!("../../../fixtures/export/v9-invoice-export-electricity-zed-0207.json"),
+];
 const N1: &str = include_str!("../../../fixtures/export/n1-0208-without-country.json");
 const N2: &str = include_str!("../../../fixtures/export/n2-0200-customer-with-ruc.json");
 const N3: &str = include_str!("../../../fixtures/export/n3-0202-without-stay-days.json");
@@ -49,6 +56,9 @@ fn as_receipt(v: &mut Value) {
 fn every_valid_vector_and_the_old_export_fixture_parse() {
     for base in [V1, V2, V3, V4, OLD_EXPORT] {
         Document::from_json(base).unwrap();
+    }
+    for (index, base) in NEW_TYPES.iter().enumerate() {
+        Document::from_json(base).unwrap_or_else(|e| panic!("v{}: {e}", index + 5));
     }
 }
 
@@ -93,6 +103,33 @@ fn service_use_country_missing_3098() {
 fn service_use_country_peru_or_not_iso_3099() {
     assert_eq!(code(V3, |v| v["service_use_country"] = json!("PE")).0, "3099");
     assert_eq!(code(V3, |v| v["service_use_country"] = json!("chl")).0, "3099");
+    assert_eq!(code(V3, |v| v["service_use_country"] = json!("ZZ")), ("3099", "$.service_use_country".into()));
+}
+
+/// Catalog 04 is ISO 3166-1 in force plus `AN` and `CS` (`crates/sunat-model/data/catalog-04.json`).
+#[test]
+fn service_use_country_in_iso_or_in_the_page_sunat_cites_passes() {
+    for country in ["RS", "ME", "SS", "CW", "AN", "CS", "CL"] {
+        edited(V3, |v| v["service_use_country"] = json!(country)).unwrap_or_else(|e| panic!("{country}: {e}"));
+    }
+}
+
+/// 4000 and 4001 (guest) take the same catalog 04, `PE` included.
+#[test]
+fn guest_countries_take_catalog_04_with_peru() {
+    for field in ["passport_country", "residence_country"] {
+        let (got, path) = code(V4, |v| v["lines"][0]["lodging"][field] = json!("ZZ"));
+        assert_eq!((got, path), ("4280", format!("$.lines[0].lodging.{field}")), "{field}");
+        for country in ["PE", "RS", "AN"] {
+            edited(V4, |v| v["lines"][0]["lodging"][field] = json!(country)).unwrap_or_else(|e| panic!("{field} {country}: {e}"));
+        }
+    }
+}
+
+/// 3272 in every operation type: the base of an export line is its value.
+#[test]
+fn export_line_base_other_than_its_value_3272() {
+    assert_eq!(code(V1, |v| v["lines"][0]["igv_base"] = json!("2400.00")), ("3272", "$.lines[0].igv_base".into()));
 }
 
 #[test]

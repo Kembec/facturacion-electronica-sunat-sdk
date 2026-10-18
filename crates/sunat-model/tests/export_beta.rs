@@ -57,3 +57,41 @@ fn n1_without_country_is_accepted_by_the_beta_and_rejected_by_the_sdk() {
     accepted(&answer!("n1-0208-without-country"));
     assert_eq!(local!("n1-0208-without-country").unwrap_err().sunat_code(), Some("3098"));
 }
+
+/// 0203 shipping, 0206 cargo services, 0204 foreign vessel, 0205 tour package and 0207 electricity to a ZED
+/// customer with RUC (sent in that order, 18/10/2026 01:47): accepted with code 0 and no notes.
+#[test]
+fn the_five_types_without_a_vector_before_were_accepted_with_code_0_and_no_notes() {
+    accepted(&answer!("v5-invoice-export-shipping-0203"));
+    accepted(&answer!("v8-invoice-export-cargo-services-0206"));
+    accepted(&answer!("v6-invoice-export-foreign-vessel-0204"));
+    accepted(&answer!("v7-invoice-export-tour-package-0205"));
+    accepted(&answer!("v9-invoice-export-electricity-zed-0207"));
+    for vector in [
+        local!("v5-invoice-export-shipping-0203"),
+        local!("v6-invoice-export-foreign-vessel-0204"),
+        local!("v7-invoice-export-tour-package-0205"),
+        local!("v8-invoice-export-cargo-services-0206"),
+        local!("v9-invoice-export-electricity-zed-0207"),
+    ] {
+        vector.unwrap();
+    }
+}
+
+fn v3_with_country(number: &str, country: &str) -> Result<Document, kembec_sunat_model::ModelError> {
+    let mut value: Value = serde_json::from_str(include_str!("../../../fixtures/export/v3-invoice-export-consulting-0208.json")).unwrap();
+    value["number"] = Value::from(number);
+    value["service_use_country"] = Value::from(country);
+    Document::from_json(&value.to_string())
+}
+
+/// Country probes on v3 (0208): `RS`, in ISO 3166-1 but not on the page the SUNAT sheet cites, was
+/// accepted; `AN`, withdrawn from ISO in 2010 but on that page, was rejected with 3099 («Valor no se
+/// encuentra en el catalogo: 04»). The beta's catalog 04 is ISO in force; the SDK still takes the union.
+#[test]
+fn the_beta_accepted_rs_and_rejected_an_while_the_sdk_takes_both() {
+    accepted(&answer!("s1-0208-country-rs"));
+    v3_with_country("8210", "RS").unwrap();
+    rejected(&answer!("s2-0208-country-an"), "3099");
+    v3_with_country("8211", "AN").unwrap();
+}

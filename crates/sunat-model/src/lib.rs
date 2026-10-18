@@ -4,6 +4,7 @@
 mod advances;
 mod allowance_totals;
 mod allowances;
+mod countries;
 mod daily;
 mod datetime;
 mod decimal;
@@ -16,6 +17,7 @@ mod export_lodging;
 mod icbper;
 mod icbper_rates;
 mod ivap;
+mod line_base;
 mod raw;
 mod references;
 mod retention;

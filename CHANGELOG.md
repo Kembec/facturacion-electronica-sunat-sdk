@@ -10,6 +10,22 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Changed
+
+- **Breaking**: `igv_rate` is required on every summary (RC) line. The writer always puts tax 1000 on the line, and the
+  SUNAT Resumen Diario sheet rejects it without `cbc:Percent` (error 2992, «Tasa del tributo faltante para código
+  1000»; the beta rejected a line without it on 17/10/2026). A line without it now fails before sending with SUNAT code
+  2992 at `$.lines[n].igv_rate`, whatever its status or amounts. Migration: add `"igv_rate": "18.00"` (or `"10.50"`;
+  a note also takes `"10.00"`) to every line of the summaries you build; the RC fixtures and their vectors carry it.
+
+### Fixed
+
+- The rejection of a summary reaches the integrator: the beta puts its message, with non-ASCII letters, in the status
+  line of an HTTP 200 (`HTTP/1.1 200 Error en la linea: 1. Tasa del tributo faltante para código 1000.: 2992 ...`), and
+  the CLI's HTTP client (`ureq` 2) refused that line, so `send`, `summary`, `ticket` and `status` printed only
+  `transport error: Bad Status`. The CLI now uses `ureq` 3, whose parser accepts the reason phrase RFC 9112 allows
+  (`obs-text`); the SOAP fault in the body gives its code and `diagnosis`. TLS verification is unchanged.
+
 ### Added
 
 - The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native

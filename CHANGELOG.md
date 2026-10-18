@@ -10,6 +10,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native
+  builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment.
+
 ## [0.1.0-beta.7] - 2026-10-17
 
 ### Added

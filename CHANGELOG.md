@@ -38,7 +38,7 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 - `docs/cli.md` no longer tells you to send a despatch advice again after a `gre-send` with no answer as if SUNAT
   documented it: its GRE API manual does not say what a repeated send returns; the guide's rules reject a number
-  already registered (1033, 1032), and the first CDR is looked up in SUNAT Operaciones en Línea (#PR).
+  already registered (1033, 1032), and the first CDR is looked up in SUNAT Operaciones en Línea (#73).
 
 ## [1.0.0-rc.1] - 2026-10-18
 

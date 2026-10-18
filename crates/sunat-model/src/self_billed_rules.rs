@@ -74,7 +74,9 @@ fn check_seller(s: &SelfBilled) -> Result<(), ModelError> {
 
 fn check_operation_place(s: &SelfBilled) -> Result<(), ModelError> {
     let Some(place) = &s.operation_place else {
-        return Err(ModelError::rule("2454", "$.operation_place", "required: the address where the purchase took place"));
+        // The beta answers 2458 (the location type) to a settlement without the whole block (18/10/2026).
+        let reason = "required: the place where the purchase took place, with its location type";
+        return Err(ModelError::rule("2458", "$.operation_place.location_type", reason));
     };
     check_street(place.street.as_deref(), ("2454", "2778"), "$.operation_place.street")?;
     rule(present(&place.ubigeo), "2455", "$.operation_place.ubigeo", "required")?;

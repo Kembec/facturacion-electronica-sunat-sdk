@@ -33,7 +33,7 @@ pub struct SelfBilled {
     pub issuer: Company,
     /// The natural person who sells (`cac:AccountingSupplierParty`).
     pub seller: SelfBilledSeller,
-    /// Where the purchase took place (`cac:DeliveryTerms`); required (SUNAT 2454).
+    /// Where the purchase took place (`cac:DeliveryTerms`); required (SUNAT 2458 without it).
     pub operation_place: Option<OperationPlace>,
     pub lines: Vec<SelfBilledLine>,
     pub totals: SelfBilledTotals,

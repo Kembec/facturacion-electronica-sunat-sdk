@@ -10,7 +10,7 @@ const V1: &str = include_str!("../../../fixtures/self-billed/v1-taxed-purchase.j
 /// 0503, gold, retention 4 %, the four properties.
 const V2: &str = include_str!("../../../fixtures/self-billed/v2-gold-retention-4.json");
 const N1: &str = include_str!("../../../fixtures/self-billed/n1-seller-with-ruc-2800.json");
-const N2: &str = include_str!("../../../fixtures/self-billed/n2-no-operation-place-2454.json");
+const N2: &str = include_str!("../../../fixtures/self-billed/n2-no-operation-place-2458.json");
 
 fn with(base: &str, edit: impl FnOnce(&mut Value)) -> Result<Document, ModelError> {
     let mut value: Value = serde_json::from_str(base).unwrap();
@@ -43,7 +43,7 @@ fn the_valid_vectors_pass() {
 #[test]
 fn the_negative_vectors_fail_with_their_code() {
     expect_code(Document::from_json(N1), "2800");
-    expect_code(Document::from_json(N2), "2454");
+    expect_code(Document::from_json(N2), "2458");
 }
 
 #[test]
@@ -99,7 +99,7 @@ fn seller_address() {
 fn operation_place() {
     expect_code(v1(|d| {
         d.as_object_mut().unwrap().remove("operation_place");
-    }), "2454");
+    }), "2458");
     expect_code(v1(|d| d["operation_place"]["street"] = Value::Null), "2454");
     expect_code(v1(|d| d["operation_place"]["street"] = json!("\tAV. 1")), "2778");
     expect_code(v1(|d| d["operation_place"]["ubigeo"] = Value::Null), "2455");

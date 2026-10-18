@@ -57,7 +57,11 @@ var batteryTestDependencies: [Target.Dependency] = ["SunatSDKBattery"]
 // No .xcframework on Linux: the shared library of bindings/ffi, installed where the linker finds it.
 targets.append(.systemLibrary(name: "SunatSDKFFI", path: "bindings/swift/Sources/SunatSDKFFI"))
 #else
-if let release {
+// KEMBEC_SUNAT_LOCAL_XCFRAMEWORK=1 (set by swift.yml) takes the local xcframework even with `release` pinned: the CI
+// tests what its own run built, never the URL, which does not exist until the tag's release attaches it. A consumer
+// never sets it.
+let useLocalXCFramework = Context.environment["KEMBEC_SUNAT_LOCAL_XCFRAMEWORK"] == "1"
+if let release, !useLocalXCFramework {
     targets.append(.binaryTarget(name: "SunatSDKFFI", url: release.url, checksum: release.checksum))
 } else {
     targets.append(.binaryTarget(name: "SunatSDKFFI", path: "bindings/swift/artifacts/SunatSDKFFI.xcframework"))

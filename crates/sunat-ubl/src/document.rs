@@ -50,6 +50,9 @@ fn invoice_body(w: &mut XmlWriter, invoice: &Invoice, options: &Options) {
     references::despatches(w, v);
     references::advances(w, v, &invoice.advances);
     signature_and_parties(w, v, options);
+    if let Some(country) = &invoice.service_use_country {
+        service_use_country(w, country);
+    }
     if let Some(detraction) = &invoice.detraction {
         totals::detraction(w, detraction);
     }
@@ -149,6 +152,20 @@ fn billing_reference(w: &mut XmlWriter, note: &Note) {
     w.open("cac:InvoiceDocumentReference", &[]);
     w.text("cbc:ID", &reference.affected_document_number);
     w.text("cbc:DocumentTypeCode", &reference.affected_document_type);
+    w.close();
+    w.close();
+}
+
+/// Country where an exported service (0201, 0208) is used: only `cac:Country`, because an address
+/// line would make SUNAT read an itinerant sale (4266 without legend 2005).
+fn service_use_country(w: &mut XmlWriter, country: &str) {
+    w.open("cac:Delivery", &[]);
+    w.open("cac:DeliveryLocation", &[]);
+    w.open("cac:Address", &[]);
+    w.open("cac:Country", &[]);
+    w.text("cbc:IdentificationCode", country);
+    w.close();
+    w.close();
     w.close();
     w.close();
 }

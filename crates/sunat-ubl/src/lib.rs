@@ -16,6 +16,7 @@ mod despatch;
 mod document;
 mod error;
 mod lines;
+mod lodging;
 mod parties;
 mod references;
 mod retention;

@@ -10,6 +10,12 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Fixed
+
+- Every invoice and receipt is checked before signing for `totals.total_taxes` = `igv` + `ivap` + `icbper`, within 1
+  (one unit of the currency, like the other totals): SUNAT answers 3294 for an invoice and 4301 for a receipt (rejected here like the errors). Until now only exports
+  and ICBPER documents were checked, so a plain invoice with a mismatched total was signed and rejected by SUNAT.
+
 ## [1.0.0-rc.2] - 2026-10-18
 
 ### Added

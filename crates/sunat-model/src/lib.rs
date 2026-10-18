@@ -25,6 +25,7 @@ mod free_sales;
 mod penalty_notes;
 mod rule_dates;
 mod scope;
+mod total_taxes;
 mod types;
 mod validate;
 

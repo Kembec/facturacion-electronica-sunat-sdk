@@ -1,0 +1,84 @@
+{
+  "kind": "invoice",
+  "ubl_version": "2.1",
+  "operation_type": "0207",
+  "document_type": "01",
+  "series": "F001",
+  "number": "8209",
+  "issue_date": "2026-10-18T10:00:00-05:00",
+  "currency": "USD",
+  "payment_terms": {
+    "type": "Contado"
+  },
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "6",
+    "document_number": "20100066603",
+    "legal_name": "CLIENTE ZED DE PRUEBA SAC",
+    "address": {
+      "ubigeo": "200501",
+      "country_code": "PE",
+      "department": "PIURA",
+      "province": "PAITA",
+      "district": "PAITA",
+      "street": "ZONA ESPECIAL DE DESARROLLO PAITA, LOTE 4"
+    }
+  },
+  "totals": {
+    "export": "3785.40",
+    "igv": "0.00",
+    "total_taxes": "0.00",
+    "sale_value": "3785.40",
+    "subtotal": "3785.40",
+    "payable": "3785.40"
+  },
+  "lines": [
+    {
+      "unit": "KWH",
+      "quantity": "40000",
+      "product_code": "ENE-01",
+      "description": "Suministro de energia electrica, octubre 2026",
+      "unit_value": "0.09",
+      "igv_base": "3600.00",
+      "igv_rate": "18.00",
+      "igv": "0.00",
+      "affectation": "40",
+      "total_taxes": "0.00",
+      "unit_price": "0.09",
+      "line_value": "3600.00"
+    },
+    {
+      "unit": "ZZ",
+      "quantity": "1",
+      "product_code": "ENE-02",
+      "description": "Cargos inherentes al suministro de energia electrica, octubre 2026",
+      "unit_value": "185.40",
+      "igv_base": "185.40",
+      "igv_rate": "18.00",
+      "igv": "0.00",
+      "affectation": "40",
+      "total_taxes": "0.00",
+      "unit_price": "185.40",
+      "line_value": "185.40"
+    }
+  ],
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON TRES MIL SETECIENTOS OCHENTA Y CINCO CON 40/100 DOLARES AMERICANOS"
+    }
+  ]
+}

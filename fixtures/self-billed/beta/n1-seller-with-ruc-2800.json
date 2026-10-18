@@ -1,0 +1,18 @@
+{
+  "sent_at": "2026-10-18T01:19:50-05:00",
+  "endpoint": "e-beta itcpfegem billService",
+  "class": "rejected",
+  "code": "2800",
+  "diagnosis": [
+    {
+      "code": "2800",
+      "detail": {
+        "node": "cbc:ID/schemeID",
+        "value": "6"
+      },
+      "fields": []
+    }
+  ],
+  "message": "El dato ingresado en el tipo de documento de identidad del receptor no esta permitido. - Detalle: xxx.xxx.xxx value='ticket: 1792304495088 error: INFO : 2800 (nodo: \"cbc:ID/schemeID\" valor: \"6\")'",
+  "outcome": "fault"
+}

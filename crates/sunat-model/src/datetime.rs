@@ -66,7 +66,12 @@ impl Date {
         format!("{year:04}-{month:02}-{day:02}")
     }
 
-    /// `YYYYMMDD`, the form in the identifiers `RC-YYYYMMDD-N` and `RA-YYYYMMDD-N`.
+    /// Calendar days from `earlier` to this date; negative when this one comes first.
+    pub(crate) fn days_after(&self, earlier: &Date) -> i64 {
+        self.days - earlier.days
+    }
+
+    /// `YYYYMMDD`, the form in the identifiers `RC-YYYYMMDD-N`, `RA-YYYYMMDD-N` and `RR-YYYYMMDD-N`.
     pub fn compact(&self) -> String {
         let (year, month, day) = civil_from_days(self.days);
         format!("{year:04}{month:02}{day:02}")

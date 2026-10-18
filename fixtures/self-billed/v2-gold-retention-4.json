@@ -1,0 +1,103 @@
+{
+  "kind": "self_billed",
+  "ubl_version": "2.1",
+  "operation_type": "0503",
+  "document_type": "04",
+  "series": "L001",
+  "number": "2",
+  "issue_date": "2026-10-18T10:00:00-05:00",
+  "currency": "PEN",
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "seller": {
+    "document_type": "1",
+    "document_number": "40123456",
+    "legal_name": "QUISPE MAMANI JUAN CARLOS",
+    "address": {
+      "ubigeo": "040101",
+      "country_code": "PE",
+      "department": "AREQUIPA",
+      "province": "AREQUIPA",
+      "district": "AREQUIPA",
+      "street": "CALLE LOS ALAMOS 45, ACOPIO",
+      "address_type": "03"
+    }
+  },
+  "operation_place": {
+    "ubigeo": "150101",
+    "country_code": "PE",
+    "department": "LIMA",
+    "province": "LIMA",
+    "district": "LIMA",
+    "street": "AV. DE PRUEBA 123, ALMACEN",
+    "location_type": "01"
+  },
+  "lines": [
+    {
+      "unit": "GRM",
+      "quantity": "60",
+      "product_code": "ORO01",
+      "sunat_product_code": "11101801",
+      "description": "Oro en bruto, minería artesanal",
+      "unit_value": "285.00",
+      "unit_price": "336.30",
+      "igv_base": "17100.00",
+      "igv_rate": "18.00",
+      "igv": "3078.00",
+      "affectation": "10",
+      "total_taxes": "3078.00",
+      "line_value": "17100.00",
+      "income_tax_retention": {
+        "base": "17100.00",
+        "rate": "4.00",
+        "amount": "684.00"
+      },
+      "item_properties": [
+        {
+          "code": "6000",
+          "value": "010012718"
+        },
+        {
+          "code": "6004",
+          "value": "85.50"
+        },
+        {
+          "code": "6005",
+          "value": "Oro en bruto"
+        },
+        {
+          "code": "6006",
+          "value": "CONCESION BETA 1"
+        }
+      ]
+    }
+  ],
+  "totals": {
+    "taxed": "17100.00",
+    "igv": "3078.00",
+    "total_taxes": "3078.00",
+    "income_tax_retention_base": "17100.00",
+    "income_tax_retention": "684.00",
+    "sale_value": "17100.00",
+    "subtotal": "20178.00",
+    "payable": "16416.00"
+  },
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON DIECISEIS MIL CUATROCIENTOS DIECISEIS CON 00/100 SOLES"
+    }
+  ]
+}

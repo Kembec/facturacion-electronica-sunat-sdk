@@ -6464,7 +6464,7 @@
    "03"
   ],
   "xpath": "/Invoice/cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode",
-  "input_path": null,
+  "input_path": "service_use_country",
   "also": [
    "operation_type"
   ],
@@ -6473,7 +6473,7 @@
    "ERROR"
   ],
   "message": "El XML no contiene el tag o no existe información del pais de uso, exploración o aprovechamiento",
-  "note": "cac:Delivery de cabecera: el SDK no lo modela ni lo escribe; sin campo en el modelo de entrada; cond: Si 'Tipo de operación' es '0201' o '0208', si el Tag UBL no existe o es vacio. // Si 'Tipo de operación' es '0201' o '0208', y el Tag UBL no existe o es vacio.",
+  "note": "cac:Delivery de cabecera: el SDK lo escribe desde service_use_country; cond: Si 'Tipo de operación' es '0201' o '0208', si el Tag UBL no existe o es vacio. // Si 'Tipo de operación' es '0201' o '0208', y el Tag UBL no existe o es vacio.",
   "source_rows": [
    "Factura2_0!75",
    "Boleta2_0!73"
@@ -6487,7 +6487,7 @@
    "03"
   ],
   "xpath": "/Invoice/cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country/cbc:IdentificationCode",
-  "input_path": null,
+  "input_path": "service_use_country",
   "also": [
    "operation_type"
   ],
@@ -6496,7 +6496,7 @@
    "ERROR"
   ],
   "message": "El dato ingresado como pais de uso, exploracion o aprovechamiento es incorrecto.",
-  "note": "cac:Delivery de cabecera: el SDK no lo modela ni lo escribe; sin campo en el modelo de entrada; cond: Si 'Tipo de operación' es '0201' o '0208' y el Tag UBL existe, el valor es diferente al Catálogo 04  o el valor es igual a 'PE' // Si 'Tipo de operación' es '0201' o '0208' y el Tag UBL existe, el valor es diferente al Catálogo 04 o el valor es igual a 'PE'",
+  "note": "cac:Delivery de cabecera: el SDK lo escribe desde service_use_country; cond: Si 'Tipo de operación' es '0201' o '0208' y el Tag UBL existe, el valor es diferente al Catálogo 04  o el valor es igual a 'PE' // Si 'Tipo de operación' es '0201' o '0208' y el Tag UBL existe, el valor es diferente al Catálogo 04 o el valor es igual a 'PE'",
   "source_rows": [
    "Factura2_0!76",
    "Boleta2_0!74"
@@ -16757,5 +16757,187 @@
    "Boleta2_0!495"
   ],
   "detail_node": "cbc:ID"
+ },
+ {
+  "code": "2220",
+  "document_types": [
+   "RR"
+  ],
+  "xpath": "/VoidedDocuments/cbc:ID",
+  "input_path": "number",
+  "also": [
+   "communication_date"
+  ],
+  "certainty": "inferido",
+  "type": [
+   "ERROR"
+  ],
+  "message": "El ID debe coincidir con el nombre del archivo",
+  "note": "reversal summary (RR) of a purchase settlement, kind \"reversal\"; hoja ResumenReversiones1_0 (24.04.2026); INFERIDO: the identifier is RR-<communication_date>-<number>",
+  "source_rows": [
+   "ResumenReversiones1_0!8"
+  ],
+  "detail_node": null
+ },
+ {
+  "code": "2671",
+  "document_types": [
+   "RR"
+  ],
+  "xpath": "/VoidedDocuments/cbc:ReferenceDate",
+  "input_path": "generation_date",
+  "also": [
+   "communication_date"
+  ],
+  "certainty": "inferido",
+  "type": [
+   "ERROR"
+  ],
+  "message": "La fecha de generación de la comunicación/resumen debe ser mayor o igual a la fecha de generación/emisión de los documentos",
+  "note": "reversal summary (RR) of a purchase settlement, kind \"reversal\"; hoja ResumenReversiones1_0 (24.04.2026); INFERIDO: a comparison of two dates",
+  "source_rows": [
+   "ResumenReversiones1_0!12"
+  ],
+  "detail_node": null
+ },
+ {
+  "code": "2308",
+  "document_types": [
+   "RR"
+  ],
+  "xpath": "/VoidedDocuments/sac:VoidedDocumentsLine/cbc:DocumentTypeCode",
+  "input_path": "lines[].document_type",
+  "also": [],
+  "certainty": "fuente",
+  "type": [
+   "ERROR"
+  ],
+  "message": "DocumentTypeCode - El valor del tipo de documento es invalido",
+  "note": "reversal summary (RR) of a purchase settlement, kind \"reversal\"; hoja ResumenReversiones1_0 (24.04.2026)",
+  "source_rows": [
+   "ResumenReversiones1_0!26"
+  ],
+  "detail_node": null
+ },
+ {
+  "code": "2345",
+  "document_types": [
+   "RR"
+  ],
+  "xpath": "/VoidedDocuments/sac:VoidedDocumentsLine/sac:DocumentSerialID",
+  "input_path": "lines[].series",
+  "also": [
+   "lines[].document_type"
+  ],
+  "certainty": "fuente",
+  "type": [
+   "ERROR"
+  ],
+  "message": "La serie no corresponde al tipo de comprobante",
+  "note": "reversal summary (RR) of a purchase settlement, kind \"reversal\"; hoja ResumenReversiones1_0 (24.04.2026)",
+  "source_rows": [
+   "ResumenReversiones1_0!30"
+  ],
+  "detail_node": null
+ },
+ {
+  "code": "2958",
+  "document_types": [
+   "RR"
+  ],
+  "xpath": "(fecha de recepción del RR frente a la del CDR aceptado de la liquidación; sin xpath UBL)",
+  "input_path": "communication_date",
+  "also": [
+   "generation_date"
+  ],
+  "certainty": "inferido",
+  "type": [
+   "ERROR"
+  ],
+  "message": "El comprobante no puede ser dado de baja por exceder el plazo desde su fecha de recepcion",
+  "note": "reversal summary (RR) of a purchase settlement, kind \"reversal\"; hoja ResumenReversiones1_0 (24.04.2026); INFERIDO: 5 days from the settlement's CDR, which the input does not carry; the SDK rejects past 6 days from generation_date",
+  "source_rows": [
+   "ResumenReversiones1_0!31"
+  ],
+  "detail_node": null
+ },
+ {
+  "code": "2312",
+  "document_types": [
+   "RR"
+  ],
+  "xpath": "/VoidedDocuments/sac:VoidedDocumentsLine/sac:DocumentNumberID",
+  "input_path": "lines[].number",
+  "also": [],
+  "certainty": "fuente",
+  "type": [
+   "ERROR"
+  ],
+  "message": "El dato ingresado en DocumentNumberID debe ser numerico y como maximo de 8 digitos",
+  "note": "reversal summary (RR) of a purchase settlement, kind \"reversal\"; hoja ResumenReversiones1_0 (24.04.2026)",
+  "source_rows": [
+   "ResumenReversiones1_0!33"
+  ],
+  "detail_node": null
+ },
+ {
+  "code": "2348",
+  "document_types": [
+   "RR"
+  ],
+  "xpath": "/VoidedDocuments/sac:VoidedDocumentsLine/sac:DocumentNumberID",
+  "input_path": "lines[].number",
+  "also": [
+   "lines[].document_type",
+   "lines[].series"
+  ],
+  "certainty": "inferido",
+  "type": [
+   "ERROR"
+  ],
+  "message": "Los documentos informados en el archivo XML se encuentran duplicados",
+  "note": "reversal summary (RR) of a purchase settlement, kind \"reversal\"; hoja ResumenReversiones1_0 (24.04.2026); INFERIDO: type, series and number together repeat",
+  "source_rows": [
+   "ResumenReversiones1_0!34"
+  ],
+  "detail_node": null
+ },
+ {
+  "code": "2315",
+  "document_types": [
+   "RR"
+  ],
+  "xpath": "/VoidedDocuments/sac:VoidedDocumentsLine/sac:VoidReasonDescription",
+  "input_path": "lines[].reason",
+  "also": [],
+  "certainty": "fuente",
+  "type": [
+   "ERROR"
+  ],
+  "message": "El tag VoidReasonDescription esta vacío",
+  "note": "reversal summary (RR) of a purchase settlement, kind \"reversal\"; hoja ResumenReversiones1_0 (24.04.2026)",
+  "source_rows": [
+   "ResumenReversiones1_0!39"
+  ],
+  "detail_node": null
+ },
+ {
+  "code": "4203",
+  "document_types": [
+   "RR"
+  ],
+  "xpath": "/VoidedDocuments/sac:VoidedDocumentsLine/sac:VoidReasonDescription",
+  "input_path": "lines[].reason",
+  "also": [],
+  "certainty": "fuente",
+  "type": [
+   "OBSERV"
+  ],
+  "message": "El dato ingresado en VoidReasonDescription debe contener información válida",
+  "note": "reversal summary (RR) of a purchase settlement, kind \"reversal\"; hoja ResumenReversiones1_0 (24.04.2026)",
+  "source_rows": [
+   "ResumenReversiones1_0!40"
+  ],
+  "detail_node": null
  }
 ]

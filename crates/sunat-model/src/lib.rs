@@ -27,6 +27,7 @@ mod free_sales;
 mod penalty_notes;
 mod rule_dates;
 mod scope;
+mod text_format;
 mod self_billed;
 mod self_billed_lines;
 mod self_billed_rules;

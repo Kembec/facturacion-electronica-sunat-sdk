@@ -1,0 +1,19 @@
+{
+  "sent_at": "2026-10-17T19:05:13-05:00",
+  "endpoint": "e-beta billService",
+  "outcome": "ticket",
+  "ticket": "1792282017918",
+  "ticket_status": {
+    "cdr": {
+      "class": "accepted",
+      "description": "El Resumen diario RC-20261017-7101, ha sido aceptado",
+      "notes": [],
+      "reference_id": "RC-20261017-7101",
+      "response_code": "0"
+    },
+    "diagnosis": [],
+    "outcome": "ticket_status",
+    "state": "processed",
+    "status_code": "0"
+  }
+}

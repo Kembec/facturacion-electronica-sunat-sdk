@@ -1,0 +1,30 @@
+{
+  "sent_at": "2026-10-17T19:03:53-05:00",
+  "endpoint": "e-beta billService",
+  "cdr": {
+    "class": "observed",
+    "description": "La Factura numero F001-7191, ha sido aceptada",
+    "notes": [
+      "4318 - El dato ingresado en el campo cac:TaxSubtotal/cbc:TaxAmount del ítem no coincide con el valor calculado - Error en la linea: 2 Tributo: 7152: 4318 (nodo: \"cac:TaxSubtotal/cbc:TaxAmount\" valor: \"1.80\")"
+    ],
+    "reference_id": "F001-7191",
+    "response_code": "0"
+  },
+  "diagnosis": [
+    {
+      "code": "4318",
+      "detail": {
+        "node": "cac:TaxSubtotal/cbc:TaxAmount",
+        "value": "1.80"
+      },
+      "fields": [
+        {
+          "certainty": "fuente",
+          "input_path": "lines[].igv",
+          "xpath": "/Invoice/cac:Line/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount"
+        }
+      ]
+    }
+  ],
+  "outcome": "cdr"
+}

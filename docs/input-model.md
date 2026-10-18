@@ -165,9 +165,11 @@ Checked only in a document with ICBPER, in the order above, each with the code a
 an invoice get; a receipt or a note on another document gets the observation (4293, 4301, 4310, 4312,
 4321) and the SDK rejects it too. SUNAT only observes 4318 and 4237; the SDK rejects them, so nothing
 reaches SUNAT with a note. A free line's `total_taxes` is not checked: SUNAT's sum leaves its IGV (9996)
-out and `03-receipt-free-line.json` puts it in, and SUNAT beta has not said which it expects. Vectors:
-`fixtures/icbper/` (`v1` to `v5` valid, `n1` to `n3` rejected with 4318, 3306 and 4237). Not sent to SUNAT
-beta yet.
+out and `03-receipt-free-line.json` puts it in; the SUNAT beta accepted `v3` with it in. Vectors:
+`fixtures/icbper/` (`v1` to `v5` valid, `n1` to `n3` rejected with 4318, 3306 and 4237). Sent to the SUNAT beta on
+17/10/2026 (answers in `fixtures/icbper/beta/`): `v1` to `v5` accepted with code 0 and no notes (`v5` as a summary
+with its ticket), `n1` observed with 4318, `n2` rejected with 3306, and `n3` (rate 0.10 in 2026) accepted with no
+note: the beta does not apply 4237, the SDK still rejects it.
 
 ## Discounts and charges
 

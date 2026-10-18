@@ -15,6 +15,14 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 - The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native
   builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment.
 
+### Changed
+
+- ICBPER sent to the SUNAT beta (17/10/2026), which `0.1.0-beta.7` had only checked locally: the five valid vectors
+  (invoice, receipt, free-bags receipt, credit note, daily summary) were accepted with code 0 and no notes; 4318 came
+  back as an observation and 3306 as a rejection, as the SDK says; 4237 (stale rate) was accepted with no note, so
+  it is a rule of the SDK alone. The daily summary line needed `igv_rate`: without it the beta answers 2992. Answers
+  in `fixtures/icbper/beta/` (#65).
+
 ## [0.1.0-beta.7] - 2026-10-17
 
 ### Added

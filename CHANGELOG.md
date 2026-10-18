@@ -18,8 +18,8 @@ The first release candidate: the contract of `0.1.0-beta.8`, unchanged.
 
 - Release policy: `1.0.0-rc.N` candidates, and `1.0.0` after 15 days of use in production by a real issuer, with its
   CDRs monitored and every rejection the SDK caused fixed ([`docs/releasing.md`](docs/releasing.md#versions)). It
-  replaces «two betas in a row without a **Breaking** entry».
-- The CPAN version of a candidate takes `_(100 + N)`, so it sorts after the betas: `1.0.0-rc.1` is `0.999999_101`.
+  replaces «two betas in a row without a **Breaking** entry» (#70).
+- The CPAN version of a candidate takes `_(100 + N)`, so it sorts after the betas: `1.0.0-rc.1` is `0.999999_101` (#70).
 
 ## [0.1.0-beta.8] - 2026-10-18
 

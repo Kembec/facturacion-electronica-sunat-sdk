@@ -13,8 +13,8 @@ use crate::{AllowanceCharge, Decimal, DocumentType, Invoice, Line, ModelError};
 const LINE_DISCOUNTS: &[&str] = &["00", "01"];
 const LINE_CHARGES: &[&str] = &["47", "48"];
 const GLOBAL_CODES: &[&str] = &["02", "03", "45", "46", "49", "50"];
-/// Catalog 53 codes the SDK does not render: advances (04, 05, 06, 20), the DU 010-2004 factors (07,
-/// 54), the ISC and other taxes (51 to 53) and perception and retention codes (61 to 64; the IGV
+/// Catalog 53 codes the SDK does not render as global adjustments: the advances (04, 05, 06: their own
+/// `advances` list), the ISC charge (20), the DU 010-2004 factors (07, 54), the ISC and other taxes (51 to 53) and perception and retention codes (61 to 64; the IGV
 /// retention 62 has its own field).
 const OUT_OF_SCOPE: &[&str] = &["04", "05", "06", "07", "20", "51", "52", "53", "54", "61", "62", "63", "64"];
 /// FISE (Ley 29852), a global charge outside the IGV base.
@@ -29,6 +29,8 @@ pub(crate) struct Codes {
     pub(crate) charge_total: &'static str,
     pub(crate) payable: &'static str,
     pub(crate) taxed: &'static str,
+    pub(crate) exempt: &'static str,
+    pub(crate) unaffected: &'static str,
     pub(crate) igv: &'static str,
     pub(crate) sale_value: &'static str,
     pub(crate) subtotal: &'static str,
@@ -42,6 +44,8 @@ const INVOICE: Codes = Codes {
     charge_total: "3301",
     payable: "3280",
     taxed: "3277",
+    exempt: "3275",
+    unaffected: "3274",
     igv: "3291",
     sale_value: "3278",
     subtotal: "3279",
@@ -55,6 +59,8 @@ const RECEIPT: Codes = Codes {
     charge_total: "4308",
     payable: "4312",
     taxed: "4299",
+    exempt: "4297",
+    unaffected: "4296",
     igv: "4290",
     sale_value: "4309",
     subtotal: "4310",
@@ -70,7 +76,9 @@ pub(crate) fn check(invoice: &Invoice) -> Result<(), ModelError> {
     for (n, adjustment) in invoice.global_adjustments.iter().enumerate() {
         check_global(&format!("$.global_adjustments[{n}]"), adjustment, codes)?;
     }
+    crate::advances::check(invoice, codes)?;
     let adjusted = !invoice.global_adjustments.is_empty()
+        || !invoice.advances.is_empty()
         || voucher.lines.iter().any(|line| !line.discounts.is_empty() || !line.charges.is_empty());
     if !adjusted {
         return Ok(());
@@ -122,6 +130,10 @@ fn check_global(path: &str, adjustment: &AllowanceCharge, codes: &Codes) -> Resu
     }
     if code == "62" {
         return Err(ModelError::invalid(at, "the IGV retention (62) goes in igv_retention"));
+    }
+    if matches!(code, "04" | "05" | "06") {
+        let feature = "an advance discount (04, 05, 06) in global_adjustments, which belongs in advances";
+        return Err(ModelError::OutOfScope { path: at, feature });
     }
     if OUT_OF_SCOPE.contains(&code) {
         let feature = "global discounts and charges other than catalog 53 codes 02, 03, 45, 46, 49 and 50";

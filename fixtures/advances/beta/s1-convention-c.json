@@ -1,0 +1,24 @@
+{
+  "sent_at": "2026-10-17T21:27:56-05:00",
+  "endpoint": "e-beta billService",
+  "class": "rejected",
+  "code": "3279",
+  "diagnosis": [
+    {
+      "code": "3279",
+      "detail": {
+        "node": "cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount",
+        "value": "2565.00"
+      },
+      "fields": [
+        {
+          "certainty": "inferido",
+          "input_path": "totals.subtotal",
+          "xpath": "/Invoice/cac:MonetaryTotal/cbc:TaxInclusiveAmount"
+        }
+      ]
+    }
+  ],
+  "message": "La sumatoria del Total del valor de venta más los impuestos no concuerda con la base imponible - Detalle: xxx.xxx.xxx value='ticket: 1792290580440 error: INFO : 3279 (nodo: \"cac:LegalMonetaryTotal/cbc:TaxInclusiveAmount\" valor: \"2565.00\")'",
+  "outcome": "fault"
+}

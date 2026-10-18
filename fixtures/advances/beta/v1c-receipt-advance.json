@@ -1,0 +1,13 @@
+{
+  "sent_at": "2026-10-17T21:27:41-05:00",
+  "endpoint": "e-beta billService",
+  "cdr": {
+    "class": "accepted",
+    "description": "La Boleta numero B001-8100, ha sido aceptada",
+    "notes": [],
+    "reference_id": "B001-8100",
+    "response_code": "0"
+  },
+  "diagnosis": [],
+  "outcome": "cdr"
+}

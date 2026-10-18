@@ -31,7 +31,13 @@ pub(crate) fn signature_reference(w: &mut XmlWriter, issuer: &Company, options: 
 }
 
 pub(crate) fn supplier(w: &mut XmlWriter, issuer: &Company) {
-    w.open("cac:AccountingSupplierParty", &[]);
+    issuer_party(w, "cac:AccountingSupplierParty", issuer);
+}
+
+/// The issuer with its RUC under `element`: `AccountingSupplierParty` of an invoice, or
+/// `AccountingCustomerParty` of a purchase settlement, where the buyer issues.
+pub(crate) fn issuer_party(w: &mut XmlWriter, element: &'static str, issuer: &Company) {
+    w.open(element, &[]);
     w.open("cac:Party", &[]);
     party_identification(w, RUC_SCHEME, &issuer.ruc);
     if let Some(trade_name) = non_empty(&issuer.trade_name) {
@@ -63,7 +69,7 @@ pub(crate) fn customer(w: &mut XmlWriter, customer: &Client) {
     w.close();
 }
 
-fn party_identification(w: &mut XmlWriter, scheme: &str, number: &str) {
+pub(crate) fn party_identification(w: &mut XmlWriter, scheme: &str, number: &str) {
     w.open("cac:PartyIdentification", &[]);
     w.leaf("cbc:ID", &[("schemeID", scheme)], number);
     w.close();
@@ -91,7 +97,7 @@ fn customer_address(w: &mut XmlWriter, address: &Address) {
     w.close();
 }
 
-fn address_line_and_country(w: &mut XmlWriter, address: &Address) {
+pub(crate) fn address_line_and_country(w: &mut XmlWriter, address: &Address) {
     if let Some(street) = non_empty(&address.street) {
         w.open("cac:AddressLine", &[]);
         w.text("cbc:Line", street);
@@ -115,6 +121,6 @@ fn contact(w: &mut XmlWriter, telephone: &Option<String>, email: &Option<String>
     w.close();
 }
 
-fn non_empty(value: &Option<String>) -> Option<&str> {
+pub(crate) fn non_empty(value: &Option<String>) -> Option<&str> {
     value.as_deref().filter(|v| !v.is_empty())
 }

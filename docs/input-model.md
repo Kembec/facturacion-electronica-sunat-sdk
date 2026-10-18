@@ -308,8 +308,8 @@ notes; as the country of use, `RS` was accepted and `AN` came back as 3099.
 
 # Daily summary (RC) and void communication (RA)
 
-Not supported, rejected with an explicit error: perception, ISC and IVAP in summary lines;
-reversal summaries (RR); despatch (GRE).
+Not supported, rejected with an explicit error: perception, ISC and IVAP in summary lines; despatch (GRE). The
+reversal summary (RR) of a purchase settlement is under [Purchase settlement (04)](#reversal-summary-kind-reversal-rr).
 
 ## Summary (`kind: "summary"`, RC)
 
@@ -528,3 +528,85 @@ Not checked here, because SUNAT answers them from its registries: whether the is
 agent (2617), whether the supplier's RUC exists (2621) and its condition (4091, an observation), and
 whether the numbering was already used (1033). The S/ 700 threshold and the exclusions of RS
 037-2002 are the agent's decision, not the SDK's.
+
+# Purchase settlement (04)
+
+The liquidación de compra electrónica: UBL 2.1 `SelfBilledInvoice`, SUNAT customization 2.0. The buyer issues it, with
+its RUC, for a purchase from a natural person without RUC (RCP art. 6 num. 1.3). `build` renders it with `file_name`
+`RUC-04-SERIES-NUMBER`; the CLI sends it with `send` to the invoice `billService`. The roles of an invoice are reversed:
+the issuer is `cac:AccountingCustomerParty` and the seller `cac:AccountingSupplierParty`.
+
+Whether a settlement may be issued (the seller's condition, the goods, the 75 UIT ceiling: SUNAT 2451) and the rules
+that query SUNAT's registries (the seller's DNI 2450 to 2462, the buyer's RUC 2010, 2011, 2463) are the caller's and
+SUNAT's. As everywhere else, the caller gives every amount and the SDK reconciles them.
+
+Not supported, rejected with an explicit error: operation type `0502` (advances) and `totals.prepaid`; a series that
+starts with a digit (printed settlements); free lines (9996) and other taxes (9999).
+
+## Settlement (`kind: "self_billed"`)
+
+| Field | Notes |
+|---|---|
+| `ubl_version` | `"2.1"` (2074) |
+| `operation_type` | catalog 51: `"0501"` purchase, `"0503"` purchase of gold (3206) |
+| `document_type` | `"04"` (1003) |
+| `series`, `number` | `L` and 3 uppercase letters or digits; 1 to 8 digits (1001) |
+| `issue_date`, `currency` | as in an invoice; `currency` ISO 4217 (3088). `SelfBilled::check_send_deadline` (Rust) checks the term: the issue date or the next day (2108), never before it (2329) |
+| `issuer` | the buyer, see Issuer; `country_code`, when given, `PE` (4041) |
+| `seller` | `{ "document_type", "document_number", "legal_name", "address" }`. `document_type` `"1"` DNI, `"4"` carné de extranjería or `"7"` passport (2800); `document_number` required (2014): a DNI has 8 digits, the others up to 15 characters without whitespace (2802); `legal_name` 1 to 1500 characters (2021, 2022) |
+| `seller.address` | `street` 3 to 250 characters, not starting with a space or a tab (2452, 2593); `ubigeo` (2453); `address_type`, catalog 60 (2456, 2457); `country_code`, `department`, `province`, `district`, `urbanization` optional |
+| `operation_place` | where the purchase took place (`cac:DeliveryTerms`), required: without it, 2458 on `$.operation_place.location_type`, as the beta answers; `street` as the seller's (2454, 2778), `ubigeo` of 6 digits (2455, 2917), `location_type`, catalog 60 (2458, 2459) |
+| `lines` | at least one; see Settlement line |
+| `totals` | `taxed`, `exempt`, `unaffected`, `igv`, `income_tax_retention_base`, `income_tax_retention`, `total_taxes` (the IGV, without the retention: 4301), `sale_value` (Σ `line_value`: 4309), `subtotal` (`sale_value` + IGV: 4310), `rounding` (absolute value up to 1: 4314), `payable` (`subtotal` − IGV − retention + `rounding`: 4312). The retention base and amount are the sums of the lines' (4345, 4346). Each within ±1, as the sheet allows |
+| `legends`, `despatch_references` | as in an invoice |
+
+The catalog 60 list is not in the sources the SDK was written from: `address_type` and `location_type` are checked as
+two digits.
+
+## Settlement line
+
+As an invoice line (`unit`, `quantity`, `product_code`, `description`, `unit_value`, `igv_base`, `igv_rate`, `igv`,
+`total_taxes`, `line_value`), with these differences:
+
+| Field | Notes |
+|---|---|
+| `sunat_product_code` | required, catalog 25, 8 digits (3506, 3496). The beta observes 4337 on a code that is not at class level (`11140000`) |
+| `unit_price` | required (2028, 2367) |
+| `affectation` | `"10"` taxed, `"20"` exempt, `"30"` unaffected (2040); `igv` = `igv_base` × `igv_rate` ±1 (3103), 0 when not taxed (3110); `igv_base` is the `line_value` (4294) |
+| `total_taxes` | the line's IGV (4293) |
+| `income_tax_retention` | required: `{ "base", "rate", "amount" }` (2464). `base` is the `line_value` (4294); `rate` `"1.50"`, or `"4.00"` for gold (4237); `amount` = `base` × `rate` / 100 ±1 (2464, 2033). It renders a second `TaxSubtotal` with tax 3000 (`IR`, `TOX`) |
+| `item_properties` | operation type `0503` only: `[{ "code", "value" }]` with codes `6000`, `6004`, `6005` and `6006`, each with a value (2466 to 2469, 3064) |
+
+## What is checked, and what is not
+
+The rules of sheet «LiquidacionCompra2_0» that read only the document, each rejected with the code SUNAT would answer,
+the totals' observations included; one test per code in `crates/sunat-model/tests/self_billed_rules.rs`. The vectors
+are `fixtures/self-billed/`: `v1` (0501, retention 1.5 %) and `v2` (0503, gold, 4 %) build, sign and pass the
+independent verifier (`crates/sunat-ubl/tests/self_billed.rs`); `n1` (a seller with RUC) fails with 2800 and `n2`
+(no `operation_place`) with 2458. On 18/10/2026 the SUNAT beta accepted `v1` with code 0 and observation 4337 (the
+vector's product code) and `v2` with code 0 and no notes, rejected `n1` with 2800, and rejected `n2` with 2458, the code the SDK gives: the
+beta checks the place's location type before its address (`fixtures/self-billed/beta/`).
+
+## Reversal summary (`kind: "reversal"`, RR)
+
+The baja of a purchase settlement: the void communication's UBL 2.0 `VoidedDocuments` (same fields as
+[`voided`](#void-communication-kind-voided-ra)) with identifier `RR-YYYYMMDD-<number>` (communication date) and
+`file_name` `RUC-RR-YYYYMMDD-N`. In Rust it is `Document::Reversal(Voided)`. The CLI sends it with `summary` to SUNAT's
+**`otroscpe`** service and asks its `ticket` there: on 18/10/2026 the beta's invoice `billService` answered 0151 to
+the RR, and `otroscpe` gave a ticket whose `getStatus` was code 0 (`fixtures/self-billed/beta/v3-*`).
+
+| Field | Notes |
+|---|---|
+| `number` | 1 to 5 digits (2220) |
+| `generation_date` | date of issue of the settlement it reverses (`ReferenceDate`); not after `communication_date` (2671) |
+| `communication_date` | date the summary is sent (`IssueDate`); at most 6 days after `generation_date` (2958, below) |
+| `issuer` | the buyer that issued the settlement, see Issuer |
+| `lines` | `[{ "document_type": "04", "series": "L001", "number": "1", "reason": "..." }]`: type `04` (2308), series `L` and 3 uppercase letters or digits (2345), number 1 to 8 digits (2312), each settlement once (2348), `reason` not blank (2315) and of 3 characters or more (4203) |
+
+The deadline: SUNAT's sheet «ResumenReversiones1_0» (ERR-2958, from 01/08/2026) allows 5 days from the settlement's
+accepted CDR, where RS 244-2019 art. 3.2 says 7 from its issue. The SDK does not know the CDR's date, which may be the
+day after the issue (2108), so it rejects with 2958 only when `communication_date` is more than 6 days after
+`generation_date`; a summary sent on day 6 may still be rejected by SUNAT. Only SUNAT checks that the settlement
+exists, was accepted, is not already reversed and has no payments registered (2750, 2398, 2751, 2471). One test per
+code in `crates/sunat-model/tests/reversal_rules.rs`; `v3` builds, signs and passes the independent verifier
+(`crates/sunat-ubl/tests/self_billed.rs`), and `n3` (7 days) fails with 2958.

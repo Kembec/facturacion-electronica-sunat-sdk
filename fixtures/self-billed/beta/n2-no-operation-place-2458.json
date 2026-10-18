@@ -1,0 +1,18 @@
+{
+  "sent_at": "2026-10-18T01:19:55-05:00",
+  "endpoint": "e-beta itcpfegem billService",
+  "class": "rejected",
+  "code": "2458",
+  "diagnosis": [
+    {
+      "code": "2458",
+      "detail": {
+        "node": "/",
+        "value": ""
+      },
+      "fields": []
+    }
+  ],
+  "message": "Debe consignar el tipo de ubicación del lugar donde se realiza la operación - Detalle: xxx.xxx.xxx value='ticket: 1792304499092 error: INFO: 2458 (nodo: \"/\" valor: \"\")'",
+  "outcome": "fault"
+}

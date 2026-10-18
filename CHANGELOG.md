@@ -12,6 +12,19 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ### Added
 
+- The purchase settlement (04), UBL 2.1 `SelfBilledInvoice`, operation types 0501 and 0503: `kind: "self_billed"` with
+  `seller` (DNI, carné de extranjería or passport), `operation_place`, the income tax retention per line (tax 3000) and
+  the four gold properties, with the SUNAT checks that read only the document
+  ([`docs/input-model.md`](docs/input-model.md#purchase-settlement-04)). In the beta, `v1` and `v2` were accepted with
+  code 0 (`fixtures/self-billed/beta/`) (#74).
+- The reversal summary (RR) of a purchase settlement: `kind: "reversal"`, the void communication's `VoidedDocuments`
+  named `RR-YYYYMMDD-N` with type 04 lines, checked with 2308, 2345, 2312, 2348, 2315, 4203, 2671, 2220 and 2958 (more
+  than 6 days after `generation_date`: SUNAT allows 5 from the settlement's CDR)
+  ([`docs/input-model.md`](docs/input-model.md#reversal-summary-kind-reversal-rr)). `summary` and `ticket` accept the
+  name `RUC-RR-YYYYMMDD-N`; it goes to SUNAT's `otroscpe` service: in the beta (18/10/2026) the invoice `billService`
+  answered 0151 and `otroscpe` gave a ticket with status 0 (`fixtures/self-billed/beta/v3-*`).
+- `diagnosis` of a reversal summary (`RUC-RR-...`) points 2220, 2671, 2308, 2345, 2958, 2312, 2348, 2315 and 4203 at
+  their `kind: "reversal"` field (`crates/sunat-sdk/data/error-fields.json`, 9 rows of type `RR`).
 - Vectors for the export types 0203 to 0207 in `fixtures/export/` (v5 to v9), built, signed and checked by the
   independent verifier; in the beta (18/10/2026) all five were accepted with code 0 and no notes.
 - 3272 and 4294: `lines[].igv_base` must equal `lines[].line_value` to the cent, in every operation type (the SDK does
@@ -20,6 +33,10 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ### Changed
 
+- **Breaking** — Rust only: `Document` gains the variant `SelfBilled`. A `match` on `Document` adds the arm (or `_`);
+  the JSON input and the bindings do not change (#74).
+- **Breaking** — Rust only: `Document` gains the variant `Reversal(Voided)` for the reversal summary (RR). A `match` on
+  `Document` adds the arm (or `_`); `Voided` gains `reversal_identifier()`. The JSON input only adds the kind.
 - Catalog 04 is a list, not a format: `service_use_country` (3099) and the guest's `passport_country` and
   `residence_country` (4280) take ISO 3166-1 alpha-2 in force (`crates/sunat-model/data/catalog-04.json`, with its
   sources). A two-letter code outside it, such as `ZZ` or the withdrawn `AN` and `CS`, is now rejected. In the beta,

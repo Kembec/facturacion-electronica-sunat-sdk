@@ -1,0 +1,96 @@
+{
+  "kind": "self_billed",
+  "ubl_version": "2.1",
+  "operation_type": "0501",
+  "document_type": "04",
+  "series": "L001",
+  "number": "92",
+  "issue_date": "2026-10-18T10:00:00-05:00",
+  "currency": "PEN",
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "seller": {
+    "document_type": "1",
+    "document_number": "40123456",
+    "legal_name": "QUISPE MAMANI JUAN CARLOS",
+    "address": {
+      "ubigeo": "040101",
+      "country_code": "PE",
+      "department": "AREQUIPA",
+      "province": "AREQUIPA",
+      "district": "AREQUIPA",
+      "street": "CALLE LOS ALAMOS 45, ACOPIO",
+      "address_type": "03"
+    }
+  },
+  "lines": [
+    {
+      "unit": "KGM",
+      "quantity": "200",
+      "product_code": "CHAT01",
+      "sunat_product_code": "11140000",
+      "description": "Chatarra de cobre y bronce, acopio",
+      "unit_value": "3.50",
+      "unit_price": "4.13",
+      "igv_base": "700.00",
+      "igv_rate": "18.00",
+      "igv": "126.00",
+      "affectation": "10",
+      "total_taxes": "126.00",
+      "line_value": "700.00",
+      "income_tax_retention": {
+        "base": "700.00",
+        "rate": "1.50",
+        "amount": "10.50"
+      }
+    },
+    {
+      "unit": "KGM",
+      "quantity": "40",
+      "product_code": "CHAT02",
+      "sunat_product_code": "11140000",
+      "description": "Chatarra de aluminio, acopio",
+      "unit_value": "12.25",
+      "unit_price": "14.455",
+      "igv_base": "490.00",
+      "igv_rate": "18.00",
+      "igv": "88.20",
+      "affectation": "10",
+      "total_taxes": "88.20",
+      "line_value": "490.00",
+      "income_tax_retention": {
+        "base": "490.00",
+        "rate": "1.50",
+        "amount": "7.35"
+      }
+    }
+  ],
+  "totals": {
+    "taxed": "1190.00",
+    "igv": "214.20",
+    "total_taxes": "214.20",
+    "income_tax_retention_base": "1190.00",
+    "income_tax_retention": "17.85",
+    "sale_value": "1190.00",
+    "subtotal": "1404.20",
+    "payable": "1172.15"
+  },
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON UN MIL CIENTO SETENTA Y DOS CON 15/100 SOLES"
+    }
+  ]
+}

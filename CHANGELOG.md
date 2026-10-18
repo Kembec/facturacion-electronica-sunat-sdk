@@ -10,6 +10,22 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- Vectors for the export types 0203 to 0207 in `fixtures/export/` (v5 to v9), built, signed and checked by the
+  independent verifier; in the beta (18/10/2026) all five were accepted with code 0 and no notes.
+- 3272 and 4294: `lines[].igv_base` must equal `lines[].line_value` to the cent, in every operation type (the SDK does
+  not model ISC). 3272 in an invoice and in a note that modifies one; 4294 in a receipt and in a note that modifies one,
+  an observation for SUNAT that the SDK rejects.
+
+### Changed
+
+- Catalog 04 is a list, not a format: `service_use_country` (3099) and the guest's `passport_country` and
+  `residence_country` (4280) take ISO 3166-1 alpha-2 in force plus `AN` and `CS`
+  (`crates/sunat-model/data/catalog-04.json`, with its sources). A two-letter code outside it, such as `ZZ`, is now
+  rejected. In the beta, `RS` was accepted and `AN` came back as 3099.
+- `diagnose` maps 3098 and 3099 to `service_use_country`.
+
 ## [1.0.0-rc.2] - 2026-10-18
 
 ### Added

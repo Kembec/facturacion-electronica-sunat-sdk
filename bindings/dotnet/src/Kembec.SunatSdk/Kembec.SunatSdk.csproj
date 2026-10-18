@@ -13,7 +13,7 @@
 
     <!-- Must equal [workspace.package] version in the repository's Cargo.toml (checked in CI) and the native
          library's sunat_sdk_version() (checked by the battery). -->
-    <Version>1.0.0-rc.2</Version>
+    <Version>1.0.0-rc.3</Version>
     <PackageId>Kembec.SunatSdk</PackageId>
     <Title>SDK de facturación electrónica SUNAT (Perú)</Title>
     <Description>Arma, firma, envía y consulta comprobantes electrónicos de la SUNAT (Perú) desde C# y VB.NET: facturas, boletas, notas, resúmenes, bajas y guías de remisión. El núcleo en Rust del SDK, en proceso por su ABI C. SUNAT (Peru) electronic invoicing SDK for .NET.</Description>

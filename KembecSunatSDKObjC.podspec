@@ -2,7 +2,7 @@
 # same sources and the same SunatSDKFFI.xcframework as the KembecSunatSDKObjC product of Package.swift (bindings/objc).
 Pod::Spec.new do |s|
   s.name = "KembecSunatSDKObjC"
-  s.version = "0.1.0-beta.8"
+  s.version = "1.0.0-rc.1"
   s.summary = "SUNAT (Peru) electronic invoicing: build, sign, send and query vouchers, summaries and despatch advices"
   s.description = "Factura, boleta, notas, resumen diario, comunicación de baja y guía de remisión remitente: arma el " \
                   "XML UBL 2.1, lo firma, lo envía a la SUNAT y lee la CDR. The SDK's Rust core through its C ABI, " \

@@ -8,8 +8,9 @@ use strict;
 use warnings;
 
 # CPAN orders versions as decimals: X.Y.Z is X.00Y00Z, and beta N of X.Y.Z is the decimal just below it with _N, a
-# trial that sorts before the final release (0.1.0-beta.8 is 0.000999_008, 0.1.0 will be 0.001000).
-our $VERSION = '0.000999_008';
+# trial that sorts before the final release; rc N takes _(100 + N), so it sorts after the betas (1.0.0-rc.1 is
+# 0.999999_101, 1.0.0 will be 1.000000).
+our $VERSION = '0.999999_101';
 $VERSION =~ tr/_//d;
 
 use JSON::PP ();
@@ -27,7 +28,7 @@ use Kembec::SunatSdk::RestResults;
 use Kembec::SunatSdk::SoapResults;
 
 # The SDK's version (Cargo.toml), as the native library reports it.
-use constant SDK_VERSION => '0.1.0-beta.8';
+use constant SDK_VERSION => '1.0.0-rc.1';
 
 # The C ABI this module speaks; a library with another one is refused at load.
 use constant ABI_VERSION => Kembec::SunatSdk::Native::ABI_VERSION;

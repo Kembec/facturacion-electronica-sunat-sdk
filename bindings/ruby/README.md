@@ -31,7 +31,7 @@ Hasta entonces, el CI del repositorio arma las gemas en cada cambio: baja el art
 descomprímelo e instala la gema de tu plataforma (`ruby -e 'puts Gem::Platform.local'` te dice cuál es):
 
 ```bash
-gem install ./kembec-sunat_sdk-0.1.0.beta.8-x86_64-linux-gnu.gem
+gem install ./kembec-sunat_sdk-1.0.0.rc.1-x86_64-linux-gnu.gem
 ```
 
 | Plataforma | Gema |
@@ -45,7 +45,7 @@ Con Bundler, instálala primero así y fija la versión en tu `Gemfile`; `bundle
 máquina donde corre `bundle install` (tu CI, tu servidor) necesita la gema instalada antes:
 
 ```ruby
-gem "kembec-sunat_sdk", "0.1.0.beta.8"
+gem "kembec-sunat_sdk", "1.0.0.rc.1"
 ```
 
 Es una versión beta. Corre en Ruby 3.2 o posterior (probado en 3.2, 3.3, 3.4 y 4.0) y cada gema trae dentro el núcleo
@@ -60,7 +60,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.8
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.1
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"

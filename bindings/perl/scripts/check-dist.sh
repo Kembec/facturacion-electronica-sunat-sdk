@@ -16,9 +16,11 @@ cargo_version=$(sed -n '/^\[workspace.package\]/,/^\[/s/^version = "\(.*\)"/\1/p
 sdk_version=$(sed -n "s/^use constant SDK_VERSION => '\(.*\)';/\1/p" "$here/lib/Kembec/SunatSdk.pm")
 [ -n "$cargo_version" ] && [ "$cargo_version" = "$sdk_version" ] \
   || { echo "module SDK_VERSION $sdk_version differs from Cargo's $cargo_version" >&2; exit 1; }
-# X.Y.Z is X.00Y00Z; beta N of X.Y.Z is the decimal just below it with _N (lib/Kembec/SunatSdk.pm).
+# X.Y.Z is X.00Y00Z; beta N of X.Y.Z is the decimal just below it with _N, rc N with _(100 + N)
+# (lib/Kembec/SunatSdk.pm).
 cpan_version=$(perl -e '
-  my ($x, $y, $z, $beta) = $ARGV[0] =~ /\A(\d+)\.(\d+)\.(\d+)(?:-beta\.(\d+))?\z/ or die "version $ARGV[0]\n";
+  my ($x, $y, $z, $stage, $n) = $ARGV[0] =~ /\A(\d+)\.(\d+)\.(\d+)(?:-(beta|rc)\.(\d+))?\z/ or die "version $ARGV[0]\n";
+  my $beta = defined $stage ? ($stage eq "rc" ? 100 + $n : $n) : undef;
   my $micro = $x * 1_000_000 + $y * 1_000 + $z;
   $micro -= 1 if defined $beta;
   printf "%d.%06d%s", int($micro / 1_000_000), $micro % 1_000_000, defined $beta ? sprintf("_%03d", $beta) : "";

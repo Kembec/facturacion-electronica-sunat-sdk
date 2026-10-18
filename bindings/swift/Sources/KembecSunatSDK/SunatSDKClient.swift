@@ -8,7 +8,7 @@ import Foundation
 /// (`try await client.send(...)`), which run the call on a dispatch queue and leave the caller's thread free.
 public struct SunatSDKClient: Sendable {
     /// The version of this package, equal to the native library's.
-    public static let packageVersion = "0.1.0-beta.8"
+    public static let packageVersion = "1.0.0-rc.1"
     /// 90 seconds, the CLI's default.
     public static let defaultHTTPTimeout: TimeInterval = 90
 

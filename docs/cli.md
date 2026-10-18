@@ -4,6 +4,13 @@ JSON on stdin, JSON on stdout, one JSON object per call. On error: exit code 1 a
 `{"error": "<message>"}` on stderr; nothing on stdout. Usage errors: same shape. Secrets (SOL password,
 private key) are read from flags, environment or files and are never printed.
 
+## `--version`
+
+`sunat-sdk --version` (or `-V`), with no other argument, prints one text line such as `sunat-sdk 1.0.0-rc.4` and exits 0;
+it reads no stdin. It is the one answer that is not JSON: it is meant for a person or an install check
+(`sunat-sdk --version`), like cargo's. The version is the release's. A program reads it from the C ABI
+(`sunat_sdk_version`, [`docs/c-abi.md`](c-abi.md)) or from its binding.
+
 ## `build`
 
 stdin: one document (`docs/input-model.md`).

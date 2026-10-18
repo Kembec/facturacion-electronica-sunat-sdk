@@ -9,6 +9,14 @@ use sunat_sdk_cli::{run, Io};
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    // `--version` is answered by the binary alone: it reads no stdin and is not a command of the C ABI,
+    // which has `sunat_sdk_version`. One text line, as cargo and most CLIs print it.
+    if let [flag] = args.as_slice() {
+        if flag == "--version" || flag == "-V" {
+            println!("sunat-sdk {}", env!("CARGO_PKG_VERSION"));
+            return ExitCode::SUCCESS;
+        }
+    }
     let io = Io { input: &read_stdin, env: &|key: &str| std::env::var(key).ok() };
     match run(&args, &io) {
         Ok(output) => {

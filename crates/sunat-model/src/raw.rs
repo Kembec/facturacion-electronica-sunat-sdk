@@ -1,5 +1,6 @@
 //! The JSON document as written, before it is split into `Invoice` or `Note`; summaries and void
-//! communications go to `daily`, despatch advices to `despatch` and retention vouchers to `retention`.
+//! communications go to `daily`, despatch advices to `despatch`, retention vouchers to `retention` and purchase settlements to
+//! `self_billed`.
 
 use serde::Deserialize;
 use serde_json::Value;
@@ -52,6 +53,9 @@ pub(crate) fn parse(json: &str) -> Result<Document, ModelError> {
     if value.get("kind").and_then(Value::as_str) == Some("retention") {
         return crate::retention::parse(value);
     }
+    if value.get("kind").and_then(Value::as_str) == Some("self_billed") {
+        return crate::self_billed::parse(value);
+    }
     crate::scope::check(&value)?;
     let raw: RawDocument = serde_json::from_value(value).map_err(|e| ModelError::Json(e.to_string()))?;
     raw.into_document()
@@ -97,7 +101,7 @@ impl RawDocument {
                 let reference = self.note.ok_or_else(|| ModelError::missing("$.note"))?;
                 Ok(Document::Note(Note { voucher, reference }))
             }
-            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\", \"note\", \"summary\", \"voided\", \"despatch\" or \"retention\"")),
+            _ => Err(ModelError::invalid("$.kind", "expected \"invoice\", \"note\", \"summary\", \"voided\", \"despatch\", \"retention\" or \"self_billed\"")),
         }
     }
 }

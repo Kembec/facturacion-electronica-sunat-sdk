@@ -17,14 +17,41 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   the four gold properties, with the SUNAT checks that read only the document
   ([`docs/input-model.md`](docs/input-model.md#purchase-settlement-04)). In the beta, `v1` and `v2` were accepted with
   code 0 (`fixtures/self-billed/beta/`) (#74).
+
+### Changed
+
 - **Breaking** — Rust only: `Document` gains the variant `SelfBilled`. A `match` on `Document` adds the arm (or `_`);
   the JSON input and the bindings do not change (#74).
 
+## [1.0.0-rc.2] - 2026-10-18
+
+### Added
+
+- Export in invoices and receipts, operation types 0200 to 0208 of catalog 51: `service_use_country` (0201, 0208)
+  renders `cac:Delivery` with the country only, and `lines[].lodging` (0202 with the ten guest fields, 0205 with four)
+  renders the catalog 55 properties 4000 to 4009. Checked before sending: 3206, 3098, 3099, 2800, 2801, 2802, 2642,
+  3110, 3102, 3136 to 3145, 4280, 4281, 4282, 3107, 3003, 3273, 3294, 3278, 3279 and 3280; advances, IGV retention,
+  free lines and ICBPER in an export are out of scope. `stay_days` above 60 is not rejected: the SDK does not decide
+  what is an export. In the beta (18/10/2026) 0200, 0201, 0208 and 0202 were accepted with code 0 and no notes, and
+  2800 and 3145 came back as the SDK says; 0208 without the country was accepted, and the SDK keeps 3098 as the
+  validation sheet says. Answers in `fixtures/export/beta/` (#72).
 - An OSE's answer reads like SUNAT's (`read_cdr`, the fault parsers): the CDR's number comes from
   `cac:DocumentReference/cbc:ID` when `cac:Response/cbc:ReferenceID` is missing, each `cac:Response/cac:Status` enters
   `notes` as `"<code> - <reason>"` (so a code 0 with an observation is `observed` and gets its `diagnosis`), and a
   fault's `message` is the text of `detail` when it has one. SUNAT's own answers read as before. Synthetic vectors in
   `fixtures/ose/` (#69).
+
+### Changed
+
+- **Breaking** — Rust only: `Line` gains `lodging` and `Invoice` gains `service_use_country`. The JSON input and the
+  other bindings are unchanged for a document without them. Migration: add `lodging: None` and
+  `service_use_country: None` where you build these structs (#72).
+
+### Fixed
+
+- `docs/cli.md` no longer tells you to send a despatch advice again after a `gre-send` with no answer as if SUNAT
+  documented it: its GRE API manual does not say what a repeated send returns; the guide's rules reject a number
+  already registered (1033, 1032), and the first CDR is looked up in SUNAT Operaciones en Línea (#73).
 
 ## [1.0.0-rc.1] - 2026-10-18
 
@@ -271,7 +298,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.1...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.2...HEAD
+[1.0.0-rc.2]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.1...v1.0.0-rc.2
 [1.0.0-rc.1]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.8...v1.0.0-rc.1
 [0.1.0-beta.8]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.7...v0.1.0-beta.8
 [0.1.0-beta.7]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.6...v0.1.0-beta.7

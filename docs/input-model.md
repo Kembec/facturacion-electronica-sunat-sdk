@@ -19,7 +19,7 @@ retention voucher (20) have their own sections below.
 |---|---|
 | `kind` | `"invoice"` (01, 03) or `"note"` (07, 08) |
 | `ubl_version` | `"2.1"` |
-| `operation_type` | catalog 51, invoice only (`"0101"`; `"1001"` or `"1003"` with `detraction`) |
+| `operation_type` | catalog 51, invoice only (`"0101"`; `"1001"` or `"1003"` with `detraction`; `"0200"` to `"0208"`, see Export) |
 | `document_type` | `"01"`, `"03"`, `"07"`, `"08"` |
 | `series` | `"F001"`, `"B001"` |
 | `number` | string, no padding added |
@@ -39,6 +39,7 @@ retention voucher (20) have their own sections below.
 | `igv_retention` | optional, 01/03/07/08, see IGV retention |
 | `global_adjustments` | optional, invoice and receipt only, see Discounts and charges |
 | `advances` | optional, invoice and receipt only, see Advances |
+| `service_use_country` | operation types 0201 and 0208 only, see Export |
 
 ## Related documents
 
@@ -131,7 +132,8 @@ and 10 (3230: beta rejected a credit note with type 07 and a debit note with typ
 `unit` (catalog 03, `"NIU"`, `"ZZ"`), `quantity`, `product_code`, `sunat_product_code`, `description`,
 `unit_value`, `igv_base`, `igv_rate` (`"18.00"`), `igv`, `affectation` (catalog 07), `total_taxes`,
 `unit_price`, `line_value`, `free_unit_value` (free lines), `discounts` and `charges` (invoice and
-receipt only, see Discounts and charges), `icbper` and `icbper_factor` (see ICBPER).
+receipt only, see Discounts and charges), `icbper` and `icbper_factor` (see ICBPER), `lodging` (operation types
+0202 and 0205, see Export).
 
 ## ICBPER
 
@@ -252,6 +254,43 @@ A sale covered in full has `payable` `"0.00"`, `taxed` `"0.00"` and still render
 (without it the beta answers 2638). An advance with an affectation other than 10, 20 or 30, the same advance twice,
 and advances with lines at two IGV rates are rejected. The SDK does not check that the advance exists or is
 accepted (3218): the beta does not either. Vectors and the beta's answers: `fixtures/advances/`, `fixtures/advances/beta/`.
+
+## Export
+
+Operation types `0200` to `0208` of catalog 51, in invoices and receipts. They share one set of rules: every line
+takes affectation `"40"` (2642), `igv` `"0.00"` (3110) and the IGV rate of the period, not zero (3102); the totals
+carry only `export` = Σ `line_value` (3003, 3273), with `taxed`, `exempt`, `unaffected` and `igv` absent or
+`"0.00"` (3107), `total_taxes` zero (3294), `sale_value` = `export` (3278), `subtotal` = `sale_value` (3279) and
+`payable` = `subtotal` + `charge_total` − `allowance_total` (3280). The customer is a catalog 06 document or `"-"`
+(2800): a DNI is 8 digits (2801), a foreign document up to 15 characters without spaces (2802), and a RUC (`"6"`)
+is rejected with 0200, 0201 and 0204, and with any export in a receipt (2800). Lodging (0202) and tour package (0205)
+are invoice only (3206). Advances, IGV retention, free lines and ICBPER in an export are out of scope.
+
+| Type | What changes |
+|---|---|
+| `0201`, `0208` services used abroad | `service_use_country`: catalog 04 country other than `"PE"`, required (3098, 3099). It renders `cac:Delivery/cac:DeliveryLocation/cac:Address/cac:Country` and no address line |
+| `0202` lodging of non-domiciled guests | `lines[].lodging` on every line with the ten fields below (3136 to 3145) |
+| `0205` tour package | `lines[].lodging` with `guest_name`, `guest_document_type`, `guest_document_number` and `passport_country` only (3136 to 3139) |
+| `0200`, `0203`, `0204`, `0206`, `0207` | nothing beyond the shared rules |
+
+| Field of `lines[].lodging` | Catalog 55 | |
+|---|---|---|
+| `passport_country` | 4000 | catalog 04 (4280) |
+| `residence_country` | 4001 | catalog 04 (4280) |
+| `country_entry_date`, `check_in_date`, `check_out_date`, `consumption_date` | 4002, 4003, 4004, 4006 | `YYYY-MM-DD`; check-out not before check-in (4282) |
+| `stay_days` | 4005 | 1 to 4 digits (4281) |
+| `guest_name` | 4007 | 3 to 200 characters (4280) |
+| `guest_document_type` | 4008 | catalog 06 (4280) |
+| `guest_document_number` | 4009 | 3 to 20 characters (4280) |
+
+Web hosting, SaaS or software for a customer abroad is a service: `0201` (or `0208` if part of it is provided
+abroad), not `0202`. `0202` is the lodging of tourists, and SUNAT rejects it without the guest data (3136 to 3145).
+Lodging beyond 60 days per entry into the country is not an export (art. 33 num. 4 of the IGV law): invoice that
+part apart; the SDK does not reject `stay_days` above 60, because SUNAT does not check it. Whether the sale is an export
+(the customer's domicile, where the service is used, the exporters' register SUNAT checks with 0201) stays with the
+caller. `service_use_country` outside 0201 and 0208, and `lodging` outside 0202 and 0205 or in a note, are rejected.
+Vectors and the beta's answers: `fixtures/export/`, `fixtures/export/beta/`; the beta accepted 0208 without the country
+(n1), the SDK still rejects it with 3098, as the validation sheet says.
 
 ## Note (07, 08)
 

@@ -438,7 +438,7 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           url="https://api.nuget.org/v3-flatcontainer/kembec.sunatsdk/index.json"
-          # nuget.org validates and indexes a push before listing it: 1.0.0-rc.1 took more than 6 minutes.
+          # nuget.org validates and indexes a push before listing it: 1.0.0-rc.2 took more than 6 minutes.
           for attempt in $(seq 1 60); do
             if curl -fsS "$url" | jq -e --arg v "$version" '.versions | index($v | ascii_downcase)' >/dev/null; then
               echo "Kembec.SunatSdk $version is on nuget.org"

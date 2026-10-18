@@ -120,7 +120,10 @@ the token and the call together. Each call asks for its own token; the token nev
 - `gre-send`: stdin `{"name": "RUC-09-SERIE-NUMERO", "xml" | "xml_base64"}` (the signed guide) → `{"outcome": "ticket",
   "ticket", "received_at", "zip_name", "hash_zip"}`. Store the ticket first: it is the only handle on the outcome.
   `hash_zip` is the SHA-256 of the zip in lowercase hex. No answer, or an answer that is not GRE-M's, exits 1: the
-  guide may have arrived, so send the same file again, never the operation with another number.
+  guide may have arrived. SUNAT's GRE API manual does not say what the same file sent again returns; the guide's
+  validation rules (rows 12-13, 20/06/2026) reject a number already registered with 1033 or 1032, so it is not
+  registered twice, but that answer does not bring the first CDR: look the guide up in SUNAT Operaciones en Línea.
+  Never send the operation with another number.
 - `gre-ticket`: stdin `{"ticket"}` → `{"outcome": "ticket_status", "ticket", "status_code", "state", "cdr_generated",
   "error"?, "cdr"?, "cdr_zip_base64"?}`; `state` is `processed` (0), `in_process` (98: ask again with the same ticket,
   never send again) or `processed_with_errors` (99); `error` is `{code, description, class}` from `numError`/`desError`;

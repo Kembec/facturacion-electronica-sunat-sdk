@@ -143,6 +143,9 @@ fn item(w: &mut XmlWriter, line: &Line) {
         w.text("cbc:ItemClassificationCode", code);
         w.close();
     }
+    if let Some(lodging) = &line.lodging {
+        crate::lodging::properties(w, lodging);
+    }
     w.close();
 }
 

@@ -134,6 +134,36 @@ pub struct Line {
     /// `line_value` already has it added (SUNAT 3271); `48` does not.
     #[serde(default)]
     pub charges: Vec<AllowanceCharge>,
+    /// Guest data of an export line, operation types 0202 (lodging) and 0205 (tour package) only:
+    /// one `cac:AdditionalItemProperty` per field, catalog 55 codes 4000 to 4009.
+    pub lodging: Option<Lodging>,
+}
+
+/// The guest of a lodging (0202) or tour package (0205) line. SUNAT requires all ten fields with 0202
+/// (3136 to 3145) and the four marked «0205» with 0205; dates are `YYYY-MM-DD`.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Lodging {
+    /// 4007, 0205 too: 3 to 200 characters.
+    pub guest_name: Option<String>,
+    /// 4008, 0205 too: catalog 06.
+    pub guest_document_type: Option<String>,
+    /// 4009, 0205 too: 3 to 20 characters.
+    pub guest_document_number: Option<String>,
+    /// 4000, 0205 too: catalog 04 country that issued the passport.
+    pub passport_country: Option<String>,
+    /// 4001: catalog 04 country of residence.
+    pub residence_country: Option<String>,
+    /// 4002: day the guest entered the country.
+    pub country_entry_date: Option<String>,
+    /// 4003.
+    pub check_in_date: Option<String>,
+    /// 4004: not before `check_in_date` (SUNAT 4282).
+    pub check_out_date: Option<String>,
+    /// 4005: days of stay, 1 to 4 digits (SUNAT 4281).
+    pub stay_days: Option<String>,
+    /// 4006.
+    pub consumption_date: Option<String>,
 }
 
 /// One `cac:AllowanceCharge`, of a line or of the document. `ChargeIndicator` is not an input: it
@@ -315,6 +345,9 @@ pub struct Invoice {
     pub global_adjustments: Vec<AllowanceCharge>,
     /// Advances the document discounts (catalog 53 `04`, `05`, `06`); they are not `global_adjustments`.
     pub advances: Vec<Advance>,
+    /// Catalog 04 country where an exported service is used (`cac:Delivery`), operation types 0201 and
+    /// 0208 only (SUNAT 3098, 3099).
+    pub service_use_country: Option<String>,
 }
 
 /// Credit (07) or debit (08) note.

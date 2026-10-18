@@ -1,7 +1,7 @@
 # Releasing
 
 One tag publishes every artifact: the CLI binary on the GitHub release, the npm package, the Python package on
-PyPI, the PHP package on Packagist, and the five library crates on crates.io ([below](#cratesio)).
+PyPI, the PHP package on Packagist, the .NET package on NuGet, and the five library crates on crates.io ([below](#cratesio)).
 
 1. Set `version` in `[workspace.package]` of `Cargo.toml`. CI fails if `SunatSdk::VERSION` (PHP) or
    `bindings/wasm/npm/package.json` differ from it. The Python package takes it from there as PEP 440
@@ -41,6 +41,7 @@ request; one line per change, not per commit.
 | GitHub release | `publish` job | the workflow's `GITHUB_TOKEN` |
 | npm (`@kembec/facturacion-electronica-sunat-sdk`) | `publish-npm` job, Trusted Publishing (OIDC) bound to `release.yml` and the `release` environment | none |
 | PyPI (`facturacion-electronica-sunat-sdk`) | `publish-pypi` job | `PYPI_API_TOKEN` in the `release` environment |
+| NuGet (`Kembec.SunatSdk`, six runtimes: win-x64, win-x86, linux-x64, linux-arm64, osx-x64, osx-arm64) | `publish-nuget` job, `dotnet nuget push --skip-duplicate`, then checks the version is listed | `NUGET_API_KEY` in the `release` environment |
 | Packagist (`kembec/facturacion-electronica-sunat-sdk`) | reads the tag through the repository's GitHub webhook | none in the workflow |
 | crates.io (`kembec-sunat-model`, `kembec-sunat-transport`, `kembec-sunat-sdk`, `kembec-sunat-xmldsig`, `kembec-sunat-ubl`) | `publish-crates` job | `CARGO_REGISTRY_TOKEN` in the `release` environment |
 

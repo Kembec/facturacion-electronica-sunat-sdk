@@ -24,54 +24,55 @@ https://fe.kembec.com
 
 ## Instalación
 
-El paquete todavía no se puede agregar por URL. El tag `v0.1.0-beta.5` ya tiene `Package.swift` y
-`KembecSunatSDKObjC.podspec`, pero sin binario: en ese commit `release` de `Package.swift` es `nil`, y el release no
-adjunta `SunatSDKFFI.xcframework.zip`. SwiftPM se detiene en `local binary target 'SunatSDKFFI' … does not contain a
-binary artifact`, y el `prepare_command` del podspec, en «Package.swift names no released xcframework yet». Cuando un
-release adjunte ese zip y el commit de su tag nombre su URL y su checksum, se agregará por URL con SwiftPM, o con
-CocoaPods desde Git:
+Se agrega por URL con Swift Package Manager, con el producto `KembecSunatSDKObjC`. En Xcode, «File › Add Package
+Dependencies…» con `https://github.com/Kembec/facturacion-electronica-sunat-sdk`, la regla «Exact Version»
+`1.0.0-rc.3` y ese producto; en un `Package.swift`:
+
+```swift
+// swift-tools-version:5.9
+import PackageDescription
+
+let package = Package(
+    name: "PrimerComprobante",
+    platforms: [.macOS(.v10_15), .iOS(.v13)],
+    dependencies: [
+        .package(url: "https://github.com/Kembec/facturacion-electronica-sunat-sdk", exact: "1.0.0-rc.3"),
+    ],
+    targets: [
+        .executableTarget(name: "PrimerComprobante", dependencies: [
+            .product(name: "KembecSunatSDKObjC", package: "facturacion-electronica-sunat-sdk"),
+        ]),
+    ]
+)
+```
+
+SwiftPM baja `SunatSDKFFI.xcframework.zip` del release de esa versión y lo acepta solo si su checksum es el que nombra
+el `Package.swift` del tag. `exact:` te deja en la versión que probaste; `from: "1.0.0-rc.3"` tomaría también las
+siguientes candidatas y la 1.0.0.
+
+O con CocoaPods, desde Git, en tu `Podfile`:
 
 ```ruby
-pod 'KembecSunatSDKObjC', :git => 'https://github.com/Kembec/facturacion-electronica-sunat-sdk.git', :tag => 'v…'
+pod 'KembecSunatSDKObjC', :git => 'https://github.com/Kembec/facturacion-electronica-sunat-sdk.git', :tag => 'v1.0.0-rc.3'
 ```
 
 El podspec no va al trunk de CocoaPods, que deja de aceptar publicaciones el 2/12/2026: se sirve desde Git, y al
-instalarse baja el binario del release y comprueba el mismo SHA-256 que `Package.swift`.
+instalarse baja el mismo zip del release y comprueba el mismo SHA-256 que `Package.swift` antes de usarlo.
 
-Hasta entonces, se usa una copia local del repositorio con el binario que arma el CI. El paquete y el podspec leen el
-`SunatSDKFFI.xcframework` de `bindings/swift/artifacts`, que no está en git (son 139 MB): baja el artefacto
-`SunatSDKFFI.xcframework` de una ejecución del
-[workflow `swift`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/actions/workflows/swift.yml) y
-descomprímelo ahí. Con `gh`:
+Es la candidata 1.0.0-rc.3 (la de `KSSPackageVersion`). Corre en macOS 10.15 o posterior (Apple Silicon e Intel) y en
+iOS 13 o posterior, dispositivo y simulador (arm64 y x86_64); no en Linux. Está escrito para ARC y no compila sin él.
+El núcleo en Rust queda enlazado dentro de tu binario como biblioteca estática: no hay framework que embeber ni firmar,
+ni programa externo al que llamar. El ejemplo de abajo, compilado en release para macOS arm64, pesa 5,4 MB y solo
+enlaza Foundation, CoreFoundation, libobjc y libSystem.
 
-```bash
-git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git
-cd facturacion-electronica-sunat-sdk
-run=$(gh run list -w swift -b "$(git branch --show-current)" -s success -L 1 --json databaseId -q '.[0].databaseId')
-gh run download "$run" -n SunatSDKFFI.xcframework -D bindings/swift/artifacts/SunatSDKFFI.xcframework
-```
-
-Después, agrégalo por ruta. Con SwiftPM (en Xcode, «Add Local…» sobre esa carpeta y el producto `KembecSunatSDKObjC`):
-
-```swift
-dependencies: [.package(path: "../facturacion-electronica-sunat-sdk")],
-targets: [
-    .executableTarget(name: "PrimerComprobante", dependencies: [
-        .product(name: "KembecSunatSDKObjC", package: "facturacion-electronica-sunat-sdk"),
-    ]),
-]
-```
-
-o con CocoaPods, en tu `Podfile`:
-
-```ruby
-pod 'KembecSunatSDKObjC', :path => '../facturacion-electronica-sunat-sdk'
-```
-
-Es una versión beta (1.0.0-rc.3, la de `KSSPackageVersion`). Corre en macOS 10.15 o posterior (Apple Silicon e
-Intel) y en iOS 13 o posterior, dispositivo y simulador (arm64 y x86_64); no en Linux. Está escrito para ARC y no
-compila sin él. El núcleo en Rust queda enlazado dentro de tu binario como biblioteca estática: no hay framework que
-embeber ni firmar, ni programa externo al que llamar.
+Para probar una rama que aún no tiene release, clona el repositorio y descomprime el artefacto
+`SunatSDKFFI.xcframework` de su run del
+[workflow `swift`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/actions/workflows/swift.yml) en
+`bindings/swift/artifacts/SunatSDKFFI.xcframework`. Agrégalo por ruta, con SwiftPM
+(`.package(path: "../facturacion-electronica-sunat-sdk")`) o con CocoaPods
+(`pod 'KembecSunatSDKObjC', :path => '../facturacion-electronica-sunat-sdk'`), y corre `swift build` o `pod install`
+con `KEMBEC_SUNAT_LOCAL_XCFRAMEWORK=1`. Sin esa variable, los dos toman el xcframework que nombra `release`, y
+`pod install` reemplaza el que descomprimiste.
 
 ## Tu primer comprobante
 

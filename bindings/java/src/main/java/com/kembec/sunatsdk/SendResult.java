@@ -1,5 +1,6 @@
 package com.kembec.sunatsdk;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -8,12 +9,14 @@ import java.util.Map;
  */
 public final class SendResult extends SdkResult {
     private final Outcome outcome;
+    private final List<Diagnosis> diagnosis;
     private final Cdr cdr;
     private final byte[] cdrZip;
     private final Fault fault;
 
     SendResult(Map<String, Object> value, String rawJson) {
         super(rawJson);
+        diagnosis = Diagnosis.listFrom(value);
         outcome = Fields.outcome(value, Outcome.CDR, Outcome.FAULT);
         if (outcome == Outcome.CDR) {
             Map<String, Object> member = Fields.requiredObject(value, "cdr");
@@ -61,5 +64,15 @@ public final class SendResult extends SdkResult {
      */
     public Fault getFault() {
         return fault;
+    }
+
+    /**
+     * The input field each code in the answer points at, one per code: the fault's, a CDR's non-zero response code and
+     * each note that starts with a code.
+     *
+     * @return an unmodifiable list, empty when the answer has none
+     */
+    public List<Diagnosis> getDiagnosis() {
+        return diagnosis;
     }
 }

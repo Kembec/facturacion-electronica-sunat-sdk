@@ -19,7 +19,7 @@ fn out_of_scope_features_get_named_errors() {
         ("advances", |v| v["advances"] = serde_json::json!([])),
         ("perception", |v| v["perception"] = serde_json::json!({})),
         ("global discounts", |v| v["discounts"] = serde_json::json!([])),
-        ("ICBPER", |v| v["lines"][0]["icbper"] = serde_json::json!("0.50")),
+        ("other taxes", |v| v["lines"][0]["other_tax"] = serde_json::json!("0.50")),
         ("ISC", |v| v["totals"]["isc"] = serde_json::json!("1.00")),
     ];
     for (feature, edit) in cases {
@@ -166,7 +166,7 @@ fn summary_lines_are_checked() {
 
 #[test]
 fn summary_line_taxes_out_of_scope_get_named_errors() {
-    for (key, feature) in [("isc", "ISC"), ("icbper", "ICBPER"), ("perception", "perception"), ("ivap", "IVAP")] {
+    for (key, feature) in [("isc", "ISC"), ("perception", "perception"), ("ivap", "IVAP")] {
         match edited(SUMMARY, |v| v["lines"][0][key] = serde_json::json!("1.00")) {
             Err(ModelError::OutOfScope { feature: f, .. }) => assert_eq!(f, feature),
             other => panic!("{key}: {other:?}"),

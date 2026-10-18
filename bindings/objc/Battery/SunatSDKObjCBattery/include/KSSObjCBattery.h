@@ -13,7 +13,7 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /// The battery of the Objective-C package as a consumer links it: the 38 fixtures against their vectors (inclusive C14N,
-/// exact DigestValue and SignatureValue), the native version against the package's, zip and CDR, the errors, no_verdict
+/// exact DigestValue and SignatureValue), the native version against the package's, zip and CDR, the errors, diagnosis, no_verdict
 /// without an answer and concurrent calls. The same checks as the Swift battery, through the other product.
 @interface KSSObjCBattery : NSObject
 @property (class, nonatomic, readonly) NSInteger expectedFixtures;

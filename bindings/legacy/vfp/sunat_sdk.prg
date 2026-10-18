@@ -39,7 +39,7 @@ PROCEDURE sunat_load
 	ENDIF
 ENDPROC
 
-* The SDK version of the loaded DLL, for example "0.1.0-beta.6".
+* The SDK version of the loaded DLL, for example "0.1.0-beta.7".
 FUNCTION sunat_version
 	RETURN sunat_sdk_version()
 ENDFUNC

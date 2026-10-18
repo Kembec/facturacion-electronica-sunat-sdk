@@ -83,5 +83,9 @@ fn despatch_advice_carries_sunat_shipment_and_lines() {
     }
     let between = String::from_utf8(signed(CASES[1])).unwrap();
     assert!(between.contains("<cbc:CompanyID>MTC1508123CNG</cbc:CompanyID>"));
+    assert!(between.contains(
+        "</cac:CarrierParty><cac:LoadingTransportEvent><cbc:OccurrenceDate>2026-10-15</cbc:OccurrenceDate></cac:LoadingTransportEvent></cac:ShipmentStage>"
+    ));
+    assert!(!xml.contains("cac:LoadingTransportEvent"), "private transport has no handover date");
     assert!(!between.contains("cac:DriverPerson") && !between.contains("cac:TransportHandlingUnit"));
 }

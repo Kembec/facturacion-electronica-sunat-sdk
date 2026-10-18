@@ -63,6 +63,15 @@ sub texts {
     return [@$field];
 }
 
+# The objects of a list; an absent list is empty.
+sub objects {
+    my ($value, $name) = @_;
+    my $field = $value->{$name};
+    return [] unless defined $field;
+    shape("`$name` is not a list of objects") unless ref $field eq 'ARRAY' && !grep { ref ne 'HASH' } @$field;
+    return $field;
+}
+
 sub optional_object {
     my ($value, $name) = @_;
     my $field = $value->{$name};

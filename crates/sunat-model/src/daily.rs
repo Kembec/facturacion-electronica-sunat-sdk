@@ -12,7 +12,6 @@ use crate::{Company, Date, Decimal, Document, ModelError};
 const SUMMARY_LINE_KEYS: &[(&str, &str)] = &[
     ("perception", "perception"),
     ("isc", "ISC"),
-    ("icbper", "ICBPER"),
     ("ivap", "IVAP"),
     ("other_taxes", "other taxes"),
 ];
@@ -56,8 +55,18 @@ pub struct SummaryLine {
     pub unaffected: Option<Decimal>,
     pub export: Option<Decimal>,
     pub free: Option<Decimal>,
+    /// Free sales by catalog 11 code, from 2027-01-01 (`reference_date`): 06 taxed, 07 exempt, 08 unaffected,
+    /// 09 export. Before it only `free` (05) exists.
+    pub free_taxed: Option<Decimal>,
+    pub free_exempt: Option<Decimal>,
+    pub free_unaffected: Option<Decimal>,
+    pub free_export: Option<Decimal>,
+    /// IGV of free sales (tax 9996, field 25), from 2027-01-01, as its own `cac:TaxTotal` after the IGV one.
+    pub free_igv: Option<Decimal>,
     pub other_charges: Option<Decimal>,
     pub igv: Option<Decimal>,
+    /// ICBPER (tax 7152) of the reported document, in PEN; `total` includes it.
+    pub icbper: Option<Decimal>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]

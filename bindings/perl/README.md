@@ -32,7 +32,7 @@ ejecución del
 descomprímelo e instala el `.tar.gz` (con `cpanm`, o con `cpan` y la misma ruta):
 
 ```bash
-cpanm ./Kembec-SunatSdk-0.000999_006.tar.gz
+cpanm ./Kembec-SunatSdk-0.000999_007.tar.gz
 ```
 
 La misma distribución sirve en todas las plataformas: trae el núcleo en Rust del SDK ya compilado para cada una, y al
@@ -44,7 +44,7 @@ instalarse copia solo el de tu máquina. No llama a ningún programa externo ni 
 | macOS Intel / Apple Silicon | el del sistema o el tuyo, 5.26 o posterior |
 | Windows de 64 bits | Strawberry Perl de 64 bits |
 
-`0.000999_006` es la 0.1.0-beta.6 del SDK en la numeración de CPAN, una versión *trial*; 0.1.0 será `0.001000`. Corre
+`0.000999_007` es la 0.1.0-beta.7 del SDK en la numeración de CPAN, una versión *trial*; 0.1.0 será `0.001000`. Corre
 en Perl 5.26 o posterior (probado en 5.40, 5.42 y 5.44 en Linux y macOS, en 5.26 en Linux x64 y en Strawberry Perl 5.40
 y 5.42 en Windows x64). Su única dependencia que no viene con Perl es
 [FFI::Platypus](https://metacpan.org/pod/FFI::Platypus), que `cpanm` instala y compila con el compilador de C de tu
@@ -59,7 +59,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.6
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.7
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -112,6 +112,11 @@ else {                                                # 'cdr'
   comprobante físico) es observación aunque esté por debajo de 4000.
 - `summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `ticket` y `status`
   sin respuesta dan `'no_verdict'`: se vuelve a consultar, nunca a enviar.
+- `send`, `summary`, `ticket` y `status` traen `diagnosis`: por cada código de la respuesta (el del `'fault'`, el de la
+  CDR si no es 0 y cada nota que empieza con un código), el campo de tu JSON de entrada que pudo causarlo. Con el 2800
+  de la beta: `$sent->diagnosis->[0]->fields->[0]->input_path` es `'customer.document_type'` y
+  `$sent->diagnosis->[0]->detail` da `node` `'cbc:ID/schemeID'` y `value` `'1'`. `fields` está vacío para un código
+  que la tabla no lista y para los resúmenes y las bajas; sin diagnóstico, `diagnosis` es una lista vacía.
 - Cada resultado guarda en `raw_json` la respuesta tal como la da el
   [contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md).
 

@@ -26,11 +26,11 @@ El paquete todavía no está en Maven Central. Cuando se publique, se agregará 
 <dependency>
   <groupId>com.kembec</groupId>
   <artifactId>sunat-sdk</artifactId>
-  <version>0.1.0-beta.6</version>
+  <version>0.1.0-beta.7</version>
 </dependency>
 ```
 
-o con Gradle: `implementation("com.kembec:sunat-sdk:0.1.0-beta.6")`.
+o con Gradle: `implementation("com.kembec:sunat-sdk:0.1.0-beta.7")`.
 
 Hasta entonces, el CI del repositorio arma el jar en cada cambio: baja el artefacto `maven` de una ejecución del
 [workflow `java`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/actions/workflows/java.yml),
@@ -39,7 +39,7 @@ desde ahí (en Gradle, con `mavenLocal()` en `repositories`):
 
 ```bash
 mvn org.apache.maven.plugins:maven-install-plugin:3.2.0:install-file \
-  -Dfile=sunat-sdk-0.1.0-beta.6.jar -DpomFile=sunat-sdk-0.1.0-beta.6.pom
+  -Dfile=sunat-sdk-0.1.0-beta.7.jar -DpomFile=sunat-sdk-0.1.0-beta.7.pom
 ```
 
 Es una versión beta. Corre en Java 8 o posterior (probado en 8, 11, 17, 21 y 25) y trae dentro del jar el núcleo en
@@ -57,7 +57,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.6
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.7
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -108,6 +108,11 @@ if (sent.getOutcome() == Outcome.FAULT) {
   comprobante físico) es observación aunque esté por debajo de 4000.
 - `summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `ticket` y `status`
   sin respuesta dan `Outcome.NO_VERDICT`: se vuelve a consultar, nunca a enviar.
+- `getDiagnosis()` (en `SendResult`, `SummaryResult`, `TicketResult` y `StatusResult`) dice qué campo de tu JSON de
+  entrada causó cada código de la respuesta: `sent.getDiagnosis().get(0).getFields().get(0).getInputPath()` es, para el
+  2800 de un tipo de documento del receptor no permitido, `customer.document_type`, y `getDetail()` trae el nodo y el
+  valor que la SUNAT nombra (`cbc:ID/schemeID` = `1`). Sin códigos que diagnosticar, o sin campos para el código, la
+  lista viene vacía.
 - Cada resultado guarda en `getRawJson()` la respuesta tal como la da el
   [contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md).
 

@@ -7,7 +7,7 @@ use crate::amount::two_decimals;
 use crate::document::root;
 use crate::lines::tax_scheme;
 use crate::parties::{signature_reference, RUC_SCHEME};
-use crate::tax::IGV;
+use crate::tax::{FREE, ICBPER, IGV};
 use crate::writer::XmlWriter;
 use crate::Options;
 
@@ -95,12 +95,48 @@ fn summary_line(w: &mut XmlWriter, line_id: usize, line: &SummaryLine, currency:
         w.close();
     }
     igv_total(w, line.igv.as_ref(), line.igv_rate.as_ref(), &money);
+    if let Some(free_igv) = non_zero(&line.free_igv) {
+        free_igv_total(w, free_igv, &money);
+    }
+    if let Some(icbper) = &line.icbper {
+        icbper_total(w, icbper, &money);
+    }
+    w.close();
+}
+
+/// IGV of free sales (field 25): its own `cac:TaxTotal` with tax 9996, after the IGV one. The model only lets
+/// it through from 2027-01-01.
+fn free_igv_total(w: &mut XmlWriter, amount: &Decimal, money: &[(&str, &str)]) {
+    let amount = two_decimals(amount);
+    w.open("cac:TaxTotal", &[]);
+    w.leaf("cbc:TaxAmount", money, &amount);
+    w.open("cac:TaxSubtotal", &[]);
+    w.leaf("cbc:TaxAmount", money, &amount);
+    w.open("cac:TaxCategory", &[]);
+    tax_scheme(w, FREE);
+    w.close();
+    w.close();
+    w.close();
+}
+
+/// ICBPER as its own `cac:TaxTotal` after the IGV one, one per tax code (SUNAT 2355), with the same
+/// amount in its subtotal (2344).
+fn icbper_total(w: &mut XmlWriter, icbper: &Decimal, money: &[(&str, &str)]) {
+    let amount = two_decimals(icbper);
+    w.open("cac:TaxTotal", &[]);
+    w.leaf("cbc:TaxAmount", money, &amount);
+    w.open("cac:TaxSubtotal", &[]);
+    w.leaf("cbc:TaxAmount", money, &amount);
+    w.open("cac:TaxCategory", &[]);
+    tax_scheme(w, ICBPER);
+    w.close();
+    w.close();
     w.close();
 }
 
 /// One `sac:BillingPayment` per sale type (catalog 11). Taxed (01) is rendered whenever given, even
-/// zero; exempt (02), unaffected (03), export (04) and free (05) only when non-zero, as the vectors
-/// do.
+/// zero; exempt (02), unaffected (03), export (04), free (05) and the free ones by type (06 to 09, from
+/// 2027-01-01) only when non-zero, as the vectors do.
 fn billing_payments(w: &mut XmlWriter, line: &SummaryLine, money: &[(&str, &str)]) {
     let payments = [
         ("01", line.taxed.as_ref()),
@@ -108,6 +144,10 @@ fn billing_payments(w: &mut XmlWriter, line: &SummaryLine, money: &[(&str, &str)
         ("03", non_zero(&line.unaffected)),
         ("04", non_zero(&line.export)),
         ("05", non_zero(&line.free)),
+        ("06", non_zero(&line.free_taxed)),
+        ("07", non_zero(&line.free_exempt)),
+        ("08", non_zero(&line.free_unaffected)),
+        ("09", non_zero(&line.free_export)),
     ];
     for (instruction, amount) in payments {
         let Some(amount) = amount else { continue };

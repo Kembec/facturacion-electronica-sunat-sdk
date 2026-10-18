@@ -29,6 +29,18 @@ NS_ASSUME_NONNULL_BEGIN
 @interface KSSNoVerdict ()
 - (instancetype)initWithFields:(KSSFields *)fields;
 @end
+@interface KSSDiagnosisDetail ()
+- (instancetype)initWithFields:(KSSFields *)fields;
+@end
+@interface KSSDiagnosisField ()
+- (instancetype)initWithFields:(KSSFields *)fields;
+@end
+@interface KSSDiagnosis ()
+- (instancetype)initWithFields:(KSSFields *)fields;
+@end
+
+/// The `diagnosis` member of a SOAP result; absent or null is empty.
+FOUNDATION_EXPORT NSArray<KSSDiagnosis *> *KSSReadDiagnosis(KSSFields *fields);
 
 @interface KSSSendResult ()
 @property (nonatomic, copy, readwrite) NSString *rawJSON;

@@ -1,10 +1,12 @@
 package com.kembec.sunatsdk;
 
+import java.util.List;
 import java.util.Map;
 
 /** {@code status} (getStatusCdr): one voucher's status, with its CDR when SUNAT attaches it. */
 public final class StatusResult extends SdkResult {
     private final Outcome outcome;
+    private final List<Diagnosis> diagnosis;
     private final String statusCode;
     private final String statusMessage;
     private final Cdr cdr;
@@ -14,6 +16,7 @@ public final class StatusResult extends SdkResult {
 
     StatusResult(Map<String, Object> value, String rawJson) {
         super(rawJson);
+        diagnosis = Diagnosis.listFrom(value);
         outcome = Fields.outcome(value, Outcome.STATUS, Outcome.FAULT, Outcome.NO_VERDICT);
         boolean status = outcome == Outcome.STATUS;
         statusCode = status ? Fields.text(value, "status_code") : null;
@@ -85,5 +88,15 @@ public final class StatusResult extends SdkResult {
      */
     public NoVerdict getNoVerdict() {
         return noVerdict;
+    }
+
+    /**
+     * The input field each code in the answer points at, one per code: the fault's, a CDR's non-zero response code and
+     * each note that starts with a code.
+     *
+     * @return an unmodifiable list, empty when the answer has none
+     */
+    public List<Diagnosis> getDiagnosis() {
+        return diagnosis;
     }
 }

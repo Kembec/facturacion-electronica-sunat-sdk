@@ -31,7 +31,7 @@ Hasta entonces, el CI del repositorio arma las gemas en cada cambio: baja el art
 descomprímelo e instala la gema de tu plataforma (`ruby -e 'puts Gem::Platform.local'` te dice cuál es):
 
 ```bash
-gem install ./kembec-sunat_sdk-0.1.0.beta.6-x86_64-linux-gnu.gem
+gem install ./kembec-sunat_sdk-0.1.0.beta.7-x86_64-linux-gnu.gem
 ```
 
 | Plataforma | Gema |
@@ -45,7 +45,7 @@ Con Bundler, instálala primero así y fija la versión en tu `Gemfile`; `bundle
 máquina donde corre `bundle install` (tu CI, tu servidor) necesita la gema instalada antes:
 
 ```ruby
-gem "kembec-sunat_sdk", "0.1.0.beta.6"
+gem "kembec-sunat_sdk", "0.1.0.beta.7"
 ```
 
 Es una versión beta. Corre en Ruby 3.2 o posterior (probado en 3.2, 3.3, 3.4 y 4.0) y cada gema trae dentro el núcleo
@@ -60,7 +60,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.6
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.7
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -109,6 +109,11 @@ end
   físico) es observación aunque esté por debajo de 4000.
 - `summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `ticket` y `status`
   sin respuesta dan `:no_verdict`: se vuelve a consultar, nunca a enviar.
+- `send_bill`, `summary`, `ticket` y `status` traen `diagnosis`: por cada código de la respuesta (el del `:fault`, el de
+  la CDR si no es 0 y cada nota que empieza con un código), el campo de tu JSON de entrada que pudo causarlo. Con el
+  2800 de la beta: `sent.diagnosis.first.fields.first.input_path` es `"customer.document_type"` y
+  `sent.diagnosis.first.detail` da `node` `"cbc:ID/schemeID"` y `value` `"1"`. `fields` está vacío para un código que
+  la tabla no lista y para los resúmenes y las bajas; sin diagnóstico, `diagnosis` es una lista vacía.
 - Cada resultado guarda en `raw_json` la respuesta tal como la da el
   [contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md).
 

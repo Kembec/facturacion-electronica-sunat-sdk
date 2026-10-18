@@ -9,6 +9,8 @@ use std::sync::OnceLock;
 
 use serde_json::{json, Value};
 
+use crate::exchange::Exchange;
+
 const ERROR_FIELDS: &str = include_str!("../data/error-fields.json");
 
 /// What SUNAT's message names, observed in beta as `(nodo: "cbc:ID/schemeID" valor: "1")`.
@@ -101,6 +103,27 @@ pub fn diagnosis_json(document_type: &str, outcome: &Value) -> Option<Value> {
         }
     }
     Some(Value::Array(found.iter().map(Diagnosis::to_json).collect()))
+}
+
+/// The outcome of `exchange::read` with `diagnosis` added when it carries a code. The one place the
+/// CLI, the WebAssembly, Python and C-ABI bindings share.
+pub fn with_diagnosis(kind: Exchange, input: &Value, mut outcome: Value) -> Value {
+    if let Some(found) = diagnosis_json(&document_type(kind, input), &outcome) {
+        outcome["diagnosis"] = found;
+    }
+    outcome
+}
+
+/// The document type the codes are looked up for: the second part of the file name for `send` and
+/// `summary` (`RUC-01-F001-1`, `RUC-RC-...`), the `document_type` field for `status`. A `ticket`
+/// only answers for a summary or void communication, whose codes the table has no rows for.
+pub fn document_type(kind: Exchange, input: &Value) -> String {
+    let field = |name: &str| input[name].as_str().unwrap_or_default().to_string();
+    match kind {
+        Exchange::Send | Exchange::Summary => field("name").split('-').nth(1).unwrap_or_default().to_string(),
+        Exchange::Status => field("document_type"),
+        Exchange::Ticket => String::new(),
+    }
 }
 
 fn str_of(value: &Value) -> &str {

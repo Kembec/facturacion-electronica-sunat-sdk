@@ -51,7 +51,7 @@ targets: [
 ]
 ```
 
-Es una versión beta (0.1.0-beta.6, la de `SunatSDKClient.packageVersion`). Pide Swift 5.9 o posterior y corre en:
+Es una versión beta (0.1.0-beta.7, la de `SunatSDKClient.packageVersion`). Pide Swift 5.9 o posterior y corre en:
 
 | Plataforma | Núcleo del SDK |
 |---|---|
@@ -77,7 +77,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.6
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.7
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -112,6 +112,11 @@ let sent = try await sdk.send(name: built.fileName, signedXML: signed.xml, crede
 switch sent.outcome {
 case let .fault(fault):
     print(fault.code, fault.responseClass)               // por ejemplo, "1033" y .alreadyRegistered
+    for diagnosis in sent.diagnosis {                    // un elemento por código de la respuesta
+        print(diagnosis.code,                            // "2800"
+              diagnosis.detail?.node,                    // lo que nombra la SUNAT: "cbc:ID/schemeID" = "1"
+              diagnosis.fields.first?.inputPath)         // el campo de tu JSON: "customer.document_type"
+    }
 case let .cdr(cdr, zip):
     try zip?.write(to: URL(fileURLWithPath: "\(built.fileName).cdr.zip")) // guarda la CDR como llegó
     print(cdr.isValidDocument)                           // aceptado, con o sin observaciones
@@ -130,6 +135,12 @@ case let .cdr(cdr, zip):
   físico) es observación aunque esté por debajo de 4000.
 - `summary` envía un resumen (RC) o una baja (RA) y devuelve su ticket: guárdalo antes que nada. `ticket` y `status`
   sin respuesta dan `.noVerdict`: se vuelve a consultar, nunca a enviar.
+- `diagnosis` (en `SendResult`, `SummaryResult`, `TicketResult` y `StatusResult`) dice qué campo de tu entrada causó
+  cada código: el del rechazo, o el de cada nota de una CDR observada. Cada `Diagnosis` trae el `code`, el `detail` (nodo
+  y valor que nombra la SUNAT, si nombra uno) y los `fields` candidatos, cada uno con su `inputPath`, su `xpath` y su
+  `certainty` (`.source` si el nodo es el de la regla y un solo campo lo escribe; `.inferred` si no). `inputPath` es
+  `nil` cuando el modelo de entrada no tiene ese campo, y `fields` queda vacío si el código no está en las reglas de la
+  SUNAT del 26.08.2026. Sin `diagnosis` en la respuesta, la lista es vacía.
 - Cada resultado es `Codable` con las claves del
   [contrato de la CLI](https://github.com/Kembec/facturacion-electronica-sunat-sdk/blob/main/docs/cli.md), así que
   `JSONEncoder().encode(sent)` da sus mismos campos; `rawJSON` guarda la respuesta tal como la dio la biblioteca y no

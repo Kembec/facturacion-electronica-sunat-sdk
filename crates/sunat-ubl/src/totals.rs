@@ -5,7 +5,7 @@ use sunat_model::{AllowanceCharge, Decimal, Detraction, IgvRetention, PaymentTer
 
 use crate::amount::{shortest, two_decimals};
 use crate::lines::{factor_text, tax_scheme};
-use crate::tax::{TaxScheme, EXEMPT, EXPORT, FREE, IGV, IVAP, UNAFFECTED};
+use crate::tax::{TaxScheme, EXEMPT, EXPORT, FREE, ICBPER, IGV, IVAP, UNAFFECTED};
 use crate::writer::XmlWriter;
 
 const PAYMENT_TERMS_ID: &str = "FormaPago";
@@ -87,7 +87,8 @@ pub(crate) fn global_adjustments(w: &mut XmlWriter, adjustments: &[AllowanceChar
 }
 
 /// `cac:TaxTotal`: the total of taxes, then one subtotal per scheme with a non-zero base, in
-/// descending catalog 05 order (IGV 1000, INA 9998, EXO 9997, GRA 9996, EXP 9995).
+/// descending catalog 05 order (IGV 1000, INA 9998, EXO 9997, GRA 9996, EXP 9995), then IVAP and
+/// ICBPER (7152), which has no base.
 pub(crate) fn tax_total(w: &mut XmlWriter, totals: &Totals, currency: &str) {
     let zero: Decimal = "0".parse().expect("literal decimal");
     let subtotals: [(TaxScheme, Option<&Decimal>, Option<&Decimal>); 6] = [
@@ -108,6 +109,14 @@ pub(crate) fn tax_total(w: &mut XmlWriter, totals: &Totals, currency: &str) {
         w.leaf("cbc:TaxAmount", &money, &two_decimals(tax.unwrap_or(&zero)));
         w.open("cac:TaxCategory", &[]);
         tax_scheme(w, scheme);
+        w.close();
+        w.close();
+    }
+    if let Some(icbper) = totals.icbper.as_ref().filter(|i| !i.is_zero()) {
+        w.open("cac:TaxSubtotal", &[]);
+        w.leaf("cbc:TaxAmount", &money, &two_decimals(icbper));
+        w.open("cac:TaxCategory", &[]);
+        tax_scheme(w, ICBPER);
         w.close();
         w.close();
     }

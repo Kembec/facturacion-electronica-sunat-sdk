@@ -10,6 +10,55 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+## [0.1.0-beta.7] - 2026-10-17
+
+### Added
+
+- `diagnosis` in the .NET and Java bindings: `SendResult`, `SummaryResult`, `TicketResult` and `StatusResult` add
+  `Diagnosis` (.NET) and `getDiagnosis()` (Java), a read-only list of `Diagnosis` (code, `Detail` with node and value,
+  `Fields` with `InputPath`, `Xpath` and `Certainty`), empty when the answer has none. Their batteries parse the beta's
+  real 2800 and a CDR with two coded notes (`bindings/dotnet/tests/data`, `bindings/java/tests/data`).
+- `diagnosis` in the Ruby and Perl bindings: the `send_bill`, `summary`, `ticket` and `status` results add `diagnosis`
+  (Ruby `Diagnosis`, Perl `Kembec::SunatSdk::Diagnosis`), a list with `code`, `detail` (`node`, `value`) and `fields`
+  (`input_path`, `xpath`, `certainty`), empty when the answer has none; the beta's 2800 gives `customer.document_type`
+  on detail `cbc:ID/schemeID` = `1`. The legacy README (VB6, Visual FoxPro, PowerBuilder) says where `diagnosis` is in
+  the JSON and how to read it.
+- `diagnosis` in the Swift and Objective-C packages: `SendResult`, `SummaryResult`, `TicketResult` and `StatusResult`
+  add `diagnosis`, a list of `Diagnosis` (`code`, `detail`, `fields` with `inputPath`, `xpath` and `certainty`), empty
+  when the response carries none; Objective-C's `KSSSendResult`, `KSSSummaryResult`, `KSSTicketResult` and
+  `KSSStatusResult` add `diagnosis` with `KSSDiagnosis`, `KSSDiagnosisDetail` and `KSSDiagnosisField`. The batteries of
+  both read the beta's 2800 and point it at `customer.document_type`.
+- `diagnosis` in the Python binding (`soap_response`, `soap_timeout`, `exchange`, and `diagnose(document_type, code,
+  message)`) and through the C ABI, whose `send`, `summary`, `ticket` and `status` run the CLI's commands. The rule
+  that picks the document type lives in `sunat_sdk::diagnosis::with_diagnosis`, shared by the CLI and wasm.
+- Rules that take effect on 01/01/2027 (RS 143-2026 art. 3.4 over RS 048-2026), each applied by the date of its norm
+  from a table of the SDK with its source: in the daily summary, free sales by catalog 11 code (`free_taxed`,
+  `free_exempt`, `free_unaffected`, `free_export` for 06 to 09) and their IGV (`free_igv`, tax 9996) from a
+  `reference_date` of 2027-01-01, with `free` (05) rejected from then and 06 to 09 rejected (2256) before; debit note
+  13 «Penalidades» from an `issue_date` of 2027-01-01 on unaffected lines only (3507), `03` rejected from then (2524)
+  and `13` before. Documents dated before the cut build the same XML as today. The SUNAT product code (3496) stays
+  unenforced: it has no norm ([`docs/input-model.md`](docs/input-model.md#rules-that-take-effect-on-01012027)).
+
+### Changed
+
+- **Breaking** — Rust only: `SummaryLine` gains `free_taxed`, `free_exempt`, `free_unaffected`, `free_export` and
+  `free_igv`, `Line` gains `icbper` and `icbper_factor`, and `Totals` and `SummaryLine` gain `icbper`, so code that
+  builds them with a struct literal no longer compiles. Migration: add the new fields as `None`. The JSON input, the
+  CLI and the other bindings do not change for documents without ICBPER or free sales split by code.
+- **Breaking** — Despatch advice (09) in public transport carries the day the goods are handed to the carrier, which
+  SUNAT requires since 2026-06-01 (field 39-A of RS 108-2026): `shipment.carrier_handover_date`, rendered as
+  `cac:LoadingTransportEvent/cbc:OccurrenceDate`. Without it the SDK answers 3617 locally, before sending; a date before
+  the issue date is 3618 and a malformed one 3619. Private transport takes no such field
+  ([`docs/input-model.md`](docs/input-model.md#shipment)). Migration: a public-transport despatch advice that built
+  before now needs `carrier_handover_date`; SUNAT already rejected it without one.
+- ICBPER (tax 7152, plastic bags) in invoices, receipts, credit and debit notes and daily summary lines, which the
+  SDK used to reject: `lines[].icbper`, `lines[].icbper_factor` and `totals.icbper` render the line and document
+  subtotals 7152, and a summary line's `icbper` its own `cac:TaxTotal`. The rate per bag is a dated table of the SDK
+  (S/ 0.50 from 2023) read on the year of `issue_date`. Checked before sending with SUNAT's codes (2033, 2048, 2892,
+  3238, 2949, 3292, 3294, 3306, 3279, 3280; a receipt gets the observation code), and the observations 4318 (amount
+  ≠ rate × bags) and 4237 (rate not the one in force) are rejected too. PEN only. Not sent to SUNAT beta yet
+  (#55, [`docs/input-model.md`](docs/input-model.md#icbper)).
+
 ## [0.1.0-beta.6] - 2026-10-17
 
 ### Added
@@ -159,7 +208,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.6...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.7...HEAD
+[0.1.0-beta.7]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.6...v0.1.0-beta.7
 [0.1.0-beta.6]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.5...v0.1.0-beta.6
 [0.1.0-beta.5]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.4...v0.1.0-beta.5
 [0.1.0-beta.4]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.3...v0.1.0-beta.4

@@ -73,6 +73,30 @@ fn m1_or_l_vehicles_need_no_driver_and_no_carrier() {
 }
 
 #[test]
+fn handover_date_on_or_after_issue_date_is_valid_in_public_transport() {
+    for date in ["2026-10-15", "2026-10-16"] {
+        with(BETWEEN, |v| v["shipment"]["carrier_handover_date"] = json!(date)).unwrap().validate().unwrap();
+    }
+}
+
+#[test]
+fn handover_date_does_not_depend_on_the_start_date() {
+    // The norm fixes no relation between the two (ERR-3616 is not checked).
+    let doc = with(BETWEEN, |v| {
+        v["shipment"]["carrier_handover_date"] = json!("2026-10-20");
+        v["shipment"]["start_date"] = json!("2026-10-16");
+    });
+    doc.unwrap().validate().unwrap();
+    with(BETWEEN, |v| v["shipment"]["start_date"] = Value::Null).unwrap().validate().unwrap();
+}
+
+#[test]
+fn private_transport_has_no_handover_date() {
+    let result = with(SALE, |v| v["shipment"]["carrier_handover_date"] = json!("2026-10-15"));
+    assert!(matches!(result, Err(ModelError::Invalid { .. })), "{result:?}");
+}
+
+#[test]
 fn imports_exports_and_itinerant_issuers_are_out_of_scope() {
     for reason in ["08", "09", "18"] {
         let result = with(SALE, |v| v["shipment"]["reason_code"] = json!(reason));
@@ -161,6 +185,11 @@ rejects! {
     transport_mode_catalog_2773: "2773", SALE, |v| v["shipment"]["transport_mode"] = json!("03");
     start_date_required_3406: "3406", SALE, |v| v["shipment"]["start_date"] = Value::Null;
     start_date_not_before_issue_3343: "3343", SALE, |v| v["shipment"]["start_date"] = json!("2026-10-14");
+    handover_date_required_3617: "3617", BETWEEN, |v| v["shipment"]["carrier_handover_date"] = Value::Null;
+    handover_date_blank_3617: "3617", BETWEEN, |v| v["shipment"]["carrier_handover_date"] = json!(" ");
+    handover_date_not_before_issue_3618: "3618", BETWEEN, |v| v["shipment"]["carrier_handover_date"] = json!("2026-10-14");
+    handover_date_format_3619: "3619", BETWEEN, |v| v["shipment"]["carrier_handover_date"] = json!("15/10/2026");
+    handover_date_impossible_3619: "3619", BETWEEN, |v| v["shipment"]["carrier_handover_date"] = json!("2026-02-30");
     private_transport_has_no_carrier_3347: "3347", SALE, |v| {
         v["shipment"]["carrier"] = json!({"ruc": "20555666777", "legal_name": "TRANSPORTES DEMO S.R.L."});
     };

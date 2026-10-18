@@ -11,6 +11,8 @@ module Kembec
       attr_reader :cdr_zip
       # The fault, with outcome :fault.
       attr_reader :fault
+      # The input fields behind each code of the answer, Diagnosis each; empty when the answer has none.
+      attr_reader :diagnosis
 
       def initialize(value, raw_json)
         super(raw_json)
@@ -24,6 +26,7 @@ module Kembec
         else
           @fault = Fault.new(value)
         end
+        @diagnosis = Diagnosis.list_from(value)
         freeze
       end
     end
@@ -34,6 +37,8 @@ module Kembec
       # The only handle on the outcome: store it before anything else.
       attr_reader :ticket
       attr_reader :fault
+      # The input fields behind each code of the answer, Diagnosis each; empty when the answer has none.
+      attr_reader :diagnosis
 
       def initialize(value, raw_json)
         super(raw_json)
@@ -43,6 +48,7 @@ module Kembec
         else
           @fault = Fault.new(value)
         end
+        @diagnosis = Diagnosis.list_from(value)
         freeze
       end
     end
@@ -59,6 +65,8 @@ module Kembec
       attr_reader :cdr_zip
       attr_reader :fault
       attr_reader :no_verdict
+      # The input fields behind each code of the answer, Diagnosis each; empty when the answer has none.
+      attr_reader :diagnosis
 
       def initialize(value, raw_json)
         super(raw_json)
@@ -70,6 +78,7 @@ module Kembec
         when :fault then @fault = Fault.new(value)
         else @no_verdict = NoVerdict.new(value)
         end
+        @diagnosis = Diagnosis.list_from(value)
         freeze
       end
 
@@ -94,6 +103,8 @@ module Kembec
       attr_reader :cdr_zip
       attr_reader :fault
       attr_reader :no_verdict
+      # The input fields behind each code of the answer, Diagnosis each; empty when the answer has none.
+      attr_reader :diagnosis
 
       def initialize(value, raw_json)
         super(raw_json)
@@ -103,6 +114,7 @@ module Kembec
         when :fault then @fault = Fault.new(value)
         else @no_verdict = NoVerdict.new(value)
         end
+        @diagnosis = Diagnosis.list_from(value)
         freeze
       end
 

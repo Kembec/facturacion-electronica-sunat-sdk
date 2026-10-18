@@ -30,6 +30,7 @@
     "reason_description": "Traslado entre establecimientos de la misma empresa",
     "transport_mode": "01",
     "start_date": "2026-10-16",
+    "carrier_handover_date": "2026-10-15",
     "gross_weight": "1.250",
     "weight_unit": "TNE",
     "carrier": {

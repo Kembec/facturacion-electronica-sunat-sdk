@@ -1,7 +1,8 @@
 #!/usr/bin/env perl
 # The battery of the module as a consumer installs it: the 38 fixtures against their vectors (inclusive C14N, exact
-# DigestValue and SignatureValue), the native version, zip and CDR, the errors, no_verdict without an answer, and
-# concurrent calls from forked children and from threads. Exit code 0 only if every check passed.
+# DigestValue and SignatureValue), the native version, zip and CDR, the diagnosis of a rejected send, the errors,
+# no_verdict without an answer, and concurrent calls from forked children and from threads. Exit code 0 only if every
+# check passed.
 #
 #   perl vectors.pl <repository>
 #
@@ -41,6 +42,7 @@ step(basename($_, '.json') => \&vector, $_) for @fixtures;
 step(characters => \&characters);
 step(zip => \&zip);
 step(cdr => \&read_cdr);
+step(diagnosis => \&diagnosis);
 step(errors => \&errors);
 step(no_verdict => \&no_verdicts);
 step(fork => \&forked);
@@ -130,6 +132,12 @@ sub read_cdr {
     check($cdr->reference_id eq 'FT01-982', 'cdr: reference ' . $cdr->reference_id);
     check($cdr->response_code eq '2047', 'cdr: code ' . $cdr->response_code);
     check($cdr->response_class eq 'rejected' && !$cdr->is_valid_document, 'cdr: class ' . $cdr->response_class);
+}
+
+# The diagnosis of a rejected send, from the response the core wrote (test/diagnosis.pl).
+sub diagnosis {
+    require(path(qw(bindings perl test diagnosis.pl)));
+    DiagnosisChecks::run(\&check);
 }
 
 sub errors {

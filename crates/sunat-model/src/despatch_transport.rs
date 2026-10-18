@@ -7,7 +7,7 @@
 //! the carrier names its own vehicles and drivers, so the despatch advice carries none (3354, 3455).
 
 use crate::despatch_rules::{all_zeros, alnum_upper, blank, digits, digits_between, positive_fits, rule, IDENTITY_TYPES};
-use crate::{Despatch, Driver, ModelError, Place, Shipment};
+use crate::{Date, Despatch, Driver, ModelError, Place, Shipment};
 
 /// Catalog 20 codes the SDK renders.
 const REASONS: &[&str] = &["01", "02", "03", "04", "05", "06", "07", "13", "14", "17"];
@@ -50,6 +50,7 @@ pub(crate) fn check_shipment(d: &Despatch) -> Result<Reason<'_>, ModelError> {
     check_weight(s)?;
     let mode = check_mode(s)?;
     check_start_date(d, mode)?;
+    check_handover_date(d, mode)?;
     check_carrier(d, mode)?;
     check_vehicles(s, mode)?;
     check_drivers(s, mode)?;
@@ -103,6 +104,28 @@ fn check_start_date(d: &Despatch, mode: Mode) -> Result<(), ModelError> {
     };
     let issued = d.issue_date.to_lima().date_string();
     rule(start.date_string() >= issued, "3343", "$.shipment.start_date", "must not be before the issue date")
+}
+
+/// The day the goods go to the carrier (field 39-A of RS 108-2026, in force since 2026-06-01):
+/// required in public transport (3617), a `YYYY-MM-DD` date (3619), the same day as the issue date
+/// or later (3618). The norm fixes no relation with `start_date`, so none is checked.
+fn check_handover_date(d: &Despatch, mode: Mode) -> Result<(), ModelError> {
+    let path = "$.shipment.carrier_handover_date";
+    let given = d.shipment.carrier_handover_date.as_deref().filter(|text| !blank(text));
+    if !mode.public {
+        return match d.shipment.carrier_handover_date {
+            None => Ok(()),
+            Some(_) => Err(ModelError::invalid(path, "only in public transport")),
+        };
+    }
+    let Some(text) = given else {
+        return Err(ModelError::rule("3617", path, "required in public transport"));
+    };
+    let Ok(handover) = text.parse::<Date>() else {
+        return Err(ModelError::rule("3619", path, "must be a date (YYYY-MM-DD)"));
+    };
+    let issued = d.issue_date.to_lima().date_string();
+    rule(handover.date_string() >= issued, "3618", path, "must not be before the issue date")
 }
 
 fn check_carrier(d: &Despatch, mode: Mode) -> Result<(), ModelError> {

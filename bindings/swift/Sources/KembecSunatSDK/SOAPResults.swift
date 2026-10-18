@@ -12,14 +12,17 @@ public struct SendResult: Codable, Sendable, Hashable, RawJSONCarrying {
     }
 
     public let outcome: Outcome
+    /// The input field behind each code SUNAT answered; empty when the response carries none.
+    public let diagnosis: [Diagnosis]
     public internal(set) var rawJSON: String = ""
 
     private enum CodingKeys: String, CodingKey {
-        case outcome, cdr, cdrZip = "cdr_zip_base64"
+        case outcome, cdr, cdrZip = "cdr_zip_base64", diagnosis
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        diagnosis = try container.decodeIfPresent([Diagnosis].self, forKey: .diagnosis) ?? []
         switch try container.decode(String.self, forKey: .outcome) {
         case "cdr":
             outcome = .cdr(try container.decode(CDR.self, forKey: .cdr), zip: try container.decodeIfPresent(Data.self, forKey: .cdrZip))
@@ -32,6 +35,7 @@ public struct SendResult: Codable, Sendable, Hashable, RawJSONCarrying {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        if !diagnosis.isEmpty { try container.encode(diagnosis, forKey: .diagnosis) }
         switch outcome {
         case let .cdr(cdr, zip):
             try container.encode("cdr", forKey: .outcome)
@@ -52,14 +56,17 @@ public struct SummaryResult: Codable, Sendable, Hashable, RawJSONCarrying {
     }
 
     public let outcome: Outcome
+    /// The input field behind each code SUNAT answered; empty when the response carries none.
+    public let diagnosis: [Diagnosis]
     public internal(set) var rawJSON: String = ""
 
     private enum CodingKeys: String, CodingKey {
-        case outcome, ticket
+        case outcome, ticket, diagnosis
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        diagnosis = try container.decodeIfPresent([Diagnosis].self, forKey: .diagnosis) ?? []
         switch try container.decode(String.self, forKey: .outcome) {
         case "ticket": outcome = .ticket(try container.decode(String.self, forKey: .ticket))
         case "fault": outcome = .fault(try Fault(from: decoder))
@@ -69,6 +76,7 @@ public struct SummaryResult: Codable, Sendable, Hashable, RawJSONCarrying {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        if !diagnosis.isEmpty { try container.encode(diagnosis, forKey: .diagnosis) }
         switch outcome {
         case let .ticket(ticket):
             try container.encode("ticket", forKey: .outcome)
@@ -102,16 +110,19 @@ public struct TicketResult: Codable, Sendable, Hashable, RawJSONCarrying {
     }
 
     public let outcome: Outcome
+    /// The input field behind each code SUNAT answered; empty when the response carries none.
+    public let diagnosis: [Diagnosis]
     /// The ticket asked for, when the response repeats it (no verdict).
     public let ticket: String?
     public internal(set) var rawJSON: String = ""
 
     private enum CodingKeys: String, CodingKey {
-        case outcome, ticket
+        case outcome, ticket, diagnosis
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        diagnosis = try container.decodeIfPresent([Diagnosis].self, forKey: .diagnosis) ?? []
         ticket = try container.decodeIfPresent(String.self, forKey: .ticket)
         switch try container.decode(String.self, forKey: .outcome) {
         case "ticket_status": outcome = .ticketStatus(try TicketStatus(from: decoder))
@@ -123,6 +134,7 @@ public struct TicketResult: Codable, Sendable, Hashable, RawJSONCarrying {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        if !diagnosis.isEmpty { try container.encode(diagnosis, forKey: .diagnosis) }
         try container.encodeIfPresent(ticket, forKey: .ticket)
         switch outcome {
         case let .ticketStatus(status):
@@ -159,14 +171,17 @@ public struct StatusResult: Codable, Sendable, Hashable, RawJSONCarrying {
     }
 
     public let outcome: Outcome
+    /// The input field behind each code SUNAT answered; empty when the response carries none.
+    public let diagnosis: [Diagnosis]
     public internal(set) var rawJSON: String = ""
 
     private enum CodingKeys: String, CodingKey {
-        case outcome
+        case outcome, diagnosis
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
+        diagnosis = try container.decodeIfPresent([Diagnosis].self, forKey: .diagnosis) ?? []
         switch try container.decode(String.self, forKey: .outcome) {
         case "status": outcome = .status(try VoucherStatus(from: decoder))
         case "fault": outcome = .fault(try Fault(from: decoder))
@@ -177,6 +192,7 @@ public struct StatusResult: Codable, Sendable, Hashable, RawJSONCarrying {
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        if !diagnosis.isEmpty { try container.encode(diagnosis, forKey: .diagnosis) }
         switch outcome {
         case let .status(status):
             try container.encode("status", forKey: .outcome)

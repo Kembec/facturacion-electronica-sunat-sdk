@@ -46,7 +46,7 @@ Baja a una carpeta vacía la factura de prueba y el certificado de prueba del re
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.6
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.7
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -151,6 +151,9 @@ URL base siempre las pasas tú (las del manual: `https://api-seguridad.sunat.gob
   verificación.
 - `soap_request`, `soap_response` y `soap_timeout` son las mismas piezas sin red, para quien hace el POST con su propio
   cliente HTTP (`httpx`, `aiohttp`).
+- Un envío rechazado u observado trae `diagnosis` en su resultado (`soap_response`, `soap_timeout` y `exchange`): por
+  cada código de la respuesta, el campo de la entrada que lo causó, p. ej. `customer.document_type` para el 2800
+  de `cbc:ID/schemeID`. `diagnose(document_type, code, message)` lo da para un solo código.
 - `validity(input, client_id, client_secret, timeout=60, context=None, token_base=None, base=None)` pide el token y hace
   la consulta dentro de `timeout`. `validity_token_request`, `validity_token_response`, `validity_request`,
   `validity_response` y `validity_timeout` son sus piezas sin red.

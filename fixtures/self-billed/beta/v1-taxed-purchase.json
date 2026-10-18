@@ -1,0 +1,33 @@
+{
+  "sent_at": "2026-10-18T01:19:38-05:00",
+  "endpoint": "e-beta itcpfegem billService",
+  "cdr": {
+    "class": "observed",
+    "description": "El comprobante de liquidacion de compra numero L001-1, ha sido aceptada",
+    "notes": [
+      "4337 - El Codigo de producto SUNAT debe especificarse como minimo al tercer nivel jerarquico (a nivel de clase del codigo UNSPSC) - Error en la linea:1. : 4337 (nodo: \"cac:CommodityClassification/cbc:ItemClassificationCode\" valor: \"11140000\")",
+      "4337 - El Codigo de producto SUNAT debe especificarse como minimo al tercer nivel jerarquico (a nivel de clase del codigo UNSPSC) - Error en la linea:2. : 4337 (nodo: \"cac:CommodityClassification/cbc:ItemClassificationCode\" valor: \"11140000\")"
+    ],
+    "reference_id": "L001-1",
+    "response_code": "0"
+  },
+  "diagnosis": [
+    {
+      "code": "4337",
+      "detail": {
+        "node": "cac:CommodityClassification/cbc:ItemClassificationCode",
+        "value": "11140000"
+      },
+      "fields": []
+    },
+    {
+      "code": "4337",
+      "detail": {
+        "node": "cac:CommodityClassification/cbc:ItemClassificationCode",
+        "value": "11140000"
+      },
+      "fields": []
+    }
+  ],
+  "outcome": "cdr"
+}

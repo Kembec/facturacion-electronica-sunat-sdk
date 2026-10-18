@@ -51,6 +51,7 @@ impl Document {
             Document::Voided(voided) => check_voided(voided),
             Document::Despatch(despatch) => crate::despatch_rules::check(despatch),
             Document::Retention(retention) => crate::retention_rules::check(retention),
+            Document::SelfBilled(settlement) => crate::self_billed_rules::check(settlement),
         }
     }
 }

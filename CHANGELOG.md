@@ -10,6 +10,19 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- The purchase settlement (04), UBL 2.1 `SelfBilledInvoice`, operation types 0501 and 0503: `kind: "self_billed"` with
+  `seller` (DNI, carné de extranjería or passport), `operation_place`, the income tax retention per line (tax 3000) and
+  the four gold properties, with the SUNAT checks that read only the document
+  ([`docs/input-model.md`](docs/input-model.md#purchase-settlement-04)). In the beta, `v1` and `v2` were accepted with
+  code 0 (`fixtures/self-billed/beta/`) (#74).
+
+### Changed
+
+- **Breaking** — Rust only: `Document` gains the variant `SelfBilled`. A `match` on `Document` adds the arm (or `_`);
+  the JSON input and the bindings do not change (#74).
+
 ## [1.0.0-rc.2] - 2026-10-18
 
 ### Added

@@ -18,11 +18,11 @@ cualquiera de ellos. Guías y ejemplos: **https://fe.kembec.com**
 | JavaScript y TypeScript (Node 18 o posterior, navegador) | [`@kembec/facturacion-electronica-sunat-sdk`](https://www.npmjs.com/package/@kembec/facturacion-electronica-sunat-sdk) | `npm install @kembec/facturacion-electronica-sunat-sdk@beta` | WebAssembly, sin binarios ni procesos aparte |
 | PHP 7.4 o posterior | [`kembec/facturacion-electronica-sunat-sdk`](https://packagist.org/packages/kembec/facturacion-electronica-sunat-sdk) | `composer require kembec/facturacion-electronica-sunat-sdk:^0.1@beta` | ejecuta el binario `sunat-sdk` una vez por llamada |
 | Python 3.10 o posterior | [`facturacion-electronica-sunat-sdk`](https://pypi.org/project/facturacion-electronica-sunat-sdk/) | `pip install --pre facturacion-electronica-sunat-sdk` | wheels con el motor compilado adentro |
-| Swift 5.9 o posterior (macOS, iOS, Linux) | el producto `KembecSunatSDK` de este repositorio | SwiftPM por URL, `exact: "1.0.0-rc.3"` ([cómo](bindings/swift/README.md#instalación)) | xcframework de bibliotecas estáticas, enlazado en tu binario; en Linux, `libsunat_sdk_ffi.so` |
+| Swift 5.9 o posterior (macOS, iOS, Linux) | el producto `KembecSunatSDK` de este repositorio | SwiftPM por URL, `exact: "1.0.0-rc.4"` ([cómo](bindings/swift/README.md#instalación)) | xcframework de bibliotecas estáticas, enlazado en tu binario; en Linux, `libsunat_sdk_ffi.so` |
 | Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) | crates, sin red |
 | Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` | binario estático |
 
-La versión publicada es la 1.0.0-rc.3. Qué trae, en [Versiones](#versiones).
+La versión publicada es la 1.0.0-rc.4. Qué trae, en [Versiones](#versiones).
 
 ## Tu primer comprobante firmado
 
@@ -30,7 +30,7 @@ Baja a una carpeta vacía una factura de ejemplo y el certificado de prueba del 
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.3
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.4
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -108,9 +108,9 @@ del tag, con la clave corta para que el código diga `sunat_model::…`. `sunat-
 
 ```toml
 [dependencies]
-sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.3" }
-sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.3" }
-sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.3" }
+sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.4" }
+sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.4" }
+sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.4" }
 ```
 
 ```rust
@@ -137,7 +137,7 @@ tú. Lo que expone cada crate está en la [arquitectura](docs/architecture.md).
 En Linux x86_64, el binario estático del release:
 
 ```bash
-url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v1.0.0-rc.3
+url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v1.0.0-rc.4
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl"
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl.sha256"
 sha256sum -c sunat-sdk-x86_64-unknown-linux-musl.sha256
@@ -259,6 +259,16 @@ El comprobante de percepción no forma parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).
 
 ## Versiones
+
+La 1.0.0-rc.4 cambia frente a la 1.0.0-rc.3, sin campos nuevos en el JSON de entrada:
+
+- en facturas, boletas y notas, el SDK rechaza antes de firmar la razón social, el nombre comercial, las partes de la
+  dirección del emisor y el código de producto de una línea que traen un salto de línea, un tabulador u otro espacio
+  que no sea el normal, o que se salen del largo que fija la SUNAT (4092, 4094 a 4098, 4338, 4234 y 4269). Antes
+  llegaban a la SUNAT y volvían aceptados con una observación. El valor se rechaza con su campo, nunca se reescribe: se
+  corrige en el origen. Cambio que rompe compatibilidad ([CHANGELOG](CHANGELOG.md));
+- en el resumen diario, el IGV de las ventas gratuitas (9996) lleva la tasa de la línea; esas ventas entran al resumen
+  desde el 1/1/2027, así que ningún resumen de hoy cambia.
 
 La 1.0.0-rc.3 suma frente a la 1.0.0-rc.2; el JSON de entrada solo gana los tipos `self_billed` y `reversal`:
 

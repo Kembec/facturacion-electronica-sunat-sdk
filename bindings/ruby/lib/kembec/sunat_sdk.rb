@@ -14,7 +14,7 @@ require_relative "sunat_sdk/client"
 module Kembec
   # SUNAT (Peru) electronic invoicing: the SDK's Rust core through its C ABI. Start with Client.
   module SunatSdk
-    # The version of the native library loaded ("1.0.0-rc.3"), equal to SDK_VERSION. Loads the library: raises
+    # The version of the native library loaded ("1.0.0-rc.4"), equal to SDK_VERSION. Loads the library: raises
     # NativeLibraryError if it cannot.
     def self.native_version
       Native.version

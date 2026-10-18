@@ -1,0 +1,81 @@
+{
+  "kind": "invoice",
+  "ubl_version": "2.1",
+  "operation_type": "0201",
+  "document_type": "01",
+  "series": "F001",
+  "number": "8202",
+  "issue_date": "2026-10-18T10:00:00-05:00",
+  "currency": "USD",
+  "payment_terms": {
+    "type": "Contado"
+  },
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "0",
+    "document_number": "DE811234567",
+    "legal_name": "NORDWERK SOFTWARE GMBH",
+    "address": {
+      "country_code": "DE",
+      "street": "HAFENSTRASSE 12, HAMBURG"
+    }
+  },
+  "totals": {
+    "export": "1550.25",
+    "igv": "0.00",
+    "total_taxes": "0.00",
+    "sale_value": "1550.25",
+    "subtotal": "1550.25",
+    "payable": "1550.25"
+  },
+  "lines": [
+    {
+      "unit": "ZZ",
+      "quantity": "1",
+      "product_code": "SAAS-10",
+      "description": "Suscripcion plataforma SaaS, octubre 2026",
+      "unit_value": "1200.00",
+      "igv_base": "1200.00",
+      "igv_rate": "18.00",
+      "igv": "0.00",
+      "affectation": "40",
+      "total_taxes": "0.00",
+      "unit_price": "1200.00",
+      "line_value": "1200.00"
+    },
+    {
+      "unit": "ZZ",
+      "quantity": "3",
+      "product_code": "HOST-01",
+      "description": "Hosting web y operacion de servidores, octubre 2026 (3 instancias)",
+      "unit_value": "116.75",
+      "igv_base": "350.25",
+      "igv_rate": "18.00",
+      "igv": "0.00",
+      "affectation": "40",
+      "total_taxes": "0.00",
+      "unit_price": "116.75",
+      "line_value": "350.25"
+    }
+  ],
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON MIL QUINIENTOS CINCUENTA CON 25/100 DOLARES AMERICANOS"
+    }
+  ],
+  "service_use_country": "DE"
+}

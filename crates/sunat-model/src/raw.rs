@@ -38,6 +38,7 @@ struct RawDocument {
     global_adjustments: Vec<AllowanceCharge>,
     #[serde(default)]
     advances: Vec<Advance>,
+    service_use_country: Option<String>,
 }
 
 pub(crate) fn parse(json: &str) -> Result<Document, ModelError> {
@@ -83,14 +84,15 @@ impl RawDocument {
                 reject(self.note.is_some(), "$.note", "applies to notes (07, 08) only")?;
                 let operation_type = self.operation_type.ok_or_else(|| ModelError::missing("$.operation_type"))?;
                 let (due_date, detraction, global_adjustments) = (self.due_date, self.detraction, self.global_adjustments);
-                let advances = self.advances;
-                Ok(Document::Invoice(Invoice { voucher, operation_type, due_date, detraction, global_adjustments, advances }))
+                let (advances, service_use_country) = (self.advances, self.service_use_country);
+                Ok(Document::Invoice(Invoice { voucher, operation_type, due_date, detraction, global_adjustments, advances, service_use_country }))
             }
             "note" => {
                 reject(self.operation_type.is_some(), "$.operation_type", "applies to invoices only")?;
                 reject(self.due_date.is_some(), "$.due_date", "applies to invoices only")?;
                 reject(self.detraction.is_some(), "$.detraction", "applies to invoices and receipts only")?;
                 reject(!self.global_adjustments.is_empty(), "$.global_adjustments", "applies to invoices and receipts only")?;
+                reject(self.service_use_country.is_some(), "$.service_use_country", "applies to invoices and receipts only")?;
                 if !self.advances.is_empty() {
                     return Err(ModelError::OutOfScope { path: "$.advances".into(), feature: "advances in credit and debit notes" });
                 }

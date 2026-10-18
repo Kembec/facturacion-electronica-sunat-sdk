@@ -58,12 +58,22 @@ fn from_the_cut_the_summary_splits_free_sales_with_the_igv_of_9996_and_rejects_0
     }
     assert!(!xml.contains("<cbc:InstructionID>05<"));
     let free_igv = "<cac:TaxTotal><cbc:TaxAmount currencyID=\"PEN\">1.80</cbc:TaxAmount><cac:TaxSubtotal>\
-                    <cbc:TaxAmount currencyID=\"PEN\">1.80</cbc:TaxAmount><cac:TaxCategory><cac:TaxScheme>\
-                    <cbc:ID>9996</cbc:ID><cbc:Name>GRA</cbc:Name><cbc:TaxTypeCode>FRE</cbc:TaxTypeCode>";
+                    <cbc:TaxAmount currencyID=\"PEN\">1.80</cbc:TaxAmount><cac:TaxCategory><cbc:Percent>18.00</cbc:Percent>\
+                    <cac:TaxScheme><cbc:ID>9996</cbc:ID><cbc:Name>GRA</cbc:Name><cbc:TaxTypeCode>FRE</cbc:TaxTypeCode>";
     let igv_at = xml.find("<cbc:ID>1000</cbc:ID>").unwrap();
     assert!(xml[igv_at..].contains(free_igv), "{xml}");
     let error = summary("2027-01-01", "2027-01-01", serde_json::json!({ "free": "5.50" })).unwrap_err();
     assert!(error.to_string().contains("free_taxed") && error.to_string().contains("2027-01-01"), "{error}");
+}
+
+/// 2992 and 3504 of the Resumen Diario sheet: the 9996 subtotal carries the line's IGV rate, not a fixed 18.
+#[test]
+fn the_igv_of_9996_carries_the_rate_of_its_line() {
+    let line = serde_json::json!({ "free_taxed": "10", "free_igv": "1.05", "free": "0.00", "igv_rate": "10.50" });
+    let xml = xml(&summary("2027-01-01", "2027-01-01", line).unwrap());
+    let free_at = xml.find("<cbc:ID>9996</cbc:ID>").unwrap();
+    let category_at = xml[..free_at].rfind("<cac:TaxCategory>").unwrap();
+    assert!(xml[category_at..free_at].contains("<cbc:Percent>10.50</cbc:Percent><cac:TaxScheme>"), "{xml}");
 }
 
 #[test]

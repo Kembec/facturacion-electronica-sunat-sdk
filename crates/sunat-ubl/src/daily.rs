@@ -98,7 +98,7 @@ fn summary_line(w: &mut XmlWriter, line_id: usize, line: &SummaryLine, currency:
     }
     igv_total(w, line.igv.as_ref(), line.igv_rate.as_ref(), &money);
     if let Some(free_igv) = non_zero(&line.free_igv) {
-        free_igv_total(w, free_igv, &money);
+        free_igv_total(w, free_igv, line.igv_rate.as_ref(), &money);
     }
     if let Some(icbper) = &line.icbper {
         icbper_total(w, icbper, &money);
@@ -107,14 +107,18 @@ fn summary_line(w: &mut XmlWriter, line_id: usize, line: &SummaryLine, currency:
 }
 
 /// IGV of free sales (field 25): its own `cac:TaxTotal` with tax 9996, after the IGV one. The model only lets
-/// it through from 2027-01-01.
-fn free_igv_total(w: &mut XmlWriter, amount: &Decimal, money: &[(&str, &str)]) {
+/// it through from 2027-01-01. It carries the line's IGV rate as well: the Resumen Diario sheet asks for
+/// `cbc:Percent` in 9996 without condition (2992) and admits the same rates as in 1000 (3504).
+fn free_igv_total(w: &mut XmlWriter, amount: &Decimal, rate: Option<&Decimal>, money: &[(&str, &str)]) {
     let amount = two_decimals(amount);
     w.open("cac:TaxTotal", &[]);
     w.leaf("cbc:TaxAmount", money, &amount);
     w.open("cac:TaxSubtotal", &[]);
     w.leaf("cbc:TaxAmount", money, &amount);
     w.open("cac:TaxCategory", &[]);
+    if let Some(rate) = rate {
+        w.text("cbc:Percent", &two_decimals(rate));
+    }
     tax_scheme(w, FREE);
     w.close();
     w.close();

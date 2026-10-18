@@ -10,6 +10,12 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Fixed
+
+- The daily summary writes the line's `igv_rate` as `cbc:Percent` in the IGV of free sales (tax 9996) too, as the
+  Resumen Diario sheet of the 2026-04-24 rules asks (2992, 3504). Free sales enter the summary from 2027-01-01, so no
+  summary sent today changes (#82).
+
 ## [1.0.0-rc.3] - 2026-10-18
 
 ### Added

@@ -30,7 +30,7 @@ final class SunatSdk
      * Equal to the Cargo workspace version (checked in CI); the binary installer downloads the release
      * `v` . VERSION, so the PHP client and the binary it drives come from the same tag.
      */
-    public const VERSION = '1.0.0-rc.1';
+    public const VERSION = '1.0.0-rc.2';
 
     public const DEFAULT_TIMEOUT_SECONDS = 120.0;
 

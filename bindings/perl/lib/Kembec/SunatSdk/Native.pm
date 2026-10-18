@@ -36,7 +36,7 @@ sub library_path {
     return File::Spec->catfile($here, 'native', Kembec::SunatSdk::Platform::key(), $file);
 }
 
-# The SDK version of the loaded library ("0.1.0-beta.8").
+# The SDK version of the loaded library ("1.0.0-rc.1").
 sub version {
     _load();
     return _sunat_sdk_version();

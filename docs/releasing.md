@@ -11,8 +11,8 @@ PyPI, the PHP package on Packagist, the .NET package on NuGet, and the five libr
    `## [<version>] - YYYY-MM-DD` above a new empty `## [Unreleased]`, and update the compare links at the end: the
    `changelog` job of `release.yml` fails, on the tag and on the pull requests that run `release.yml`, if the
    version has no such section, and every publish job waits on it.
-2. Merge to `main` and push the tag `v<version>`. A version with `-` (`0.1.0-beta.4`) is a prerelease and goes to
-   npm under the `beta` dist-tag.
+2. Merge to `main` and push the tag `v<version>`. A version with `-` (`0.1.0-beta.4`, `1.0.0-rc.1`) is a prerelease
+   and goes to npm under the `beta` dist-tag.
 3. `release.yml` builds and tests the artifacts, then waits on the `release` environment (only `v*` tags, the owner
    approves).
 
@@ -22,9 +22,14 @@ The public contract is the input model ([`input-model.md`](input-model.md)), the
 ([`cli.md`](cli.md)), the public API of each binding, and the C ABI ([`c-abi.md`](c-abi.md)). Anything else (internal
 crate modules, error message wording, the repository's scripts) can change in any release.
 
-- **While the version is `0.1.0-beta.N`**, a change that breaks the contract may ship in a beta, but it goes in
-  `CHANGELOG.md` as **Breaking**, with how to migrate.
-- **The first stable version** (`1.0.0`) requires two betas in a row without a **Breaking** entry.
+- **While the version is `0.1.0-beta.N` or `1.0.0-rc.N`**, a change that breaks the contract may ship in a
+  prerelease, but it goes in `CHANGELOG.md` as **Breaking**, with how to migrate.
+- **Release candidates** (`1.0.0-rc.N`) are the candidates for `1.0.0`. From `rc.1`, a real issuer emits with the SDK
+  in production and its CDRs are monitored: every rejection is classified, and one the SDK caused (its SUNAT code
+  points to the XML the SDK writes, not to the input data) is fixed in the next candidate. Changes keep shipping as
+  `rc.N+1` meanwhile.
+- **The first stable version** (`1.0.0`) comes after 15 days of that use in production, with every rejection the SDK
+  caused fixed, and the owner approves it.
 - **From `1.0.0`**, semantic versioning: MAJOR breaks the contract; MINOR adds to it (a document type, an optional
   input field, an operation); PATCH fixes without changing it.
 - Adding an error code or an output field does not break the contract; removing one, or changing what it means, does.

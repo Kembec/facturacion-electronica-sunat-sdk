@@ -20,7 +20,7 @@ module Kembec
       @library = nil
 
       class << self
-        # The SDK version of the loaded library ("0.1.0-beta.8").
+        # The SDK version of the loaded library ("1.0.0-rc.1").
         def version
           library.sunat_sdk_version.dup.force_encoding(Encoding::UTF_8).freeze
         end

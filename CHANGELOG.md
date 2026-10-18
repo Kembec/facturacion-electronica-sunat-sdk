@@ -18,6 +18,17 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   fault's `message` is the text of `detail` when it has one. SUNAT's own answers read as before. Synthetic vectors in
   `fixtures/ose/` (#69).
 
+## [1.0.0-rc.1] - 2026-10-18
+
+The first release candidate: the contract of `0.1.0-beta.8`, unchanged.
+
+### Changed
+
+- Release policy: `1.0.0-rc.N` candidates, and `1.0.0` after 15 days of use in production by a real issuer, with its
+  CDRs monitored and every rejection the SDK caused fixed ([`docs/releasing.md`](docs/releasing.md#versions)). It
+  replaces «two betas in a row without a **Breaking** entry» (#70).
+- The CPAN version of a candidate takes `_(100 + N)`, so it sorts after the betas: `1.0.0-rc.1` is `0.999999_101` (#70).
+
 ## [0.1.0-beta.8] - 2026-10-18
 
 ### Added
@@ -252,7 +263,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.8...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.1...HEAD
+[1.0.0-rc.1]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.8...v1.0.0-rc.1
 [0.1.0-beta.8]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.7...v0.1.0-beta.8
 [0.1.0-beta.7]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.6...v0.1.0-beta.7
 [0.1.0-beta.6]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.5...v0.1.0-beta.6

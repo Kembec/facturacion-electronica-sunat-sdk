@@ -1,6 +1,6 @@
 //! Catalog 04 (country code). SUNAT points to ISO 3166-1 without listing it; `data/catalog-04.json`
-//! holds the list the SDK accepts and where it comes from: ISO 3166-1 alpha-2 in force plus the two
-//! withdrawn codes of the page the SUNAT sheet cites (`AN`, `CS`).
+//! holds the list the SDK accepts and where it comes from: ISO 3166-1 alpha-2 in force, the list the
+//! SUNAT beta applied (it rejected the withdrawn `AN` with 3099).
 
 use std::collections::HashSet;
 use std::sync::OnceLock;
@@ -28,12 +28,12 @@ pub(crate) fn is_country(code: &str) -> bool {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn the_catalog_is_iso_plus_the_two_withdrawn_codes() {
-        assert_eq!(super::codes().len(), 251);
-        for code in ["PE", "RS", "ME", "SS", "CW", "AN", "CS"] {
+    fn the_catalog_is_iso_in_force() {
+        assert_eq!(super::codes().len(), 249);
+        for code in ["PE", "RS", "ME", "SS", "CW"] {
             assert!(super::is_country(code), "{code}");
         }
-        for code in ["ZZ", "XK", "pe", "PER", ""] {
+        for code in ["ZZ", "AN", "CS", "XK", "pe", "PER", ""] {
             assert!(!super::is_country(code), "{code}");
         }
     }

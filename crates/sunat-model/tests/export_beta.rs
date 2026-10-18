@@ -87,11 +87,11 @@ fn v3_with_country(number: &str, country: &str) -> Result<Document, kembec_sunat
 
 /// Country probes on v3 (0208): `RS`, in ISO 3166-1 but not on the page the SUNAT sheet cites, was
 /// accepted; `AN`, withdrawn from ISO in 2010 but on that page, was rejected with 3099 («Valor no se
-/// encuentra en el catalogo: 04»). The beta's catalog 04 is ISO in force; the SDK still takes the union.
+/// encuentra en el catalogo: 04»). The SDK's catalog 04 is ISO in force, like the beta's.
 #[test]
-fn the_beta_accepted_rs_and_rejected_an_while_the_sdk_takes_both() {
+fn the_beta_accepted_rs_and_rejected_an_like_the_sdk() {
     accepted(&answer!("s1-0208-country-rs"));
     v3_with_country("8210", "RS").unwrap();
     rejected(&answer!("s2-0208-country-an"), "3099");
-    v3_with_country("8211", "AN").unwrap();
+    assert_eq!(v3_with_country("8211", "AN").unwrap_err().sunat_code(), Some("3099"));
 }

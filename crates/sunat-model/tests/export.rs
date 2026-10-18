@@ -106,11 +106,16 @@ fn service_use_country_peru_or_not_iso_3099() {
     assert_eq!(code(V3, |v| v["service_use_country"] = json!("ZZ")), ("3099", "$.service_use_country".into()));
 }
 
-/// Catalog 04 is ISO 3166-1 in force plus `AN` and `CS` (`crates/sunat-model/data/catalog-04.json`).
+/// Catalog 04 is ISO 3166-1 in force (`crates/sunat-model/data/catalog-04.json`): `AN` and `CS`, withdrawn
+/// but on the page the SUNAT sheet cites, give 3099 like the beta did with `AN`.
 #[test]
-fn service_use_country_in_iso_or_in_the_page_sunat_cites_passes() {
-    for country in ["RS", "ME", "SS", "CW", "AN", "CS", "CL"] {
+fn service_use_country_in_iso_in_force_passes_and_withdrawn_codes_3099() {
+    for country in ["RS", "ME", "SS", "CW", "CL"] {
         edited(V3, |v| v["service_use_country"] = json!(country)).unwrap_or_else(|e| panic!("{country}: {e}"));
+    }
+    for country in ["AN", "CS"] {
+        assert_eq!(code(V3, |v| v["service_use_country"] = json!(country)), ("3099", "$.service_use_country".into()));
+        assert_eq!(code(V2, |v| v["service_use_country"] = json!(country)).0, "3099", "0201 {country}");
     }
 }
 
@@ -118,9 +123,11 @@ fn service_use_country_in_iso_or_in_the_page_sunat_cites_passes() {
 #[test]
 fn guest_countries_take_catalog_04_with_peru() {
     for field in ["passport_country", "residence_country"] {
-        let (got, path) = code(V4, |v| v["lines"][0]["lodging"][field] = json!("ZZ"));
-        assert_eq!((got, path), ("4280", format!("$.lines[0].lodging.{field}")), "{field}");
-        for country in ["PE", "RS", "AN"] {
+        for country in ["ZZ", "AN", "CS"] {
+            let (got, path) = code(V4, |v| v["lines"][0]["lodging"][field] = json!(country));
+            assert_eq!((got, path), ("4280", format!("$.lines[0].lodging.{field}")), "{field} {country}");
+        }
+        for country in ["PE", "RS"] {
             edited(V4, |v| v["lines"][0]["lodging"][field] = json!(country)).unwrap_or_else(|e| panic!("{field} {country}: {e}"));
         }
     }

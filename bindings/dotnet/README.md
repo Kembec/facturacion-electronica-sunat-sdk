@@ -20,13 +20,14 @@ https://fe.kembec.com
 
 ## Instalación
 
-El paquete todavía no está en NuGet. Cuando se publique, se instalará con:
+Desde la próxima beta, el tag del repositorio publica el paquete en NuGet y se instala con:
 
 ```bash
 dotnet add package Kembec.SunatSdk --prerelease
 ```
 
-Hasta entonces, el CI del repositorio arma el `.nupkg` en cada cambio: baja el artefacto `nupkg` de una ejecución del
+Mientras tanto, o para probar un cambio sin publicar, el CI del repositorio arma el `.nupkg` en cada cambio: baja el
+artefacto `nupkg` de una ejecución del
 [workflow `dotnet`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/actions/workflows/dotnet.yml),
 descomprímelo en `nupkg/` y agrega esa carpeta como origen:
 

@@ -10,6 +10,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native
+  builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment.
+
 ### Changed
 
 - ICBPER sent to the SUNAT beta (17/10/2026), which `0.1.0-beta.7` had only checked locally: the five valid vectors

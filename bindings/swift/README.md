@@ -21,37 +21,33 @@ https://fe.kembec.com
 
 ## Instalación
 
-El paquete todavía no se puede agregar por URL. El tag `v0.1.0-beta.5` ya tiene `Package.swift`, pero sin binario:
-en ese commit `release` es `nil`, y el release no adjunta `SunatSDKFFI.xcframework.zip`. SwiftPM resuelve la versión
-0.1.0-beta.5 y se detiene en `local binary target 'SunatSDKFFI' … does not contain a binary artifact`. Se podrá
-agregar por URL cuando un release adjunte ese zip y el commit de su tag nombre su URL y su checksum en `release`;
-entonces SwiftPM bajará el binario y comprobará el checksum.
-
-Hasta entonces, se usa una copia local del repositorio con el binario que arma el CI. `Package.swift` lee el
-`SunatSDKFFI.xcframework` de `bindings/swift/artifacts`, que no está en git (son 139 MB): baja el artefacto
-`SunatSDKFFI.xcframework` de una ejecución del
-[workflow `swift`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/actions/workflows/swift.yml) y
-descomprímelo ahí. Con `gh`:
-
-```bash
-git clone https://github.com/Kembec/facturacion-electronica-sunat-sdk.git
-cd facturacion-electronica-sunat-sdk
-run=$(gh run list -w swift -b "$(git branch --show-current)" -s success -L 1 --json databaseId -q '.[0].databaseId')
-gh run download "$run" -n SunatSDKFFI.xcframework -D bindings/swift/artifacts/SunatSDKFFI.xcframework
-```
-
-Después, agrégalo a tu paquete por ruta (en Xcode, con «Add Local…» sobre esa carpeta):
+Se agrega por URL con Swift Package Manager. En Xcode, «File › Add Package Dependencies…» con
+`https://github.com/Kembec/facturacion-electronica-sunat-sdk` y la regla «Exact Version» `1.0.0-rc.3`; en un
+`Package.swift`:
 
 ```swift
-dependencies: [.package(path: "../facturacion-electronica-sunat-sdk")],
-targets: [
-    .executableTarget(name: "PrimerComprobante", dependencies: [
-        .product(name: "KembecSunatSDK", package: "facturacion-electronica-sunat-sdk"),
-    ]),
-]
+// swift-tools-version:5.9
+import PackageDescription
+
+let package = Package(
+    name: "PrimerComprobante",
+    platforms: [.macOS(.v10_15), .iOS(.v13)],
+    dependencies: [
+        .package(url: "https://github.com/Kembec/facturacion-electronica-sunat-sdk", exact: "1.0.0-rc.3"),
+    ],
+    targets: [
+        .executableTarget(name: "PrimerComprobante", dependencies: [
+            .product(name: "KembecSunatSDK", package: "facturacion-electronica-sunat-sdk"),
+        ]),
+    ]
+)
 ```
 
-Es una versión beta (1.0.0-rc.3, la de `SunatSDKClient.packageVersion`). Pide Swift 5.9 o posterior y corre en:
+SwiftPM baja `SunatSDKFFI.xcframework.zip` del release de esa versión y lo acepta solo si su checksum es el que nombra
+el `Package.swift` del tag. `exact:` te deja en la versión que probaste; `from: "1.0.0-rc.3"` tomaría también las
+siguientes candidatas y la 1.0.0.
+
+Es la candidata 1.0.0-rc.3 (la de `SunatSDKClient.packageVersion`). Pide Swift 5.9 o posterior y corre en:
 
 | Plataforma | Núcleo del SDK |
 |---|---|
@@ -60,16 +56,24 @@ Es una versión beta (1.0.0-rc.3, la de `SunatSDKClient.packageVersion`). Pide S
 | Linux x64 / ARM64, glibc 2.17 o posterior (no Alpine) | `libsunat_sdk_ffi.so` |
 
 En Apple, el núcleo en Rust queda enlazado dentro de tu binario: no hay framework que embeber ni firmar, ni programa
-externo al que llamar. El ejemplo de abajo, compilado en release para macOS arm64, pesa 5,3 MB.
+externo al que llamar. El ejemplo de abajo, compilado en release para macOS arm64, pesa 6,2 MB.
 
-En Linux no hay xcframework: el paquete enlaza `libsunat_sdk_ffi.so`. Baja del mismo run el artefacto
-`shared-linux-x86_64` o `shared-linux-aarch64` (compilado en manylinux2014) y pásale su carpeta al enlazador al compilar
-y al cargador al correr:
+En Linux no hay xcframework: el paquete enlaza `libsunat_sdk_ffi.so`, que el release no adjunta. Está en el run del
+[workflow `swift`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/actions/workflows/swift.yml) del commit
+del tag, como artefacto `shared-linux-x86_64` o `shared-linux-aarch64` (compilado en manylinux2014; GitHub lo guarda
+hasta el 16/01/2027). Pásale su carpeta al enlazador al compilar y al cargador al correr:
 
 ```bash
-swift build -Xlinker -L/ruta/a/la/so
-LD_LIBRARY_PATH=/ruta/a/la/so .build/debug/PrimerComprobante
+sha=90a694b05a98e630e3d112e37cc056c38ed78884   # el commit de v1.0.0-rc.3
+run=$(gh run list -R Kembec/facturacion-electronica-sunat-sdk -w swift -c "$sha" -s success -L 1 --json databaseId -q '.[0].databaseId')
+gh run download "$run" -R Kembec/facturacion-electronica-sunat-sdk -n shared-linux-x86_64 -D sunat-ffi
+swift build -Xlinker -L"$PWD/sunat-ffi"
+LD_LIBRARY_PATH="$PWD/sunat-ffi" .build/debug/PrimerComprobante
 ```
+
+Para probar una rama que aún no tiene release, clona el repositorio, descomprime el artefacto `SunatSDKFFI.xcframework`
+de su run en `bindings/swift/artifacts/SunatSDKFFI.xcframework` y compila con `KEMBEC_SUNAT_LOCAL_XCFRAMEWORK=1`: así
+el paquete toma ese xcframework en vez del que nombra `release`.
 
 ## Tu primer comprobante
 

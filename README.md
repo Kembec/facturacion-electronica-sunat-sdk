@@ -1,12 +1,12 @@
 # SDK de facturación electrónica SUNAT (Perú)
 
-Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **Rust, JavaScript y TypeScript, Python y PHP**, o
-desde la línea de comandos. Tu sistema decide qué emitir y calcula los importes; el SDK convierte esos datos en el
+Un SDK para emitir comprobantes electrónicos ante la SUNAT desde **Rust, JavaScript y TypeScript, Python, PHP y Swift**,
+o desde la línea de comandos. Tu sistema decide qué emitir y calcula los importes; el SDK convierte esos datos en el
 archivo XML que pide la SUNAT, lo firma con tu certificado digital, lo envía y te dice si la SUNAT lo aceptó. Sirve
 para facturas, boletas, notas de crédito y de débito, liquidaciones de compra, resúmenes diarios de boletas y
 comunicaciones de baja para anular comprobantes ya enviados. Es para quien programa el sistema de facturación de una empresa.
 
-SUNAT (Peru) electronic invoicing SDK for Rust, JavaScript/TypeScript, Python and PHP.
+SUNAT (Peru) electronic invoicing SDK for Rust, JavaScript/TypeScript, Python, PHP and Swift.
 
 Todos los lenguajes usan el mismo motor por dentro, así que los mismos datos dan el mismo comprobante firmado en
 cualquiera de ellos. Guías y ejemplos: **https://fe.kembec.com**
@@ -18,6 +18,7 @@ cualquiera de ellos. Guías y ejemplos: **https://fe.kembec.com**
 | JavaScript y TypeScript (Node 18 o posterior, navegador) | [`@kembec/facturacion-electronica-sunat-sdk`](https://www.npmjs.com/package/@kembec/facturacion-electronica-sunat-sdk) | `npm install @kembec/facturacion-electronica-sunat-sdk@beta` | WebAssembly, sin binarios ni procesos aparte |
 | PHP 7.4 o posterior | [`kembec/facturacion-electronica-sunat-sdk`](https://packagist.org/packages/kembec/facturacion-electronica-sunat-sdk) | `composer require kembec/facturacion-electronica-sunat-sdk:^0.1@beta` | ejecuta el binario `sunat-sdk` una vez por llamada |
 | Python 3.10 o posterior | [`facturacion-electronica-sunat-sdk`](https://pypi.org/project/facturacion-electronica-sunat-sdk/) | `pip install --pre facturacion-electronica-sunat-sdk` | wheels con el motor compilado adentro |
+| Swift 5.9 o posterior (macOS, iOS, Linux) | el producto `KembecSunatSDK` de este repositorio | SwiftPM por URL, `exact: "1.0.0-rc.3"` ([cómo](bindings/swift/README.md#instalación)) | xcframework de bibliotecas estáticas, enlazado en tu binario; en Linux, `libsunat_sdk_ffi.so` |
 | Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) | crates, sin red |
 | Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` | binario estático |
 

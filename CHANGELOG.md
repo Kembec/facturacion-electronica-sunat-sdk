@@ -10,6 +10,8 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+## [1.0.0-rc.4] - 2026-10-18
+
 ### Breaking
 
 - 01, 03, 07 and 08 refuse, before signing, the issuer's `legal_name` (4338), `trade_name` (4092), `address.street`
@@ -18,7 +20,7 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   break, a tab or another whitespace other than the space, or fall outside the length SUNAT's sheet sets. They used to
   reach SUNAT and come back accepted with an observation (beta answered 4094 to a street with a line break on
   2026-10-18). The value is refused with its field, never rewritten: fix it at the source (`docs/input-model.md`,
-  Issuer).
+  Issuer) (#83).
 
 ### Fixed
 
@@ -344,7 +346,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.3...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.4...HEAD
+[1.0.0-rc.4]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.3...v1.0.0-rc.4
 [1.0.0-rc.3]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.2...v1.0.0-rc.3
 [1.0.0-rc.2]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.1...v1.0.0-rc.2
 [1.0.0-rc.1]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.8...v1.0.0-rc.1

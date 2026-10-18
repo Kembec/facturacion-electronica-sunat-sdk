@@ -1,0 +1,13 @@
+{
+  "sent_at": "2026-10-17T19:04:26-05:00",
+  "endpoint": "e-beta billService",
+  "cdr": {
+    "class": "accepted",
+    "description": "La Nota de Credito numero FC01-7101, ha sido aceptada",
+    "notes": [],
+    "reference_id": "FC01-7101",
+    "response_code": "0"
+  },
+  "diagnosis": [],
+  "outcome": "cdr"
+}

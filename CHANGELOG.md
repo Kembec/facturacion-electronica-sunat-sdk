@@ -10,6 +10,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native
+  builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment.
+
 ### Changed
 
 - **Breaking**: `igv_rate` is required on every summary (RC) line. The writer always puts tax 1000 on the line, and the
@@ -17,6 +22,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   1000»; the beta rejected a line without it on 17/10/2026). A line without it now fails before sending with SUNAT code
   2992 at `$.lines[n].igv_rate`, whatever its status or amounts. Migration: add `"igv_rate": "18.00"` (or `"10.50"`;
   a note also takes `"10.00"`) to every line of the summaries you build; the RC fixtures and their vectors carry it.
+- ICBPER sent to the SUNAT beta (17/10/2026), which `0.1.0-beta.7` had only checked locally: the five valid vectors
+  (invoice, receipt, free-bags receipt, credit note, daily summary) were accepted with code 0 and no notes; 4318 came
+  back as an observation and 3306 as a rejection, as the SDK says; 4237 (stale rate) was accepted with no note, so
+  it is a rule of the SDK alone. The daily summary line needed `igv_rate`: without it the beta answers 2992. Answers
+  in `fixtures/icbper/beta/` (#65).
 
 ### Fixed
 
@@ -25,11 +35,6 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   the CLI's HTTP client (`ureq` 2) refused that line, so `send`, `summary`, `ticket` and `status` printed only
   `transport error: Bad Status`. The CLI now uses `ureq` 3, whose parser accepts the reason phrase RFC 9112 allows
   (`obs-text`); the SOAP fault in the body gives its code and `diagnosis`. TLS verification is unchanged.
-
-### Added
-
-- The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native
-  builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment.
 
 ## [0.1.0-beta.7] - 2026-10-17
 

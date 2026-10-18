@@ -438,7 +438,8 @@ jobs:
         run: |
           version="${GITHUB_REF_NAME#v}"
           url="https://api.nuget.org/v3-flatcontainer/kembec.sunatsdk/index.json"
-          for attempt in 1 2 3 4 5 6 7 8 9 10 11 12; do
+          # nuget.org validates and indexes a push before listing it: 1.0.0-rc.1 took more than 6 minutes.
+          for attempt in $(seq 1 60); do
             if curl -fsS "$url" | jq -e --arg v "$version" '.versions | index($v | ascii_downcase)' >/dev/null; then
               echo "Kembec.SunatSdk $version is on nuget.org"
               exit 0
@@ -446,7 +447,7 @@ jobs:
             echo "attempt $attempt: not listed yet"
             sleep 30
           done
-          echo "::error::Kembec.SunatSdk $version is not on nuget.org after 6 minutes"
+          echo "::error::Kembec.SunatSdk $version is not on nuget.org after 30 minutes"
           exit 1
 
   # The crates as crates.io gets them, the same checks as crates.yml: a dry-run publish of each one in dependency order

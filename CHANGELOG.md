@@ -12,6 +12,10 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ### Added
 
+- Advances (F04) in invoices and receipts: `advances[]` and `totals.prepaid` render the `cac:AdditionalDocumentReference`,
+  the `cac:PrepaidPayment`, the discount 04, 05 or 06 and the `PrepaidAmount`, with the SUNAT checks (2505, 2521, 3217,
+  2503, 2968, 3307, 3220, 2509, 3275, 3274, 3277, 3279, 3280, 3291) and, in the beta, vectors accepted with code 0
+  (`fixtures/advances/beta/`). `advances` no longer fails as out of scope; in a note it still does.
 - The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native
   builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment.
 

@@ -16,9 +16,9 @@ fn set(base: &str, pointer: &str, value: &str) -> Result<Document, ModelError> {
 
 fn refused(base: &str, pointer: &str, path: &str, code: &str, value: &str) {
     match set(base, pointer, value) {
-        Err(ModelError::Invalid { path: got, message }) => {
+        Err(ModelError::Invalid { path: got, reason }) => {
             assert_eq!(got, path, "{value:?}");
-            assert!(message.contains(&format!("SUNAT {code}")), "{message}");
+            assert!(reason.contains(&format!("SUNAT {code}")), "{reason}");
         }
         other => panic!("{path} {value:?}: {other:?}"),
     }

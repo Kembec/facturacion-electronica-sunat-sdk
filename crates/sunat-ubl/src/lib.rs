@@ -1,7 +1,8 @@
 //! sunat-ubl: UBL 2.1 XML for invoices (01), receipts (03), credit notes (07) and debit notes (08),
 //! written from SUNAT's «Guía de elaboración de documentos electrónicos XML - UBL 2.1» for each
 //! document type; the UBL 2.0 daily summary (RC) and void communication (RA); and the sender's
-//! despatch advice (09), UBL 2.1 `DespatchAdvice`; and the UBL 2.0 retention voucher (20), `Retention`.
+//! despatch advice (09), UBL 2.1 `DespatchAdvice`; the UBL 2.0 retention voucher (20), `Retention`;
+//! and the purchase settlement (04), UBL 2.1 `SelfBilledInvoice`.
 //!
 //! The output is an XML declaration followed by the root element in canonical form (inclusive
 //! Canonical XML 1.0): the bytes after the declaration equal their own C14N, so what is hashed
@@ -19,6 +20,7 @@ mod lines;
 mod parties;
 mod references;
 mod retention;
+mod self_billed;
 mod tax;
 mod totals;
 mod writer;

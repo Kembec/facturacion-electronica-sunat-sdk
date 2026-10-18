@@ -21,7 +21,7 @@ cualquiera de ellos. Guías y ejemplos: **https://fe.kembec.com**
 | Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) | crates, sin red |
 | Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` | binario estático |
 
-La versión publicada es la 0.1.0-beta.7. Qué trae, en [Versiones](#versiones).
+La versión publicada es la 0.1.0-beta.8. Qué trae, en [Versiones](#versiones).
 
 ## Tu primer comprobante firmado
 
@@ -29,7 +29,7 @@ Baja a una carpeta vacía una factura de ejemplo y el certificado de prueba del 
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.7
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v0.1.0-beta.8
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -107,9 +107,9 @@ del tag, con la clave corta para que el código diga `sunat_model::…`. `sunat-
 
 ```toml
 [dependencies]
-sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.7" }
-sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.7" }
-sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.7" }
+sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.8" }
+sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.8" }
+sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v0.1.0-beta.8" }
 ```
 
 ```rust
@@ -136,7 +136,7 @@ tú. Lo que expone cada crate está en la [arquitectura](docs/architecture.md).
 En Linux x86_64, el binario estático del release:
 
 ```bash
-url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.7
+url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v0.1.0-beta.8
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl"
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl.sha256"
 sha256sum -c sunat-sdk-x86_64-unknown-linux-musl.sha256
@@ -180,6 +180,7 @@ La CDR es la constancia con la que la SUNAT responde a cada envío.
   01/08/2026.
 - **Descuentos y cargos** del catálogo 53, por línea y globales, en facturas y boletas.
 - **ICBPER** (bolsas plásticas, tributo 7152), en comprobantes, notas y líneas del resumen diario.
+- **Anticipos** en facturas y boletas: el comprobante del anticipo y el final que lo descuenta.
 - **Firma** XML-DSig enveloped como la pide la SUNAT (RSA-SHA1, C14N inclusiva), con tu certificado y tu llave en PEM;
   la llave, RSA sin cifrar.
 - **Respuesta de la SUNAT**: el SDK lee la CDR y la clasifica (aceptada, observada, rechazada, excepción). Un error SOAP
@@ -213,7 +214,7 @@ observa la boleta (4288).
 **Lo que el SDK no cubre lo rechaza con un error explícito**, en vez de generar un XML que la SUNAT rechazaría:
 
 - en comprobantes: ISC y otros tributos, descuentos y cargos en notas de crédito y débito, los códigos del catálogo 53
-  que no son de descuentos y cargos, anticipos, detracción en operaciones 1002 y 1004 y percepción;
+  que no son de descuentos y cargos, anticipos en notas, detracción en operaciones 1002 y 1004 y percepción;
 - en resúmenes diarios: percepción, ISC e IVAP en las líneas, y los resúmenes de reversión (RR).
 
 **Referencias**: la orden de compra (`order_reference`) y las guías de remisión que el comprobante cita
@@ -243,7 +244,17 @@ está en el [modelo de entrada](docs/input-model.md).
 
 ## Versiones
 
-La 0.1.0-beta.7 suma frente a la 0.1.0-beta.6:
+La 0.1.0-beta.8 suma frente a la 0.1.0-beta.7:
+
+- anticipos en facturas y boletas: la del anticipo y la final que lo descuenta (`advances`, `totals.prepaid`), con los
+  códigos de la SUNAT; la beta de la SUNAT aceptó los cuatro vectores válidos. En el modelo de Rust, `Invoice` y
+  `Totals` ganan campos;
+- en el resumen diario, `igv_rate` obligatorio en cada línea: sin ella el SDK responde 2992 antes de enviar. Cambio que
+  rompe compatibilidad;
+- cuando la SUNAT rechaza un resumen, la CLI devuelve su código y `diagnosis` en vez de `transport error: Bad Status`;
+- el ICBPER, probado en la beta de la SUNAT (cinco vectores aceptados).
+
+La 0.1.0-beta.7 había sumado frente a la 0.1.0-beta.6:
 
 - el ICBPER (tributo 7152) en facturas, boletas, notas y resúmenes diarios;
 - reglas con fecha de entrada en vigor del 01/01/2027 en el resumen diario y en la nota de débito 13;

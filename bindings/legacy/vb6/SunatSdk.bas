@@ -50,7 +50,7 @@ Public Sub SunatLoad(ByVal dllPath As String)
     End If
 End Sub
 
-' The SDK version of the loaded DLL, for example "0.1.0-beta.7".
+' The SDK version of the loaded DLL, for example "0.1.0-beta.8".
 Public Function SunatVersion() As String
     Dim pointer As Long, length As Long, bytes() As Byte
     pointer = sunat_sdk_version()

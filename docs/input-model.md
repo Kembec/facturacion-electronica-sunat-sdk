@@ -7,7 +7,7 @@ compute taxes.
 Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV (affectations
 10-16, 20, 21, 30-37, 40), IVAP (affectation 17, see IVAP) and ICBPER (tax 7152, see ICBPER). Not
 supported, rejected with an explicit error: ISC, other taxes, catalog 53 codes other than those of Discounts and
-charges, discounts and charges in notes, advances, detraction on operation types 1002 and 1004,
+charges, discounts and charges in notes, advances in notes, detraction on operation types 1002 and 1004,
 perception.
 
 The daily summary (RC), the void communication (RA), the sender's despatch advice (09) and the
@@ -38,6 +38,7 @@ retention voucher (20) have their own sections below.
 | `despatch_references` | optional, `[{ "document_type": "09", "number": "T001-45" }]`, see Related documents |
 | `igv_retention` | optional, 01/03/07/08, see IGV retention |
 | `global_adjustments` | optional, invoice and receipt only, see Discounts and charges |
+| `advances` | optional, invoice and receipt only, see Advances |
 
 ## Related documents
 
@@ -105,10 +106,10 @@ issuer's), `email`, `telephone`.
 ## Totals
 
 `taxed`, `unaffected`, `exempt`, `export`, `free`, `free_igv`, `igv`, `ivap_base`, `ivap`, `icbper`,
-`total_taxes`, `sale_value`, `subtotal`, `allowance_total`, `charge_total`, `rounding`, `payable`. An
+`total_taxes`, `sale_value`, `subtotal`, `allowance_total`, `charge_total`, `rounding`, `prepaid`, `payable`. An
 absent total is not rendered. `allowance_total` and `charge_total` (`cbc:AllowanceTotalAmount`,
 `cbc:ChargeTotalAmount`) carry the discounts and charges that do not change the IGV base, see
-Discounts and charges.
+Discounts and charges. `prepaid` (`cbc:PrepaidAmount`) is the sum of the advances' `paid_amount`, see Advances.
 
 ## IVAP
 
@@ -218,6 +219,39 @@ A global `02` or `49` with lines at two IGV rates (18 and 10.5) is out of scope:
 how it splits between them. Each line keeps its own IGV over its own base; only the document's IGV is net
 of `02` and `49`. Vectors: `fixtures/allowances/` (`inv-01` to `inv-06` valid, `inv-R1` to `inv-R3`
 rejected with 3277, 3307 and 3290). Not sent to SUNAT beta yet.
+
+## Advances
+
+A sale paid in advance is two documents. The advance is an ordinary invoice or receipt for what was received
+(`operation_type` `0101`: catalog 51 has no code of its own for it). The final invoice or receipt carries the
+whole sale and lists each advance in `advances`; the SDK renders from that list a `cac:AdditionalDocumentReference`
+(the advance's document, `DocumentStatusCode` its number), a `cac:PrepaidPayment` and a `cac:AllowanceCharge` with
+catalog 53 code `04`, `05` or `06`, in the same order. Invoice and receipt only; in a note, `advances` and
+`totals.prepaid` are out of scope. `global_adjustments` does not take 04, 05 or 06, and `prepayments` is not a name.
+
+| Field of `advances[]` | |
+|---|---|
+| `document_type` | `"02"` invoice or `"03"` receipt of the advance (2505) |
+| `document_number` | `SERIES-NUMBER`: `F`+3, `E001` or up to 4 digits for an invoice, `B`+3, `EB01` or up to 4 digits for a receipt; then 1 to 8 digits (2521) |
+| `paid_amount` | what was received, IGV included; positive, 12 integer digits and 2 decimals (2503) |
+| `affectation` | `"10"` taxed (discount 04), `"20"` exempt (05), `"30"` unaffected (06) |
+| `value` | sale value of the advance, without IGV (equal to `paid_amount` in 20 and 30): the `Amount` of the discount (2968) |
+| `issuer_ruc` | optional, 11 digits; the document's issuer when absent |
+| `base_amount`, `factor` | optional, both or neither; `value` = `base_amount` × `factor`, within 1 (3307, 4322) |
+
+With `L` the sum of the lines' value, `A` the advances 04 and `P` the sum of `paid_amount`:
+
+- `totals.prepaid` = `P`, above zero (3220) and equal to the sum (2509);
+- `taxed` = `L` − `A` − 02 + 49 (3277, 4299) and `igv` = rate × `taxed` (3291, 4290): n2 shows the beta rejects the IGV over `L`;
+- `sale_value` = `L` − 02 + 49: the advance does not lower it (3278, 4309);
+- `subtotal` = `sale_value` + `total_taxes` + rate × `A`, that is, the IGV over the gross base (3279, 4310); the net version was rejected (s1);
+- `payable` = `subtotal` + `charge_total` − `allowance_total` − `prepaid` + `rounding` (3280, 4312); `allowance_total` does not include 04, 05 or 06;
+- `exempt` = Σ exempt lines − advances 05 and `unaffected` = Σ unaffected lines − advances 06 (3275, 3274; 4297, 4296).
+
+A sale covered in full has `payable` `"0.00"`, `taxed` `"0.00"` and still renders the IGV subtotal at zero
+(without it the beta answers 2638). An advance with an affectation other than 10, 20 or 30, the same advance twice,
+and advances with lines at two IGV rates are rejected. The SDK does not check that the advance exists or is
+accepted (3218): the beta does not either. Vectors and the beta's answers: `fixtures/advances/`, `fixtures/advances/beta/`.
 
 ## Note (07, 08)
 

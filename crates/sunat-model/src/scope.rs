@@ -13,7 +13,6 @@ const DOCUMENT_KEYS: &[(&str, &str)] = &[
     ("global_discounts", "global discounts"),
     ("charges", "global charges"),
     ("global_charges", "global charges"),
-    ("advances", "advances"),
     ("prepayments", "advances"),
     ("perception", "perception"),
 ];
@@ -29,7 +28,6 @@ const TOTALS_KEYS: &[(&str, &str)] = &[
     ("charges", "global charges"),
     ("other_charges", "global charges"),
     ("advances", "advances"),
-    ("prepaid", "advances"),
 ];
 
 const LINE_KEYS: &[(&str, &str)] = &[

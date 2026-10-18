@@ -1,7 +1,7 @@
 //! Document-level sections: payment terms («Forma de pago»), the tax total with one subtotal per
 //! scheme («Total de tributos») and the monetary totals («Totales del comprobante»).
 
-use sunat_model::{AllowanceCharge, Decimal, Detraction, IgvRetention, PaymentTerms, Totals};
+use sunat_model::{Advance, AllowanceCharge, Decimal, Detraction, IgvRetention, PaymentTerms, Totals};
 
 use crate::amount::{shortest, two_decimals};
 use crate::lines::{factor_text, tax_scheme};
@@ -86,10 +86,41 @@ pub(crate) fn global_adjustments(w: &mut XmlWriter, adjustments: &[AllowanceChar
     }
 }
 
+/// One `cac:PrepaidPayment` per advance, after the payment terms: its number is its position and
+/// `PaidAmount` what was received, IGV included.
+pub(crate) fn prepaid_payments(w: &mut XmlWriter, advances: &[Advance], currency: &str) {
+    for (index, advance) in advances.iter().enumerate() {
+        w.open("cac:PrepaidPayment", &[]);
+        w.text("cbc:ID", &(index + 1).to_string());
+        w.leaf("cbc:PaidAmount", &[("currencyID", currency)], &two_decimals(&advance.paid_amount));
+        w.close();
+    }
+}
+
+/// One global discount per advance with catalog 53 code `04`, `05` or `06` (`ChargeIndicator` false),
+/// next to the other global adjustments.
+pub(crate) fn advance_discounts(w: &mut XmlWriter, advances: &[Advance], currency: &str) {
+    let money = [("currencyID", currency)];
+    for advance in advances {
+        let Some(code) = advance.discount_code() else { continue };
+        w.open("cac:AllowanceCharge", &[]);
+        w.text("cbc:ChargeIndicator", "false");
+        w.text("cbc:AllowanceChargeReasonCode", code);
+        if let Some(factor) = &advance.factor {
+            w.text("cbc:MultiplierFactorNumeric", &factor_text(factor));
+        }
+        w.leaf("cbc:Amount", &money, &two_decimals(&advance.value));
+        if let Some(base) = &advance.base_amount {
+            w.leaf("cbc:BaseAmount", &money, &two_decimals(base));
+        }
+        w.close();
+    }
+}
+
 /// `cac:TaxTotal`: the total of taxes, then one subtotal per scheme with a non-zero base, in
 /// descending catalog 05 order (IGV 1000, INA 9998, EXO 9997, GRA 9996, EXP 9995), then IVAP and
-/// ICBPER (7152), which has no base.
-pub(crate) fn tax_total(w: &mut XmlWriter, totals: &Totals, currency: &str) {
+/// ICBPER (7152), which has no base. The IGV subtotal stays at zero when `igv_when_zero`.
+pub(crate) fn tax_total(w: &mut XmlWriter, totals: &Totals, currency: &str, igv_when_zero: bool) {
     let zero: Decimal = "0".parse().expect("literal decimal");
     let subtotals: [(TaxScheme, Option<&Decimal>, Option<&Decimal>); 6] = [
         (IGV, totals.taxed.as_ref(), totals.igv.as_ref()),
@@ -103,7 +134,9 @@ pub(crate) fn tax_total(w: &mut XmlWriter, totals: &Totals, currency: &str) {
     w.open("cac:TaxTotal", &[]);
     w.leaf("cbc:TaxAmount", &money, &two_decimals(totals.total_taxes.as_ref().unwrap_or(&zero)));
     for (scheme, base, tax) in subtotals {
-        let Some(base) = base.filter(|b| !b.is_zero()) else { continue };
+        // A sale an advance covers in full has a zero IGV base, and SUNAT still wants its subtotal (2638).
+        let keep = igv_when_zero && scheme.id == IGV.id;
+        let Some(base) = base.filter(|b| keep || !b.is_zero()) else { continue };
         w.open("cac:TaxSubtotal", &[]);
         w.leaf("cbc:TaxableAmount", &money, &two_decimals(base));
         w.leaf("cbc:TaxAmount", &money, &two_decimals(tax.unwrap_or(&zero)));
@@ -144,6 +177,7 @@ pub(crate) fn monetary_total(w: &mut XmlWriter, kind: MonetaryTotal, totals: &To
         amount_opt(w, "cbc:TaxInclusiveAmount", totals.subtotal.as_ref(), &money);
         amount_opt(w, "cbc:AllowanceTotalAmount", totals.allowance_total.as_ref(), &money);
         amount_opt(w, "cbc:ChargeTotalAmount", totals.charge_total.as_ref(), &money);
+        amount_opt(w, "cbc:PrepaidAmount", totals.prepaid.as_ref(), &money);
     }
     if let Some(rounding) = totals.rounding.as_ref().filter(|r| !r.is_zero()) {
         w.leaf("cbc:PayableRoundingAmount", &money, &two_decimals(rounding));

@@ -10,6 +10,19 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Breaking
+
+- The sender's despatch advice (09) refuses, before signing, the free text SUNAT's «Guía-Remitente2_0» sheet observes
+  by format: `note` (4186), the issuer's, recipient's, seller's and buyer's `legal_name` (4338, 4152, 4106, 4381), a
+  related document's `description` (4372), `shipment.reason_description` with reason 13 (4190), the carrier's
+  `legal_name` and `mtc_registration` (4165, 4392), the drivers' `first_name` and `family_name` (4409), the origin and
+  destination `address` (4076, 4068) and a line's `description` and `product_code` (4084, 4085). A value with a line
+  break, a tab or another whitespace other than the space, outside the sheet's length, or of only spaces where the
+  sheet says so, used to be signed and would have reached SUNAT as an observation; a line's `description` still
+  allows line breaks and is only measured. SUNAT has no test environment for despatch advices, so the sheet is the
+  only source. The value is refused with its field, never rewritten: fix it at the source (`docs/input-model.md`,
+  Despatch advice (09)).
+
 ## [1.0.0-rc.4] - 2026-10-18
 
 ### Breaking

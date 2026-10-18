@@ -158,11 +158,11 @@ fn read_cdr_decodes_latin1() {
 
 #[test]
 fn summaries_and_void_communications_zip_under_their_own_names() {
-    for name in ["20123456789-RC-20261016-1", "20123456789-RA-20261016-12345"] {
+    for name in ["20123456789-RC-20261016-1", "20123456789-RA-20261016-12345", "20123456789-RR-20261018-1"] {
         let zip = zip_document(name, b"<SummaryDocuments/>").unwrap();
         assert_eq!(unzip_xml(&zip).unwrap(), b"<SummaryDocuments/>", "{name}");
     }
-    for name in ["20123456789-RC-2026101-1", "20123456789-RA-20261016-123456", "20123456789-RC-2026101A-1"] {
+    for name in ["20123456789-RC-2026101-1", "20123456789-RA-20261016-123456", "20123456789-RC-2026101A-1", "20123456789-RR-20261018-123456"] {
         assert_eq!(zip_document(name, b"x"), Err(TransportError::InvalidName(name.into())), "{name}");
     }
 }

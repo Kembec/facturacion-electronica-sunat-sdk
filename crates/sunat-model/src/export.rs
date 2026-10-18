@@ -73,10 +73,7 @@ fn check_country(invoice: &Invoice, operation: &str) -> Result<(), ModelError> {
     Ok(())
 }
 
-/// Catalog 04 is ISO 3166-1 alpha-2: two uppercase letters.
-pub(crate) fn is_country(code: &str) -> bool {
-    code.len() == 2 && code.bytes().all(|b| b.is_ascii_uppercase())
-}
+pub(crate) use crate::countries::is_country;
 
 fn check_customer(invoice: &Invoice, operation: &str, receipt: bool) -> Result<(), ModelError> {
     let customer = &invoice.voucher.customer;

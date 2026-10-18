@@ -12,8 +12,8 @@ categories = ["finance", "encoding", "parser-implementations"]
 readme = "README.md"
 # The library, its tests' code and the notices. The data the tests read (fixtures/, tests/vectors/,
 # tests/xsd/ and this crate's tests/data/) stays in the repository: the crates workflow runs this
-# package's tests against it.
-include = ["/src/**/*.rs", "/tests/**/*.rs", "/tests/*.py", "/README.md", "/LICENSE", "/NOTICE"]
+# package's tests against it. data/catalog-04.json is the country list the validation embeds.
+include = ["/src/**/*.rs", "/data/catalog-04.json", "/tests/**/*.rs", "/tests/*.py", "/README.md", "/LICENSE", "/NOTICE"]
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }

@@ -1,0 +1,24 @@
+{
+ "catalog": "04",
+ "rule": "SUNAT catalog 04 points to ISO 3166-1 without listing it. The SDK takes ISO 3166-1 alpha-2 in force (249 codes): the SUNAT beta (2026-10-18) accepted RS, absent from the page the SUNAT sheet cites, and rejected AN, present there, with 3099 (\"Valor no se encuentra en el catalogo: 04\"). CS was not sent: it is left out because ISO withdrew it in 2006, before AN (2010) [INF].",
+ "sources": {
+  "iso_3166_1": {
+   "what": "Debian iso-codes v4.20.1 (tag of 2026-01-01), data/iso_3166-1.json",
+   "sha256": "f01b812b57fba9f31ff621bf33e7c7570a01964dbeb5be2167e94decf538c89f",
+   "codes": 249
+  },
+  "sunat_cited_page": {
+   "what": "ISO 3166 Codes (Countries), the page the SUNAT rules sheet (Catalogos, catalog 04) cites, as archived by the Wayback Machine",
+   "url": "http://www.chemie.fu-berlin.de/diverse/doc/ISO_3166.html",
+   "snapshot": "https://web.archive.org/web/20210611233232/http://kirste.userpage.fu-berlin.de/diverse/doc/ISO_3166.html",
+   "sha256": "144c1454c9ef52c3a6e7a81a2da83abf07cea6f84f4cf1b664903ac5883cdb33",
+   "codes": 240,
+   "not_in_iso": [
+    "AN",
+    "CS"
+   ]
+  }
+ },
+ "queried": "2026-10-18",
+ "codes": ["AD", "AE", "AF", "AG", "AI", "AL", "AM", "AO", "AQ", "AR", "AS", "AT", "AU", "AW", "AX", "AZ", "BA", "BB", "BD", "BE", "BF", "BG", "BH", "BI", "BJ", "BL", "BM", "BN", "BO", "BQ", "BR", "BS", "BT", "BV", "BW", "BY", "BZ", "CA", "CC", "CD", "CF", "CG", "CH", "CI", "CK", "CL", "CM", "CN", "CO", "CR", "CU", "CV", "CW", "CX", "CY", "CZ", "DE", "DJ", "DK", "DM", "DO", "DZ", "EC", "EE", "EG", "EH", "ER", "ES", "ET", "FI", "FJ", "FK", "FM", "FO", "FR", "GA", "GB", "GD", "GE", "GF", "GG", "GH", "GI", "GL", "GM", "GN", "GP", "GQ", "GR", "GS", "GT", "GU", "GW", "GY", "HK", "HM", "HN", "HR", "HT", "HU", "ID", "IE", "IL", "IM", "IN", "IO", "IQ", "IR", "IS", "IT", "JE", "JM", "JO", "JP", "KE", "KG", "KH", "KI", "KM", "KN", "KP", "KR", "KW", "KY", "KZ", "LA", "LB", "LC", "LI", "LK", "LR", "LS", "LT", "LU", "LV", "LY", "MA", "MC", "MD", "ME", "MF", "MG", "MH", "MK", "ML", "MM", "MN", "MO", "MP", "MQ", "MR", "MS", "MT", "MU", "MV", "MW", "MX", "MY", "MZ", "NA", "NC", "NE", "NF", "NG", "NI", "NL", "NO", "NP", "NR", "NU", "NZ", "OM", "PA", "PE", "PF", "PG", "PH", "PK", "PL", "PM", "PN", "PR", "PS", "PT", "PW", "PY", "QA", "RE", "RO", "RS", "RU", "RW", "SA", "SB", "SC", "SD", "SE", "SG", "SH", "SI", "SJ", "SK", "SL", "SM", "SN", "SO", "SR", "SS", "ST", "SV", "SX", "SY", "SZ", "TC", "TD", "TF", "TG", "TH", "TJ", "TK", "TL", "TM", "TN", "TO", "TR", "TT", "TV", "TW", "TZ", "UA", "UG", "UM", "US", "UY", "UZ", "VA", "VC", "VE", "VG", "VI", "VN", "VU", "WF", "WS", "YE", "YT", "ZA", "ZM", "ZW"]
+}

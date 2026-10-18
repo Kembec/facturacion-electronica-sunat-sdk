@@ -14,9 +14,11 @@ impl Document {
                 check_voucher(&invoice.voucher, &[DocumentType::Invoice, DocumentType::Receipt])?;
                 require_text("$.operation_type", &invoice.operation_type)?;
                 crate::export::check(invoice)?;
+                crate::line_base::check(&invoice.voucher, None)?;
                 check_detraction(invoice)?;
                 require(invoice.voucher.totals.sale_value.is_some(), "$.totals.sale_value")?;
                 crate::allowances::check(invoice)?;
+                crate::total_taxes::check(&invoice.voucher)?;
                 crate::icbper::check(&invoice.voucher, None)
             }
             Document::Note(note) => {
@@ -45,12 +47,15 @@ impl Document {
                 require_text("$.note.reason", &reference.reason)?;
                 require_text("$.note.affected_document_type", &reference.affected_document_type)?;
                 require_text("$.note.affected_document_number", &reference.affected_document_number)?;
+                crate::line_base::check(&note.voucher, Some(&reference.affected_document_type))?;
                 crate::icbper::check(&note.voucher, Some(&reference.affected_document_type))
             }
             Document::Summary(summary) => check_summary(summary),
             Document::Voided(voided) => check_voided(voided),
             Document::Despatch(despatch) => crate::despatch_rules::check(despatch),
             Document::Retention(retention) => crate::retention_rules::check(retention),
+            Document::SelfBilled(settlement) => crate::self_billed_rules::check(settlement),
+            Document::Reversal(reversal) => crate::reversal_rules::check(reversal),
         }
     }
 }

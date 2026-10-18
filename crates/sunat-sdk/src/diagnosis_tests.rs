@@ -126,6 +126,27 @@ fn error_fields_match_their_source() {
             }));
         }
     }
-    assert_eq!(source.len(), 702, "the source table of 26.08.2026");
+    assert_eq!(source.len(), 711, "the source table of 26.08.2026 and the 9 reversal (RR) rows");
     assert_eq!(embedded, Value::Array(expected), "data/error-fields.json drifted from its source: regenerate it");
+}
+
+/// The reversal summary (RR) of a purchase settlement: `summary` names it `RUC-RR-...`, so its codes are looked
+/// up under `RR`, and each one the SDK checks points at its `kind: "reversal"` field.
+#[test]
+fn reversal_codes_point_at_their_fields() {
+    let expected = [
+        ("2220", "number"),
+        ("2671", "generation_date"),
+        ("2308", "lines[].document_type"),
+        ("2345", "lines[].series"),
+        ("2958", "communication_date"),
+        ("2312", "lines[].number"),
+        ("2348", "lines[].number"),
+        ("2315", "lines[].reason"),
+        ("4203", "lines[].reason"),
+    ];
+    for (code, field) in expected {
+        assert_eq!(paths(&diagnose("RR", code, "")), vec![Some(field)], "{code}");
+    }
+    assert!(diagnose("01", "2958", "").fields.is_empty(), "RR rows stay under RR");
 }

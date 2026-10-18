@@ -507,7 +507,7 @@ starts with a digit (printed settlements); free lines (9996) and other taxes (99
 | `issuer` | the buyer, see Issuer; `country_code`, when given, `PE` (4041) |
 | `seller` | `{ "document_type", "document_number", "legal_name", "address" }`. `document_type` `"1"` DNI, `"4"` carné de extranjería or `"7"` passport (2800); `document_number` required (2014): a DNI has 8 digits, the others up to 15 characters without whitespace (2802); `legal_name` 1 to 1500 characters (2021, 2022) |
 | `seller.address` | `street` 3 to 250 characters, not starting with a space or a tab (2452, 2593); `ubigeo` (2453); `address_type`, catalog 60 (2456, 2457); `country_code`, `department`, `province`, `district`, `urbanization` optional |
-| `operation_place` | where the purchase took place (`cac:DeliveryTerms`), required (2454): `street` as the seller's (2454, 2778), `ubigeo` of 6 digits (2455, 2917), `location_type`, catalog 60 (2458, 2459) |
+| `operation_place` | where the purchase took place (`cac:DeliveryTerms`), required: without it, 2458 on `$.operation_place.location_type`, as the beta answers; `street` as the seller's (2454, 2778), `ubigeo` of 6 digits (2455, 2917), `location_type`, catalog 60 (2458, 2459) |
 | `lines` | at least one; see Settlement line |
 | `totals` | `taxed`, `exempt`, `unaffected`, `igv`, `income_tax_retention_base`, `income_tax_retention`, `total_taxes` (the IGV, without the retention: 4301), `sale_value` (Σ `line_value`: 4309), `subtotal` (`sale_value` + IGV: 4310), `rounding` (absolute value up to 1: 4314), `payable` (`subtotal` − IGV − retention + `rounding`: 4312). The retention base and amount are the sums of the lines' (4345, 4346). Each within ±1, as the sheet allows |
 | `legends`, `despatch_references` | as in an invoice |
@@ -535,6 +535,6 @@ The rules of sheet «LiquidacionCompra2_0» that read only the document, each re
 the totals' observations included; one test per code in `crates/sunat-model/tests/self_billed_rules.rs`. The vectors
 are `fixtures/self-billed/`: `v1` (0501, retention 1.5 %) and `v2` (0503, gold, 4 %) build, sign and pass the
 independent verifier (`crates/sunat-ubl/tests/self_billed.rs`); `n1` (a seller with RUC) fails with 2800 and `n2`
-(no `operation_place`) with 2454. On 18/10/2026 the SUNAT beta accepted `v1` with code 0 and observation 4337 (the
-vector's product code) and `v2` with code 0 and no notes, rejected `n1` with 2800, and rejected `n2` with 2458: the beta
-checks the place's location type before its address (`fixtures/self-billed/beta/`).
+(no `operation_place`) with 2458. On 18/10/2026 the SUNAT beta accepted `v1` with code 0 and observation 4337 (the
+vector's product code) and `v2` with code 0 and no notes, rejected `n1` with 2800, and rejected `n2` with 2458, the code the SDK gives: the
+beta checks the place's location type before its address (`fixtures/self-billed/beta/`).

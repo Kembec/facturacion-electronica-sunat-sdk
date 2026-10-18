@@ -18,7 +18,7 @@ impl Document {
                 check_detraction(invoice)?;
                 require(invoice.voucher.totals.sale_value.is_some(), "$.totals.sale_value")?;
                 crate::allowances::check(invoice)?;
-                crate::total_taxes::check(&invoice.voucher)?;
+                crate::total_taxes::check(&invoice.voucher, None)?;
                 crate::icbper::check(&invoice.voucher, None)
             }
             Document::Note(note) => {
@@ -48,6 +48,7 @@ impl Document {
                 require_text("$.note.affected_document_type", &reference.affected_document_type)?;
                 require_text("$.note.affected_document_number", &reference.affected_document_number)?;
                 crate::line_base::check(&note.voucher, Some(&reference.affected_document_type))?;
+                crate::total_taxes::check(&note.voucher, Some(&reference.affected_document_type))?;
                 crate::icbper::check(&note.voucher, Some(&reference.affected_document_type))
             }
             Document::Summary(summary) => check_summary(summary),

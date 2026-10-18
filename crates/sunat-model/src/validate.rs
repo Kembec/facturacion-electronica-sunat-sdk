@@ -68,6 +68,8 @@ fn check_voucher(voucher: &Voucher, allowed: &[DocumentType]) -> Result<(), Mode
         return Err(ModelError::invalid("$.document_type", "does not match kind"));
     }
     check_issuer(&voucher.issuer)?;
+    crate::text_format::check_issuer(&voucher.issuer, voucher.document_type)?;
+    crate::text_format::check_lines(&voucher.lines, voucher.document_type)?;
     check_format("$.series", &voucher.series, "4 uppercase letters or digits", series)?;
     check_format("$.number", &voucher.number, "1 to 8 digits", voucher_number)?;
     check_format("$.currency", &voucher.currency, "ISO 4217 code", currency)?;

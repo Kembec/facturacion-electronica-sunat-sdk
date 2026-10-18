@@ -10,6 +10,14 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Changed
+
+- ICBPER sent to the SUNAT beta (17/10/2026), which `0.1.0-beta.7` had only checked locally: the five valid vectors
+  (invoice, receipt, free-bags receipt, credit note, daily summary) were accepted with code 0 and no notes; 4318 came
+  back as an observation and 3306 as a rejection, as the SDK says; 4237 (stale rate) was accepted with no note, so
+  it is a rule of the SDK alone. The daily summary line needed `igv_rate`: without it the beta answers 2992. Answers
+  in `fixtures/icbper/beta/` (#65).
+
 ## [0.1.0-beta.7] - 2026-10-17
 
 ### Added
@@ -56,9 +64,8 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   subtotals 7152, and a summary line's `icbper` its own `cac:TaxTotal`. The rate per bag is a dated table of the SDK
   (S/ 0.50 from 2023) read on the year of `issue_date`. Checked before sending with SUNAT's codes (2033, 2048, 2892,
   3238, 2949, 3292, 3294, 3306, 3279, 3280; a receipt gets the observation code), and the observations 4318 (amount
-  ≠ rate × bags) and 4237 (rate not the one in force) are rejected too. PEN only. Sent to the SUNAT beta (17/10/2026):
-  the five valid vectors were accepted with code 0, 4318 came back as an observation and 3306 as a rejection, and
-  the beta accepted a stale rate with no note, so 4237 is the SDK's rule alone (#55, [`docs/input-model.md`](docs/input-model.md#icbper)).
+  ≠ rate × bags) and 4237 (rate not the one in force) are rejected too. PEN only. Not sent to SUNAT beta yet
+  (#55, [`docs/input-model.md`](docs/input-model.md#icbper)).
 
 ## [0.1.0-beta.6] - 2026-10-17
 

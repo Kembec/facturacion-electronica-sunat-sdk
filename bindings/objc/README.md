@@ -26,7 +26,7 @@ https://fe.kembec.com
 
 Se agrega por URL con Swift Package Manager, con el producto `KembecSunatSDKObjC`. En Xcode, «File › Add Package
 Dependencies…» con `https://github.com/Kembec/facturacion-electronica-sunat-sdk`, la regla «Exact Version»
-`1.0.0-rc.3` y ese producto; en un `Package.swift`:
+`1.0.0-rc.4` y ese producto; en un `Package.swift`:
 
 ```swift
 // swift-tools-version:5.9
@@ -36,7 +36,7 @@ let package = Package(
     name: "PrimerComprobante",
     platforms: [.macOS(.v10_15), .iOS(.v13)],
     dependencies: [
-        .package(url: "https://github.com/Kembec/facturacion-electronica-sunat-sdk", exact: "1.0.0-rc.3"),
+        .package(url: "https://github.com/Kembec/facturacion-electronica-sunat-sdk", exact: "1.0.0-rc.4"),
     ],
     targets: [
         .executableTarget(name: "PrimerComprobante", dependencies: [
@@ -47,19 +47,19 @@ let package = Package(
 ```
 
 SwiftPM baja `SunatSDKFFI.xcframework.zip` del release de esa versión y lo acepta solo si su checksum es el que nombra
-el `Package.swift` del tag. `exact:` te deja en la versión que probaste; `from: "1.0.0-rc.3"` tomaría también las
+el `Package.swift` del tag. `exact:` te deja en la versión que probaste; `from: "1.0.0-rc.4"` tomaría también las
 siguientes candidatas y la 1.0.0.
 
 O con CocoaPods, desde Git, en tu `Podfile`:
 
 ```ruby
-pod 'KembecSunatSDKObjC', :git => 'https://github.com/Kembec/facturacion-electronica-sunat-sdk.git', :tag => 'v1.0.0-rc.3'
+pod 'KembecSunatSDKObjC', :git => 'https://github.com/Kembec/facturacion-electronica-sunat-sdk.git', :tag => 'v1.0.0-rc.4'
 ```
 
 El podspec no va al trunk de CocoaPods, que deja de aceptar publicaciones el 2/12/2026: se sirve desde Git, y al
 instalarse baja el mismo zip del release y comprueba el mismo SHA-256 que `Package.swift` antes de usarlo.
 
-Es la candidata 1.0.0-rc.3 (la de `KSSPackageVersion`). Corre en macOS 10.15 o posterior (Apple Silicon e Intel) y en
+Es la candidata 1.0.0-rc.4 (la de `KSSPackageVersion`). Corre en macOS 10.15 o posterior (Apple Silicon e Intel) y en
 iOS 13 o posterior, dispositivo y simulador (arm64 y x86_64); no en Linux. Está escrito para ARC y no compila sin él.
 El núcleo en Rust queda enlazado dentro de tu binario como biblioteca estática: no hay framework que embeber ni firmar,
 ni programa externo al que llamar. El ejemplo de abajo, compilado en release para macOS arm64, pesa 5,4 MB y solo
@@ -80,7 +80,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.3
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.4
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"

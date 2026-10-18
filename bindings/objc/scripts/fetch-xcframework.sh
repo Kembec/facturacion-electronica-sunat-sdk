@@ -8,6 +8,14 @@ repo=$(cd "$(dirname "$0")/../../.." && pwd)
 out="$repo/bindings/swift/artifacts"
 xcframework="$out/SunatSDKFFI.xcframework"
 
+# KEMBEC_SUNAT_LOCAL_XCFRAMEWORK=1 (set by swift.yml) keeps the local xcframework even with `release` pinned, as
+# Package.swift does: the CI checks what its own run built, never the URL, which exists only once the release does.
+if [ "${KEMBEC_SUNAT_LOCAL_XCFRAMEWORK:-}" = "1" ]; then
+  [ -d "$xcframework" ] && { echo "SunatSDKFFI.xcframework: the one in bindings/swift/artifacts (KEMBEC_SUNAT_LOCAL_XCFRAMEWORK=1)"; exit 0; }
+  echo "KEMBEC_SUNAT_LOCAL_XCFRAMEWORK=1 but bindings/swift/artifacts has no SunatSDKFFI.xcframework" >&2
+  exit 1
+fi
+
 line=$(grep -E '^let release: \(url: String, checksum: String\)\? = ' "$repo/Package.swift")
 url=$(sed -n 's/.*url: "\([^"]*\)".*/\1/p' <<<"$line")
 checksum=$(sed -n 's/.*checksum: "\([0-9a-f]\{64\}\)".*/\1/p' <<<"$line")

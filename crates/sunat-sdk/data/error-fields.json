@@ -1224,5 +1224,14 @@
 {"code":"4439","document_types":["08"],"xpath":"/DebitNote/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount","input_path":"totals.igv","also":["totals.unaffected","totals.exempt","totals.free","totals.export","totals.ivap_base","issue_date"],"certainty":"fuente"},
 {"code":"4439","document_types":["03"],"xpath":"/Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount","input_path":"totals.free_igv","also":["issue_date"],"certainty":"fuente"},
 {"code":"4439","document_types":["07"],"xpath":"/CreditNote/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount","input_path":"totals.free_igv","also":["issue_date"],"certainty":"fuente"},
-{"code":"4441","document_types":["03"],"xpath":"/Invoice/cac:AdditionalDocumentReference/cac:IssuerParty/cac:PartyIdentification/cbc:ID","input_path":null,"also":[],"certainty":"fuente"}
+{"code":"4441","document_types":["03"],"xpath":"/Invoice/cac:AdditionalDocumentReference/cac:IssuerParty/cac:PartyIdentification/cbc:ID","input_path":null,"also":[],"certainty":"fuente"},
+{"code":"2220","document_types":["RR"],"xpath":"/VoidedDocuments/cbc:ID","input_path":"number","also":["communication_date"],"certainty":"inferido"},
+{"code":"2671","document_types":["RR"],"xpath":"/VoidedDocuments/cbc:ReferenceDate","input_path":"generation_date","also":["communication_date"],"certainty":"inferido"},
+{"code":"2308","document_types":["RR"],"xpath":"/VoidedDocuments/sac:VoidedDocumentsLine/cbc:DocumentTypeCode","input_path":"lines[].document_type","also":[],"certainty":"fuente"},
+{"code":"2345","document_types":["RR"],"xpath":"/VoidedDocuments/sac:VoidedDocumentsLine/sac:DocumentSerialID","input_path":"lines[].series","also":["lines[].document_type"],"certainty":"fuente"},
+{"code":"2958","document_types":["RR"],"xpath":null,"input_path":"communication_date","also":["generation_date"],"certainty":"inferido"},
+{"code":"2312","document_types":["RR"],"xpath":"/VoidedDocuments/sac:VoidedDocumentsLine/sac:DocumentNumberID","input_path":"lines[].number","also":[],"certainty":"fuente"},
+{"code":"2348","document_types":["RR"],"xpath":"/VoidedDocuments/sac:VoidedDocumentsLine/sac:DocumentNumberID","input_path":"lines[].number","also":["lines[].document_type","lines[].series"],"certainty":"inferido"},
+{"code":"2315","document_types":["RR"],"xpath":"/VoidedDocuments/sac:VoidedDocumentsLine/sac:VoidReasonDescription","input_path":"lines[].reason","also":[],"certainty":"fuente"},
+{"code":"4203","document_types":["RR"],"xpath":"/VoidedDocuments/sac:VoidedDocumentsLine/sac:VoidReasonDescription","input_path":"lines[].reason","also":[],"certainty":"fuente"}
 ]

@@ -12,6 +12,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ### Added
 
+- An OSE's answer reads like SUNAT's (`read_cdr`, the fault parsers): the CDR's number comes from
+  `cac:DocumentReference/cbc:ID` when `cac:Response/cbc:ReferenceID` is missing, each `cac:Response/cac:Status` enters
+  `notes` as `"<code> - <reason>"` (so a code 0 with an observation is `observed` and gets its `diagnosis`), and a
+  fault's `message` is the text of `detail` when it has one. SUNAT's own answers read as before. Synthetic vectors in
+  `fixtures/ose/`.
 - The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native
   builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment.
 

@@ -32,7 +32,8 @@
       "taxed": "50.00",
       "exempt": "41.00",
       "unaffected": "60.00",
-      "igv": "9.00"
+      "igv": "9.00",
+      "igv_rate": "18.00"
     },
     {
       "document_type": "03",
@@ -42,7 +43,8 @@
       "customer_document_number": "87654321",
       "total": "25.00",
       "exempt": "25.00",
-      "igv": "0.00"
+      "igv": "0.00",
+      "igv_rate": "18.00"
     },
     {
       "document_type": "03",
@@ -52,7 +54,8 @@
       "customer_document_number": "11223344",
       "total": "12.50",
       "unaffected": "12.50",
-      "igv": "0.00"
+      "igv": "0.00",
+      "igv_rate": "18.00"
     }
   ]
 }

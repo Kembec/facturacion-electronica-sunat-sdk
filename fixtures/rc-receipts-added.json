@@ -30,7 +30,8 @@
       "customer_document_number": "12345678",
       "total": "109.99",
       "taxed": "93.21",
-      "igv": "16.78"
+      "igv": "16.78",
+      "igv_rate": "18.00"
     },
     {
       "document_type": "03",
@@ -40,7 +41,8 @@
       "customer_document_number": "87654321",
       "total": "59.00",
       "taxed": "50.00",
-      "igv": "9.00"
+      "igv": "9.00",
+      "igv_rate": "18.00"
     }
   ]
 }

@@ -30,7 +30,8 @@
       "customer_document_number": "87654321",
       "total": "59.00",
       "taxed": "50.00",
-      "igv": "9.00"
+      "igv": "9.00",
+      "igv_rate": "18.00"
     }
   ]
 }

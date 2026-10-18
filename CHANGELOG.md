@@ -10,6 +10,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- Swift Package Manager from a tag: a release attaches `SunatSDKFFI.xcframework.zip`, the zip `swift.yml` built and
+  whose URL and checksum the tagged `Package.swift` names (`bindings/swift/scripts/pin-release.sh`) (#77).
+
 ## [1.0.0-rc.2] - 2026-10-18
 
 ### Added

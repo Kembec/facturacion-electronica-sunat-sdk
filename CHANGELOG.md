@@ -10,6 +10,16 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Breaking
+
+- 01, 03, 07 and 08 refuse, before signing, the issuer's `legal_name` (4338), `trade_name` (4092), `address.street`
+  (4094), `address.urbanization` (4095), `address.province` (4096), `address.department` (4097) and
+  `address.district` (4098), and a line's `product_code` (4269 in 01 and 03, 4234 in 07 and 08), when they carry a line
+  break, a tab or another whitespace other than the space, or fall outside the length SUNAT's sheet sets. They used to
+  reach SUNAT and come back accepted with an observation (beta answered 4094 to a street with a line break on
+  2026-10-18). The value is refused with its field, never rewritten: fix it at the source (`docs/input-model.md`,
+  Issuer).
+
 ### Fixed
 
 - The daily summary writes the line's `igv_rate` as `cbc:Percent` in the IGV of free sales (tax 9996) too, as the

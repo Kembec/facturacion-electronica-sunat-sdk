@@ -17,11 +17,19 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   the four gold properties, with the SUNAT checks that read only the document
   ([`docs/input-model.md`](docs/input-model.md#purchase-settlement-04)). In the beta, `v1` and `v2` were accepted with
   code 0 (`fixtures/self-billed/beta/`) (#74).
+- The reversal summary (RR) of a purchase settlement: `kind: "reversal"`, the void communication's `VoidedDocuments`
+  named `RR-YYYYMMDD-N` with type 04 lines, checked with 2308, 2345, 2312, 2348, 2315, 4203, 2671, 2220 and 2958 (more
+  than 6 days after `generation_date`: SUNAT allows 5 from the settlement's CDR)
+  ([`docs/input-model.md`](docs/input-model.md#reversal-summary-kind-reversal-rr)). `summary` and `ticket` accept the
+  name `RUC-RR-YYYYMMDD-N`; it goes to SUNAT's `otroscpe` service: in the beta (18/10/2026) the invoice `billService`
+  answered 0151 and `otroscpe` gave a ticket with status 0 (`fixtures/self-billed/beta/v3-*`).
 
 ### Changed
 
 - **Breaking** — Rust only: `Document` gains the variant `SelfBilled`. A `match` on `Document` adds the arm (or `_`);
   the JSON input and the bindings do not change (#74).
+- **Breaking** — Rust only: `Document` gains the variant `Reversal(Voided)` for the reversal summary (RR). A `match` on
+  `Document` adds the arm (or `_`); `Voided` gains `reversal_identifier()`. The JSON input only adds the kind.
 
 ## [1.0.0-rc.2] - 2026-10-18
 

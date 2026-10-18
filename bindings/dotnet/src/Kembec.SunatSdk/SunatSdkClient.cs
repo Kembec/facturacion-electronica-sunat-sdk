@@ -43,7 +43,7 @@ namespace Kembec.SunatSdk
         public TimeSpan HttpTimeout { get; }
 
         /// <summary>
-        /// The version of the native library loaded (the SDK's, <c>0.1.0-beta.7</c>); equal to this package's.
+        /// The version of the native library loaded (the SDK's, <c>0.1.0-beta.8</c>); equal to this package's.
         /// Loads the library: throws <see cref="SunatSdkLoadException"/> if it cannot.
         /// </summary>
         public static string NativeVersion => Native.Version;

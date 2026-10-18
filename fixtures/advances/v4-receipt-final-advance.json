@@ -1,0 +1,72 @@
+{
+  "kind": "invoice",
+  "ubl_version": "2.1",
+  "operation_type": "0101",
+  "document_type": "03",
+  "series": "B001",
+  "number": "8101",
+  "issue_date": "2026-10-17T10:00:00-05:00",
+  "currency": "PEN",
+  "payment_terms": {
+    "type": "Contado"
+  },
+  "issuer": {
+    "ruc": "20000000001",
+    "legal_name": "EMPRESA DE PRUEBA BETA SAC",
+    "trade_name": "PRUEBA BETA",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "street": "AV. DE PRUEBA 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "1",
+    "document_number": "12345678",
+    "legal_name": "JUAN PEREZ QUISPE"
+  },
+  "lines": [
+    {
+      "unit": "NIU",
+      "quantity": "2",
+      "product_code": "ESC01",
+      "description": "Escritorio de trabajo",
+      "unit_value": "150.00",
+      "igv_base": "300.00",
+      "igv_rate": "18.00",
+      "igv": "54.00",
+      "affectation": "10",
+      "total_taxes": "54.00",
+      "unit_price": "177.00",
+      "line_value": "300.00"
+    }
+  ],
+  "advances": [
+    {
+      "document_type": "03",
+      "document_number": "B001-8100",
+      "paid_amount": "118.00",
+      "affectation": "10",
+      "value": "100.00"
+    }
+  ],
+  "totals": {
+    "taxed": "200.00",
+    "igv": "36.00",
+    "total_taxes": "36.00",
+    "sale_value": "300.00",
+    "subtotal": "354.00",
+    "prepaid": "118.00",
+    "payable": "236.00"
+  },
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON DOSCIENTOS TREINTA Y SEIS CON 00/100 SOLES"
+    }
+  ]
+}

@@ -48,6 +48,7 @@ fn invoice_body(w: &mut XmlWriter, invoice: &Invoice, options: &Options) {
     legends_and_currency(w, v);
     references::order(w, v);
     references::despatches(w, v);
+    references::advances(w, v, &invoice.advances);
     signature_and_parties(w, v, options);
     if let Some(detraction) = &invoice.detraction {
         totals::detraction(w, detraction);
@@ -55,11 +56,13 @@ fn invoice_body(w: &mut XmlWriter, invoice: &Invoice, options: &Options) {
     if let Some(terms) = &v.payment_terms {
         totals::payment_terms(w, terms, &v.currency);
     }
+    totals::prepaid_payments(w, &invoice.advances, &v.currency);
     totals::global_adjustments(w, &invoice.global_adjustments, &v.currency);
+    totals::advance_discounts(w, &invoice.advances, &v.currency);
     if let Some(retention) = &v.igv_retention {
         totals::igv_retention(w, retention, &v.currency);
     }
-    totals::tax_total(w, &v.totals, &v.currency);
+    totals::tax_total(w, &v.totals, &v.currency, invoice.advances.iter().any(|a| a.discount_code() == Some("04")));
     totals::monetary_total(w, MonetaryTotal::Full("cac:LegalMonetaryTotal"), &v.totals, &v.currency);
     lines::lines(w, &INVOICE_LINE, &v.lines, &v.currency);
     w.close();
@@ -87,7 +90,7 @@ fn note_body(w: &mut XmlWriter, note: &Note, options: &Options) {
     if let Some(retention) = &v.igv_retention {
         totals::igv_retention(w, retention, &v.currency);
     }
-    totals::tax_total(w, &v.totals, &v.currency);
+    totals::tax_total(w, &v.totals, &v.currency, false);
     if credit {
         totals::monetary_total(w, MonetaryTotal::PayableOnly, &v.totals, &v.currency);
         lines::lines(w, &CREDIT_NOTE_LINE, &v.lines, &v.currency);

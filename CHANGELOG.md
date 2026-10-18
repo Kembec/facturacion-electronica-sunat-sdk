@@ -16,17 +16,30 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   `cac:DocumentReference/cbc:ID` when `cac:Response/cbc:ReferenceID` is missing, each `cac:Response/cac:Status` enters
   `notes` as `"<code> - <reason>"` (so a code 0 with an observation is `observed` and gets its `diagnosis`), and a
   fault's `message` is the text of `detail` when it has one. SUNAT's own answers read as before. Synthetic vectors in
-  `fixtures/ose/`.
+  `fixtures/ose/` (#69).
+
+## [0.1.0-beta.8] - 2026-10-18
+
+### Added
+
+- Advances (F04) in invoices and receipts: `advances[]` and `totals.prepaid` render the `cac:AdditionalDocumentReference`,
+  the `cac:PrepaidPayment`, the discount 04, 05 or 06 and the `PrepaidAmount`, with the SUNAT checks (2505, 2521, 3217,
+  2503, 2968, 3307, 3220, 2509, 3275, 3274, 3277, 3279, 3280, 3291) and, in the beta, vectors accepted with code 0
+  (`fixtures/advances/beta/`). `advances` no longer fails as out of scope; in a note it still does (#67).
 - The .NET package `Kembec.SunatSdk` is published to NuGet with the tag: `release.yml` packs it with the six native
-  builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment.
+  builds (`nuget-package` artifact) and `publish-nuget` uploads it behind the `release` environment (#64).
 
 ### Changed
 
+- **Breaking** — Rust only: `Invoice` gains `advances` and `Totals` gains `prepaid`. The JSON input and the
+  other bindings are unchanged for a document without advances. Migration: add `advances: vec![]` and `prepaid: None`
+  where you build these structs (#67).
 - **Breaking**: `igv_rate` is required on every summary (RC) line. The writer always puts tax 1000 on the line, and the
   SUNAT Resumen Diario sheet rejects it without `cbc:Percent` (error 2992, «Tasa del tributo faltante para código
   1000»; the beta rejected a line without it on 17/10/2026). A line without it now fails before sending with SUNAT code
   2992 at `$.lines[n].igv_rate`, whatever its status or amounts. Migration: add `"igv_rate": "18.00"` (or `"10.50"`;
-  a note also takes `"10.00"`) to every line of the summaries you build; the RC fixtures and their vectors carry it.
+  a note also takes `"10.00"`) to every line of the summaries you build; the RC fixtures and their vectors carry it
+  (#66).
 - ICBPER sent to the SUNAT beta (17/10/2026), which `0.1.0-beta.7` had only checked locally: the five valid vectors
   (invoice, receipt, free-bags receipt, credit note, daily summary) were accepted with code 0 and no notes; 4318 came
   back as an observation and 3306 as a rejection, as the SDK says; 4237 (stale rate) was accepted with no note, so
@@ -39,7 +52,7 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   line of an HTTP 200 (`HTTP/1.1 200 Error en la linea: 1. Tasa del tributo faltante para código 1000.: 2992 ...`), and
   the CLI's HTTP client (`ureq` 2) refused that line, so `send`, `summary`, `ticket` and `status` printed only
   `transport error: Bad Status`. The CLI now uses `ureq` 3, whose parser accepts the reason phrase RFC 9112 allows
-  (`obs-text`); the SOAP fault in the body gives its code and `diagnosis`. TLS verification is unchanged.
+  (`obs-text`); the SOAP fault in the body gives its code and `diagnosis`. TLS verification is unchanged (#66).
 
 ## [0.1.0-beta.7] - 2026-10-17
 
@@ -239,7 +252,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.7...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.8...HEAD
+[0.1.0-beta.8]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.7...v0.1.0-beta.8
 [0.1.0-beta.7]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.6...v0.1.0-beta.7
 [0.1.0-beta.6]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.5...v0.1.0-beta.6
 [0.1.0-beta.5]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v0.1.0-beta.4...v0.1.0-beta.5

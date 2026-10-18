@@ -1,0 +1,24 @@
+{
+  "sent_at": "2026-10-17T21:27:52-05:00",
+  "endpoint": "e-beta billService",
+  "class": "rejected",
+  "code": "3291",
+  "diagnosis": [
+    {
+      "code": "3291",
+      "detail": {
+        "node": "cac:TaxSubtotal/cbc:TaxAmount",
+        "value": "405.00"
+      },
+      "fields": [
+        {
+          "certainty": "inferido",
+          "input_path": "totals.igv",
+          "xpath": "/Invoice/cac:TaxTotal/cac:TaxSubtotal/cbc:TaxAmount"
+        }
+      ]
+    }
+  ],
+  "message": "El cálculo del IGV es Incorrecto - Detalle: xxx.xxx.xxx value='ticket: 1792290576014 error: INFO : 3291 (nodo: \"cac:TaxSubtotal/cbc:TaxAmount\" valor: \"405.00\")'",
+  "outcome": "fault"
+}

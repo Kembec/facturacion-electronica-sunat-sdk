@@ -1,7 +1,8 @@
 //! SUNAT's validation rules for the sender's despatch advice that can be checked on the document
 //! itself (sheet «Guía-Remitente2_0» of SUNAT's validation rules, type XSL): header, parties, related
 //! documents and lines. The shipment is in `despatch_transport`. Each rejection carries the error code
-//! SUNAT would answer; observations (codes 4000 and above) are not enforced.
+//! SUNAT would answer. Observations (codes 4000 and above) are not enforced, except the free-text
+//! formats in `despatch_text`, which run last.
 
 use crate::despatch_transport::{check_shipment, Reason};
 use crate::{Decimal, Despatch, DespatchLine, DespatchParty, ModelError, RelatedDocument};
@@ -23,7 +24,8 @@ pub(crate) fn check(despatch: &Despatch) -> Result<(), ModelError> {
     check_seller(despatch, reason)?;
     check_buyer(despatch, reason)?;
     check_related(despatch, reason)?;
-    check_lines(&despatch.lines)
+    check_lines(&despatch.lines)?;
+    crate::despatch_text::check(despatch)
 }
 
 fn check_header(d: &Despatch) -> Result<(), ModelError> {

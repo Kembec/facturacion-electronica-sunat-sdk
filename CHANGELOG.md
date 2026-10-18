@@ -10,6 +10,23 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- Export in invoices and receipts, operation types 0200 to 0208 of catalog 51: `service_use_country` (0201, 0208)
+  renders `cac:Delivery` with the country only, and `lines[].lodging` (0202 with the ten guest fields, 0205 with four)
+  renders the catalog 55 properties 4000 to 4009. Checked before sending: 3206, 3098, 3099, 2800, 2801, 2802, 2642,
+  3110, 3102, 3136 to 3145, 4280, 4281, 4282, 3107, 3003, 3273, 3294, 3278, 3279 and 3280; advances, IGV retention,
+  free lines and ICBPER in an export are out of scope. `stay_days` above 60 is not rejected: the SDK does not decide
+  what is an export. In the beta (18/10/2026) 0200, 0201, 0208 and 0202 were accepted with code 0 and no notes, and
+  2800 and 3145 came back as the SDK says; 0208 without the country was accepted, and the SDK keeps 3098 as the
+  validation sheet says. Answers in `fixtures/export/beta/` (#72).
+
+### Changed
+
+- **Breaking** — Rust only: `Line` gains `lodging` and `Invoice` gains `service_use_country`. The JSON input and the
+  other bindings are unchanged for a document without them. Migration: add `lodging: None` and
+  `service_use_country: None` where you build these structs (#72).
+
 ## [1.0.0-rc.1] - 2026-10-18
 
 The first release candidate: the contract of `0.1.0-beta.8`, unchanged.

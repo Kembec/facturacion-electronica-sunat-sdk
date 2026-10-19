@@ -7,7 +7,7 @@ import PackageDescription
 // x86_64, iOS, iOS simulator) built by .github/workflows/swift.yml; a release fills `release` with the URL and checksum
 // of its zip in the tagged commit. While it is nil, the package takes the xcframework from bindings/swift/artifacts,
 // where the CI artifact is unzipped (bindings/swift/README.md).
-let release: (url: String, checksum: String)? = (url: "https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v1.0.0-rc.4/SunatSDKFFI.xcframework.zip", checksum: "75000a76d0a6d657dd018f002217e6a73f245ddb3fb129f83fcf38f1955c0486")
+let release: (url: String, checksum: String)? = (url: "https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v1.0.0-rc.5/SunatSDKFFI.xcframework.zip", checksum: "62aaf0bcbcd743acc41f2e078bed4d29809fa89255475dc688aff49f8127c055")
 
 // libxml2 comes with the SDK on Apple platforms (headers in usr/include/libxml, libxml2.tbd): no pkg-config there, or a
 // Homebrew libxml2 found by it would be linked into the macOS build and break the iOS one.

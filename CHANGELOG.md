@@ -10,6 +10,14 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Breaking
+
+- Credit (07) and debit (08) notes are checked before signing for `totals.total_taxes` = `igv` + `ivap` + `icbper`,
+  within 1, as invoices and receipts are since #78: SUNAT answers 3294 for a note on an invoice (01) and 4301 for a note
+  on anything else (observation, rejected here like the errors; NotaCredito2_0 rows 286-287, NotaDebito2_0 rows
+  269-270 of the 2026-04-24 sheet). Until now only notes with ICBPER were checked, so a note with a mismatched total
+  was signed and SUNAT rejected or observed it. Send `total_taxes` as the sum of the note's global taxes (#85).
+
 ### Added
 
 - `sunat-sdk --version` and `-V` print `sunat-sdk <version>` on one line and exit 0; they used to answer with the

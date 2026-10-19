@@ -130,6 +130,8 @@ issuer's), `email`, `telephone`.
 absent total is not rendered. `allowance_total` and `charge_total` (`cbc:AllowanceTotalAmount`,
 `cbc:ChargeTotalAmount`) carry the discounts and charges that do not change the IGV base, see
 Discounts and charges. `prepaid` (`cbc:PrepaidAmount`) is the sum of the advances' `paid_amount`, see Advances.
+`total_taxes` is `igv` + `ivap` + `icbper`, within 1, in 01, 03, 07 and 08: 3294 in an invoice and in a note on one,
+4301 in a receipt and in a note on anything else (the SDK rejects that observation too).
 
 ## IVAP
 

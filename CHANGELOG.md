@@ -10,6 +10,22 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Breaking
+
+- Invoices (01) and receipts (03) are checked before signing for three line rules of the 2026-04-24 sheet, within
+  SUNAT's tolerance of 1: a receipt line with a discount or a charge for `line_value` = `unit_value` × `quantity` −
+  discounts `00` + charges `47` (observation 4288, «Boleta2_0» row 274; invoices were already held to 3271); every
+  line for `unit_price` = (`line_value` + `total_taxes` − discounts `01` + charges `48`) ÷ `quantity`, free lines
+  aside (3270 in an invoice, row 183; observation 4287 in a receipt, row 176); and every line with affectation 10 to
+  17 for `igv` = `igv_base` × `igv_rate` (error 3103 in both, rows 213 and 206). Such a document used to be signed and
+  was rejected by SUNAT (3103, 3270, 3271) or accepted with an observation (4287, 4288); observations are rejected
+  here like the errors. Fix the amounts at the source (`docs/input-model.md`, Line) (#89).
+
+### Changed
+
+- Every invoice and receipt the SDK builds from `fixtures/` is validated, signed, against the OASIS UBL 2.1 `Invoice`
+  schema (`tests/xsd/ubl-2.1/maindoc/UBL-Invoice-2.1.xsd`), as the despatch advices already were (#89).
+
 ## [1.0.0-rc.5] - 2026-10-19
 
 ### Breaking

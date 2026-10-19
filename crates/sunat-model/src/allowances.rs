@@ -97,10 +97,7 @@ fn check_line(index: usize, line: &Line, codes: &Codes, receipt: bool) -> Result
         check_line_code(&path, &charge.code, LINE_CHARGES, "discounts")?;
         check_entry(&path, charge, codes.line_factor, LINE_FORMATS)?;
     }
-    if receipt {
-        return Ok(());
-    }
-    check_line_value(index, line)
+    check_line_value(index, line, if receipt { "4288" } else { "3271" })
 }
 
 /// `00` and `01` go in `discounts`, `47` and `48` in `charges`: the list decides nothing the code
@@ -189,9 +186,9 @@ fn check_entry(path: &str, entry: &AllowanceCharge, factor_code: &'static str, f
     Err(ModelError::rule(factor_code, format!("{path}.amount"), reason))
 }
 
-/// SUNAT 3271, invoice only: `line_value` = `unit_value` × `quantity` − line discounts `00` + line
-/// charges `47`, within 1. Free lines (with `free_unit_value`) follow other rules and are not checked.
-fn check_line_value(index: usize, line: &Line) -> Result<(), ModelError> {
+/// SUNAT 3271 (invoice, row 280 of «Factura2_0») and 4288 (receipt, row 274 of «Boleta2_0»):
+/// `line_value` = `unit_value` × `quantity` − line discounts `00` + line charges `47`, within 1. Free lines (with `free_unit_value`) follow other rules and are not checked.
+fn check_line_value(index: usize, line: &Line, code: &'static str) -> Result<(), ModelError> {
     if line.free_unit_value.is_some() || (line.discounts.is_empty() && line.charges.is_empty()) {
         return Ok(());
     }
@@ -212,7 +209,7 @@ fn check_line_value(index: usize, line: &Line) -> Result<(), ModelError> {
         return Ok(());
     }
     let reason = "line_value must be unit_value × quantity − discounts 00 + charges 47, within 1";
-    Err(ModelError::rule("3271", format!("$.lines[{index}].line_value"), reason))
+    Err(ModelError::rule(code, format!("$.lines[{index}].line_value"), reason))
 }
 
 /// `units` (millionths) to cents, half up.

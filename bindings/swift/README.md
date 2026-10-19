@@ -22,7 +22,7 @@ https://fe.kembec.com
 ## Instalación
 
 Se agrega por URL con Swift Package Manager. En Xcode, «File › Add Package Dependencies…» con
-`https://github.com/Kembec/facturacion-electronica-sunat-sdk` y la regla «Exact Version» `1.0.0-rc.4`; en un
+`https://github.com/Kembec/facturacion-electronica-sunat-sdk` y la regla «Exact Version» `1.0.0-rc.5`; en un
 `Package.swift`:
 
 ```swift
@@ -33,7 +33,7 @@ let package = Package(
     name: "PrimerComprobante",
     platforms: [.macOS(.v10_15), .iOS(.v13)],
     dependencies: [
-        .package(url: "https://github.com/Kembec/facturacion-electronica-sunat-sdk", exact: "1.0.0-rc.4"),
+        .package(url: "https://github.com/Kembec/facturacion-electronica-sunat-sdk", exact: "1.0.0-rc.5"),
     ],
     targets: [
         .executableTarget(name: "PrimerComprobante", dependencies: [
@@ -44,10 +44,10 @@ let package = Package(
 ```
 
 SwiftPM baja `SunatSDKFFI.xcframework.zip` del release de esa versión y lo acepta solo si su checksum es el que nombra
-el `Package.swift` del tag. `exact:` te deja en la versión que probaste; `from: "1.0.0-rc.4"` tomaría también las
+el `Package.swift` del tag. `exact:` te deja en la versión que probaste; `from: "1.0.0-rc.5"` tomaría también las
 siguientes candidatas y la 1.0.0.
 
-Es la candidata 1.0.0-rc.4 (la de `SunatSDKClient.packageVersion`). Pide Swift 5.9 o posterior y corre en:
+Es la candidata 1.0.0-rc.5 (la de `SunatSDKClient.packageVersion`). Pide Swift 5.9 o posterior y corre en:
 
 | Plataforma | Núcleo del SDK |
 |---|---|
@@ -81,7 +81,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.4
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.5
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"

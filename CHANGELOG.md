@@ -18,6 +18,11 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
   269-270 of the 2026-04-24 sheet). Until now only notes with ICBPER were checked, so a note with a mismatched total
   was signed and SUNAT rejected or observed it. Send `total_taxes` as the sum of the note's global taxes (#85).
 
+### Added
+
+- `sunat-sdk --version` and `-V` print `sunat-sdk <version>` on one line and exit 0; they used to answer with the
+  usage and exit 1 (`docs/cli.md`, `--version`) (#87).
+
 ## [1.0.0-rc.4] - 2026-10-18
 
 ### Breaking

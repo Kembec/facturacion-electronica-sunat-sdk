@@ -3,7 +3,7 @@
 //!
 //! SUNAT has no test environment for despatch advices. What SUNAT's validation rules check on the XML
 //! itself (sheet «Guía-Remitente2_0», type XSL) is checked here, each with its SUNAT code, in
-//! `despatch_rules` and `despatch_transport`; the rules that query SUNAT's registries (type REST:
+//! `despatch_rules`, `despatch_transport` and `despatch_text`; the rules that query SUNAT's registries (type REST:
 //! taxpayer status, RENIEC, MTC, issued documents) and the reception date (2108, 2329) are not.
 
 use serde::Deserialize;

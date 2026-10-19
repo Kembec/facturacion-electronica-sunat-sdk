@@ -10,6 +10,7 @@ mod datetime;
 mod decimal;
 mod despatch;
 mod despatch_rules;
+mod despatch_text;
 mod despatch_transport;
 mod error;
 mod export;

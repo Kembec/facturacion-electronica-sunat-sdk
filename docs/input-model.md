@@ -467,8 +467,8 @@ is checked here by:
 
 1. Its SUNAT validation rules that read only the XML (sheet «Guía-Remitente2_0», type XSL), each
    rejected with the code SUNAT would answer: `{"error": "$.shipment.carrier.ruc: must not be the
-   sender (SUNAT ERR-2560)"}`. Observations (4000 and above) are not enforced. One test per code in
-   `crates/sunat-model/tests/despatch_rules.rs`.
+   sender (SUNAT ERR-2560)"}`. Observations (4000 and above) are not enforced, except the free-text
+   formats below. One test per code in `crates/sunat-model/tests/despatch_rules.rs`.
 2. Its vectors: `fixtures/09-despatch-sale.json` (reason 01, private transport) and
    `fixtures/09-despatch-between-establishments.json` (reason 04, public transport) give
    `tests/vectors/09-*.unsigned.xml` and the `DigestValue` and `SignatureValue` of
@@ -477,6 +477,33 @@ is checked here by:
    prove compatibility. The independent verifier accepts their signatures.
 3. The OASIS UBL 2.1 `DespatchAdvice` schema (`tests/xsd/ubl-2.1`), validated with lxml on both signed
    vectors (`crates/sunat-ubl/tests/xsd.rs`).
+
+The free-text fields SUNAT observes by format are refused before signing, with the field and the SUNAT code, and
+never trimmed or rewritten, as in 01, 03, 07 and 08 (Issuer): the sheet allows any character including the space and
+no other whitespace (line feed, carriage return, tab, vertical tab, form feed), and most rows refuse a value of only
+spaces. The line's `description` is the exception: it allows line breaks and tabs and only its length is measured. An
+empty value is not checked by format: the SDK writes no `note` or `product_code` for it, rows R!48 and R!161 exempt
+it, and the errors that require a field answer first (1037, 2761, 2563, 3360, 3361, 2577, 2574, 2781); an empty
+`seller.legal_name` outside reasons 02, 07 and 13 is not refused. SUNAT has no test environment for despatch
+advices: the sheet is the only source. One test of the borders per row in
+`crates/sunat-model/tests/despatch_text.rs`.
+
+| Field | Accepted | SUNAT (sheet row) |
+|---|---|---|
+| `note` | 1 to 250 characters, not only spaces | 4186 (R!24) |
+| `issuer.legal_name` | 1 to 250 characters, not only spaces | 4338 (R!37) |
+| `related_documents[].description` | 1 to 120 characters, not only spaces | 4372 (R!48) |
+| `recipient.legal_name` | 1 to 250 characters, not only spaces | 4152 (R!114) |
+| `seller.legal_name` | 1 to 250 characters, not only spaces, with any reason | 4106 (R!138) |
+| `buyer.legal_name` | 1 to 250 characters, not only spaces, with any reason | 4381 (R!161) |
+| `shipment.reason_description` | with reason 13: 3 to 100 characters, at least 3 of them letters | 4190 (R!171, R!172) |
+| `shipment.carrier.legal_name` | public transport without M1 or L vehicles: 3 to 250 characters, not only spaces | 4165 (R!241) |
+| `shipment.carrier.mtc_registration` | public transport without M1 or L vehicles: up to 20 uppercase letters or digits, not only zeros | 4392 (R!245) |
+| `shipment.drivers[].first_name`, `.family_name` | 1 to 250 characters, not only spaces, main and secondary drivers | 4409 (R!316, R!321, R!352, R!357) |
+| `shipment.origin.address` | 3 to 500 characters, not only spaces | 4076 (R!373) |
+| `shipment.destination.address` | 3 to 500 characters, not only spaces | 4068 (R!400) |
+| `lines[].description` | 3 to 500 characters, line breaks and tabs allowed | 4084 (R!449) |
+| `lines[].product_code` | 1 to 30 characters | 4085 (R!450) |
 
 Not checked here, because SUNAT answers them from its registries or at reception: the reception date
 (2108, 2329), the sender's, recipient's and carrier's taxpayer status, RENIEC identities, the MTC

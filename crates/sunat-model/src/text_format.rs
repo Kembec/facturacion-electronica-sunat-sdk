@@ -4,6 +4,7 @@
 //! tags for an empty value, so an empty value is left alone. The sheet allows the space; beta, on
 //! 4233, accepted a no-break space, so only ASCII whitespace other than the space is refused. A value
 //! is refused with its field, never trimmed or rewritten: SUNAT would keep the note on the voucher.
+//! The despatch advice's fields (09) are in `despatch_text`, with the same `Text`.
 
 use crate::{Company, DocumentType, Line, ModelError};
 
@@ -28,12 +29,56 @@ pub(crate) fn check_lines(lines: &[Line], document_type: DocumentType) -> Result
 }
 
 fn check(path: &str, value: Option<&str>, min: usize, max: usize, code: &str) -> Result<(), ModelError> {
+    check_format(path, value, Text::spaced(min, max), code)
+}
+
+/// A free-text format as SUNAT's sheets word it: a length in characters, whether whitespace other
+/// than the space is allowed, and whether a value of only spaces is.
+#[derive(Clone, Copy)]
+pub(crate) struct Text {
+    min: usize,
+    max: usize,
+    whitespace: bool,
+    only_spaces: bool,
+}
+
+impl Text {
+    /// «se considera cualquier carácter incluido espacio, no se permite ningún otro whitespace».
+    pub(crate) const fn spaced(min: usize, max: usize) -> Self {
+        Self { min, max, whitespace: false, only_spaces: true }
+    }
+
+    /// «permite whitespace character: espacio, salto de línea, fin de línea, tab».
+    pub(crate) const fn any_whitespace(min: usize, max: usize) -> Self {
+        Self { min, max, whitespace: true, only_spaces: true }
+    }
+
+    /// «Tampoco se permite solo espacios en blanco».
+    pub(crate) const fn not_only_spaces(self) -> Self {
+        Self { only_spaces: false, ..self }
+    }
+
+    fn accepts(self, value: &str) -> bool {
+        (self.min..=self.max).contains(&value.chars().count())
+            && (self.whitespace || !value.chars().any(forbidden))
+            && (self.only_spaces || !value.chars().all(|c| c == ' '))
+    }
+
+    fn describe(self) -> String {
+        let whitespace = if self.whitespace { "line breaks and tabs allowed" } else { "spaces allowed, no line break or tab" };
+        let spaces = if self.only_spaces { "" } else { ", not only spaces" };
+        format!("{} to {} characters, {whitespace}{spaces}", self.min, self.max)
+    }
+}
+
+/// Refuses a non-empty `value` outside `format` with SUNAT's observation `code`; an empty value is
+/// left alone (the SDK writes no tag for it, or another rule already requires it).
+pub(crate) fn check_format(path: &str, value: Option<&str>, format: Text, code: &str) -> Result<(), ModelError> {
     let Some(value) = value.filter(|v| !v.is_empty()) else { return Ok(()) };
-    if (min..=max).contains(&value.chars().count()) && !value.chars().any(forbidden) {
+    if format.accepts(value) {
         return Ok(());
     }
-    let expected = format!("{min} to {max} characters, spaces allowed, no line break or tab (SUNAT {code})");
-    Err(ModelError::invalid(path, format!("expected {expected}, got {value:?}")))
+    Err(ModelError::invalid(path, format!("expected {} (SUNAT {code}), got {value:?}", format.describe())))
 }
 
 /// Line feed, carriage return, tab, vertical tab and form feed: the whitespace SUNAT names, and the

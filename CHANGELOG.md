@@ -12,6 +12,16 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ### Breaking
 
+- The sender's despatch advice (09) refuses, before signing, the free text SUNAT's «Guía-Remitente2_0» sheet observes
+  by format: `note` (4186), the issuer's, recipient's, seller's and buyer's `legal_name` (4338, 4152, 4106, 4381), a
+  related document's `description` (4372), `shipment.reason_description` with reason 13 (4190), the carrier's
+  `legal_name` and `mtc_registration` (4165, 4392), the drivers' `first_name` and `family_name` (4409), the origin and
+  destination `address` (4076, 4068) and a line's `description` and `product_code` (4084, 4085). A value with a line
+  break, a tab or another whitespace other than the space, outside the sheet's length, or of only spaces where the
+  sheet says so, used to be signed and would have reached SUNAT as an observation; a line's `description` still
+  allows line breaks and is only measured. SUNAT has no test environment for despatch advices, so the sheet is the
+  only source. The value is refused with its field, never rewritten: fix it at the source (`docs/input-model.md`,
+  Despatch advice (09)) (#86).
 - Credit (07) and debit (08) notes are checked before signing for `totals.total_taxes` = `igv` + `ivap` + `icbper`,
   within 1, as invoices and receipts are since #78: SUNAT answers 3294 for a note on an invoice (01) and 4301 for a note
   on anything else (observation, rejected here like the errors; NotaCredito2_0 rows 286-287, NotaDebito2_0 rows

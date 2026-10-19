@@ -18,6 +18,7 @@ mod export_lodging;
 mod icbper;
 mod icbper_rates;
 mod ivap;
+mod line_amounts;
 mod line_base;
 mod raw;
 mod references;

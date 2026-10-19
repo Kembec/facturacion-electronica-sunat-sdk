@@ -160,6 +160,14 @@ receipt only, see Discounts and charges), `icbper` and `icbper_factor` (see ICBP
 without it SUNAT compares the two exactly. Otherwise 3272 in an invoice and in a note that modifies one, and 4294 in a
 receipt and in a note that modifies one (an observation for SUNAT, rejected here).
 
+In an invoice and a receipt, every line is also checked before signing, within SUNAT's tolerance of 1:
+
+- `unit_price` = (`line_value` + `total_taxes` − discounts `01` + charges `48`) ÷ `quantity`, on a line without
+  `free_unit_value`: 3270 in an invoice («Factura2_0» row 183), 4287 in a receipt («Boleta2_0» row 176, an
+  observation, rejected here); a `unit_price` with up to 10 decimals is compared exactly;
+- `igv` = `igv_base` × `igv_rate`, rounded half up to the cent, on a line with affectation 10 to 17, free ones
+  included: 3103 in both (an error; rows 213 and 206).
+
 ## ICBPER
 
 The tax on plastic bags (Ley 30884, art. 12; tax 7152 `ICBPER` `OTH`), in invoices, receipts and both
@@ -232,7 +240,7 @@ rejects it too):
   3053); the FISE needs `base_amount` (3092) and `amount` (3074) above zero; `allowance_total` and
   `charge_total` up to 2 decimals (2065, 2064);
 - `amount` = `base_amount` × `factor`, rounded half up to the cent: 3290 (4289) line, 3307 (4322) global;
-- invoice line: `line_value` = `unit_value` × `quantity` − discounts `00` + charges `47` (3271), so
+- line: `line_value` = `unit_value` × `quantity` − discounts `00` + charges `47` (3271, 4288), so
   `unit_value` is the value before them: beta rejected an invoice whose `unit_value` was already net of
   the declared discount (3271) and accepted the same receipt with observation 4288;
 - `allowance_total` = line `01` + global `03` (3300, 4307); `charge_total` = line `48` + global `45`, `46`,

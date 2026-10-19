@@ -18,6 +18,7 @@ impl Document {
                 check_detraction(invoice)?;
                 require(invoice.voucher.totals.sale_value.is_some(), "$.totals.sale_value")?;
                 crate::allowances::check(invoice)?;
+                crate::line_amounts::check(&invoice.voucher)?;
                 crate::total_taxes::check(&invoice.voucher, None)?;
                 crate::icbper::check(&invoice.voucher, None)
             }

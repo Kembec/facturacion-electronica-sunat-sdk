@@ -15,7 +15,7 @@
 
   <name>SUNAT electronic invoicing SDK</name>
   <description>Builds, signs, sends and queries SUNAT (Peru) electronic vouchers: invoices, receipts, notes, daily summaries, voids and despatch advices. The SDK's Rust core in process, with its native builds for Windows x86 and x64, Linux x64 and ARM64 and macOS inside the jar.</description>
-  <url>https://github.com/Kembec/facturacion-electronica-sunat-sdk</url>
+  <url>https://fe.kembec.com</url>
   <inceptionYear>2026</inceptionYear>
 
   <licenses>

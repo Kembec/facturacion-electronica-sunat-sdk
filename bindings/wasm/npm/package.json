@@ -8,7 +8,7 @@
     "url": "git+https://github.com/Kembec/facturacion-electronica-sunat-sdk.git",
     "directory": "bindings/wasm/npm"
   },
-  "homepage": "https://github.com/Kembec/facturacion-electronica-sunat-sdk#readme",
+  "homepage": "https://fe.kembec.com",
   "bugs": "https://github.com/Kembec/facturacion-electronica-sunat-sdk/issues",
   "keywords": [
     "sunat",

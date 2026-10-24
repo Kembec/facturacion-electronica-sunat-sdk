@@ -20,7 +20,7 @@
     <Authors>Manuel Benancio</Authors>
     <Copyright>© 2026 Manuel Benancio</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/Kembec/facturacion-electronica-sunat-sdk</PackageProjectUrl>
+    <PackageProjectUrl>https://fe.kembec.com</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Kembec/facturacion-electronica-sunat-sdk</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>sunat;peru;facturacion-electronica;comprobantes;ubl;xmldsig;e-invoicing</PackageTags>

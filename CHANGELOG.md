@@ -10,6 +10,12 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+## [1.0.0-rc.7] - 2026-10-24
+
+### Changed
+
+- The package page on npm, Packagist, NuGet and Maven links to https://fe.kembec.com as its homepage (#91).
+
 ## [1.0.0-rc.6] - 2026-10-19
 
 ### Breaking
@@ -389,7 +395,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.6...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.7...HEAD
+[1.0.0-rc.7]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.6...v1.0.0-rc.7
 [1.0.0-rc.6]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.5...v1.0.0-rc.6
 [1.0.0-rc.5]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.4...v1.0.0-rc.5
 [1.0.0-rc.4]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.3...v1.0.0-rc.4

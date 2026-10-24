@@ -44,7 +44,7 @@ if sunat_sdk_abi_version() <> 1 then
 end if
 end subroutine
 
-public function string of_version ();// The SDK version of the loaded DLL, for example "1.0.0-rc.6".
+public function string of_version ();// The SDK version of the loaded DLL, for example "1.0.0-rc.7".
 return sunat_sdk_version()
 end function
 

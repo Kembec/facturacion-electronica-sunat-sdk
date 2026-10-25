@@ -8,6 +8,7 @@ name: swift
 on:
   push:
     branches: ["**"]
+    tags: ["v*"]
     paths:
       - "Package.swift"
       - "KembecSunatSDKObjC.podspec"
@@ -35,6 +36,7 @@ on:
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/swift.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -59,7 +61,11 @@ jobs:
       - name: Cargo, Swift, Objective-C and podspec agree
         run: bindings/swift/scripts/check-version.sh
 
+  # macOS (10x Linux per minute) and Windows (2x) only on a v* tag or by hand (workflow_dispatch), never on push or
+  # pull request: those spent 10,488 macOS and 7,410 Windows minutes in October 2026.
+  # xcframework, macos, ios and podspec need it, so they follow.
   apple-static:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
     strategy:
       fail-fast: false
       matrix:

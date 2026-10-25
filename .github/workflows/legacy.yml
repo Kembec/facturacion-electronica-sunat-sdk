@@ -5,30 +5,11 @@ name: legacy
 # into C (tests/declarations.py): the 38 vectors on 32 bits for the three, and on 64 bits for
 # PowerBuilder. The VB6 JSON reader runs as VBScript over the same responses. The zip stays as an
 # artifact: nothing is published.
+# Windows only (2x Linux per minute): on a v* tag or by hand, never on push or pull request.
 on:
   push:
-    branches: ["**"]
-    paths:
-      - "bindings/legacy/**"
-      - "bindings/ffi/**"
-      - "bindings/cli/**"
-      - "crates/**"
-      - "fixtures/**"
-      - "tests/vectors/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - ".github/workflows/legacy.yml"
-  pull_request:
-    paths:
-      - "bindings/legacy/**"
-      - "bindings/ffi/**"
-      - "bindings/cli/**"
-      - "crates/**"
-      - "fixtures/**"
-      - "tests/vectors/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - ".github/workflows/legacy.yml"
+    tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: read

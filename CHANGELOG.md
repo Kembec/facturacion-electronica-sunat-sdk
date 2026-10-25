@@ -10,6 +10,12 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Changed
+
+- On npm, a prerelease newer than the one under `latest` goes under `latest` while there is no stable version, so
+  `npm install @kembec/facturacion-electronica-sunat-sdk` installs the newest release candidate instead of
+  `0.1.0-beta.2`; once a stable version is out, prereleases stay under `beta` (#94).
+
 ## [1.0.0-rc.7] - 2026-10-24
 
 ### Changed

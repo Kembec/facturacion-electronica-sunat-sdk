@@ -200,10 +200,25 @@ jobs:
           registry-url: "https://registry.npmjs.org"
       - name: Trusted Publishing needs npm 11.5.1 or later
         run: node -e 'const [a,b,c]=process.argv[1].split(".").map(Number); process.exit(a>11||(a===11&&(b>5||(b===5&&c>=1)))?0:1)' "$(npm --version)"
+      # A prerelease goes under `beta`, except while `latest` is itself an older prerelease: until the first stable
+      # version, `npm install` gets the newest candidate. If the registry does not answer, `beta`, the safe side.
       - name: npm publish
         run: |
           dist_tag=""
-          case "$GITHUB_REF_NAME" in *-*) dist_tag="--tag beta" ;; esac
+          case "$GITHUB_REF_NAME" in *-*)
+            dist_tag="--tag beta"
+            name="$(tar -xOzf ./npm/*.tgz package/package.json | node -p 'JSON.parse(require("fs").readFileSync(0, "utf8")).name')"
+            latest="$(npm view "$name" dist-tags.latest 2>/dev/null || true)"
+            if [ -n "$latest" ] && node -e '
+              const semver = require(process.argv[1] + "/npm/node_modules/semver");
+              const [next, latest] = process.argv.slice(2);
+              process.exit(semver.prerelease(latest) && semver.gt(next, latest) ? 0 : 1);
+            ' "$(npm root -g)" "${GITHUB_REF_NAME#v}" "$latest"; then
+              dist_tag="--tag latest"
+            fi
+            ;;
+          esac
+          echo "npm publish ${GITHUB_REF_NAME#v} ${dist_tag:---tag latest}"
           npm publish ./npm/*.tgz --provenance --access public $dist_tag
 
   # One abi3 wheel per platform (CPython 3.10 and later), each built and then installed and tested on a

@@ -14,7 +14,8 @@ PyPI, the PHP package on Packagist, the .NET package on NuGet, and the five libr
 2. Once `swift.yml` passes on `release/<version>`, run `bindings/swift/scripts/pin-release.sh <version> <run-id>` and commit
    `Package.swift` and `bindings/swift/release-source.json`: the `swift-xcframework` job uploads that same zip.
 3. Merge to `main` and push the tag `v<version>`. A version with `-` (`0.1.0-beta.4`, `1.0.0-rc.1`) is a prerelease
-   and goes to npm under the `beta` dist-tag.
+   and goes to npm under the `beta` dist-tag, except while `latest` is itself an older prerelease: until the first
+   stable version, the newest candidate goes under `latest`, so `npm install` gets it.
 4. `release.yml` builds and tests the artifacts, then waits on the `release` environment (only `v*` tags, the owner
    approves).
 

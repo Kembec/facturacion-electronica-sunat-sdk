@@ -6,6 +6,7 @@ name: ffi
 on:
   push:
     branches: ["**"]
+    tags: ["v*"]
     paths:
       - "bindings/ffi/**"
       - "bindings/cli/**"
@@ -25,6 +26,7 @@ on:
       - "Cargo.toml"
       - "Cargo.lock"
       - ".github/workflows/ffi.yml"
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -66,17 +68,13 @@ jobs:
         include:
           - { os: ubuntu-24.04, target: x86_64-unknown-linux-gnu }
           - { os: ubuntu-24.04-arm, target: aarch64-unknown-linux-gnu }
-          - { os: macos-15, target: aarch64-apple-darwin }
-          - { os: macos-15-intel, target: x86_64-apple-darwin }
-          - { os: windows-2025, target: x86_64-pc-windows-msvc, arch: x64, powershell: System32 }
-          - { os: windows-2025, target: i686-pc-windows-msvc, arch: x86, powershell: SysWOW64 }
     runs-on: ${{ matrix.os }}
     name: native (${{ matrix.target }})
-    env:
+    env: &native_env
       # Windows: the C runtime goes inside the DLL, so a VB6, Visual FoxPro or PowerBuilder machine
       # without the Visual C++ redistributable loads it. Checked below with dumpbin.
       RUSTFLAGS: ${{ contains(matrix.target, 'windows') && '-C target-feature=+crt-static' || '' }}
-    steps:
+    steps: &native_steps
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Rust toolchain
         shell: bash
@@ -130,3 +128,20 @@ jobs:
           $powershell = "$env:WINDIR\${{ matrix.powershell }}\WindowsPowerShell\v1.0\powershell.exe"
           & $powershell -NoProfile -ExecutionPolicy Bypass -File bindings\ffi\tests\dotnet.ps1 -Dll "target\${{ matrix.target }}\release\sunat_sdk_ffi.dll" -Repo (Get-Location).Path
           if ($LASTEXITCODE -ne 0) { exit 1 }
+
+  # macOS (10x Linux per minute) and Windows (2x) only on a v* tag or by hand (workflow_dispatch), never on push or
+  # pull request: those spent 10,488 macOS and 7,410 Windows minutes in October 2026.
+  native-desktop:
+    if: github.event_name == 'workflow_dispatch' || startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: macos-15, target: aarch64-apple-darwin }
+          - { os: macos-15-intel, target: x86_64-apple-darwin }
+          - { os: windows-2025, target: x86_64-pc-windows-msvc, arch: x64, powershell: System32 }
+          - { os: windows-2025, target: i686-pc-windows-msvc, arch: x86, powershell: SysWOW64 }
+    runs-on: ${{ matrix.os }}
+    name: native (${{ matrix.target }})
+    env: *native_env
+    steps: *native_steps

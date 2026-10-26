@@ -189,9 +189,12 @@ En Node se lee de disco. En el navegador y con bundlers (Vite, webpack 5) se pid
 Donde eso no aplique —por ejemplo, Cloudflare Workers— se pasa el módulo a `load`:
 
 ```js
-import wasm from '@kembec/facturacion-electronica-sunat-sdk/wasm';
+import wasm from '@kembec/facturacion-electronica-sunat-sdk/sdk.wasm';
 const sdk = await load(wasm);
 ```
+
+`/sdk.wasm` termina en `.wasm`, así que wrangler lo carga con su regla por defecto, sin `rules` en la
+configuración. `/wasm` sigue disponible, pero en Workers necesita una regla `CompiledWasm` propia.
 
 `load` acepta un `WebAssembly.Module`, los bytes, una URL o una `Response`.
 
@@ -201,7 +204,8 @@ En Node 18, donde `globalThis.crypto` no existe sin una opción de arranque, `lo
 ## Límites y pruebas
 
 - El envío desde el navegador depende de que la SUNAT permita CORS, y eso no se ha probado.
-- La carga con el módulo ya compilado se prueba en Node; en Cloudflare Workers y con bundlers, no.
+- La carga con el módulo ya compilado se prueba en Node. En Cloudflare Workers solo se comprobó que
+  wrangler empaqueta `/sdk.wasm` sin reglas (`wrangler deploy --dry-run`); con bundlers, no se prueba.
 - Lo que aceptó la SUNAT y cómo se comprueba cada versión está en
   [Cómo se comprueba](https://github.com/Kembec/facturacion-electronica-sunat-sdk#cómo-se-comprueba): la beta de la
   SUNAT aceptó 36 de los 38 documentos de ejemplo; las 2 guías de remisión no tienen beta. Para este paquete, el CI lo

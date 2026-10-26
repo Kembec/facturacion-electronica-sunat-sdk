@@ -2,9 +2,11 @@
 // and describe the API that node-consumer.mjs and browser-page.mjs exercise.
 import { load, type BuildOutput, type Cdr, type Sdk, type SignOutput, type SoapRequest, type TicketOutcome, type ZipOutput, type RestRequest, type TokenOutcome, type ValidityOutcome, type GreRequest, type GreSendRequest, type GreTokenOutcome, type GreSendOutcome, type GreTicketOutcome, type SendOutcome, type Diagnosis, type DiagnosisField } from '@kembec/facturacion-electronica-sunat-sdk';
 import wasm from '@kembec/facturacion-electronica-sunat-sdk/wasm';
+import suffixed from '@kembec/facturacion-electronica-sunat-sdk/sdk.wasm';
 
 const sdk: Sdk = await load();
 const same: Sdk = await load(wasm);
+const bundled: Sdk = await load(suffixed);
 const fromUrl: Promise<Sdk> = load(new URL('https://example.com/sunat_sdk_wasm_bg.wasm'));
 const built: BuildOutput = JSON.parse(sdk.build('{}'));
 const signed: SignOutput = JSON.parse(same.sign(built.xml, 'cert', 'key'));
@@ -36,7 +38,7 @@ const field: DiagnosisField | undefined = sent.diagnosis[0]?.fields[0];
 const pointed: (string | null)[] = [diagnosed.code, diagnosed.detail?.node ?? null, field?.input_path ?? null, field?.xpath ?? null];
 const sure: boolean = field?.certainty === 'fuente';
 export const diagnosisUsed = [pointed, sure];
-export const used = [tokenCall.url, queryCall.headers, decided, fromUrl, signed.digest_value, signed.signature_value, built.file_name, named, zipped, read, post.body, again];
+export const used = [bundled, tokenCall.url, queryCall.headers, decided, fromUrl, signed.digest_value, signed.signature_value, built.file_name, named, zipped, read, post.body, again];
 
 // @ts-expect-error certainty is fuente or inferido
 const unsure: DiagnosisField['certainty'] = 'maybe';

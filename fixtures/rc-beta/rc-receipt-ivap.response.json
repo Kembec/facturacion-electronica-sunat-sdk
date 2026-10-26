@@ -1,0 +1,32 @@
+{
+  "sent_at": "00:45:22 2026-10-26 (America/Lima)",
+  "endpoint": "e-beta.sunat.gob.pe billService, user 20000000001MODDATOS",
+  "summary": {
+    "outcome": "ticket",
+    "ticket": "1792993631302"
+  },
+  "ticket_status": {
+    "cdr": {
+      "class": "observed",
+      "description": "El Resumen diario RC-20261025-61251, ha sido aceptado",
+      "notes": [
+        "4019 - El calculo del IGV no es correcto - Error en la linea: 1. codigo tributo: 1000. : 4019 (nodo: \"/\" valor: \"\")"
+      ],
+      "reference_id": "RC-20261025-61251",
+      "response_code": "0"
+    },
+    "diagnosis": [
+      {
+        "code": "4019",
+        "detail": {
+          "node": "/",
+          "value": ""
+        },
+        "fields": []
+      }
+    ],
+    "outcome": "ticket_status",
+    "state": "processed",
+    "status_code": "0"
+  }
+}

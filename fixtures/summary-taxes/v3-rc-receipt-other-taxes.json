@@ -1,0 +1,39 @@
+{
+  "kind": "summary",
+  "number": "923",
+  "generation_date": "2026-10-16",
+  "reference_date": "2026-10-15",
+  "currency": "PEN",
+  "issuer": {
+    "ruc": "20123456789",
+    "legal_name": "EMPRESA DEMO ORACULO S.A.C.",
+    "trade_name": "DEMO ORACULO",
+    "email": "facturacion@example.com",
+    "telephone": "014000000",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "urbanization": "-",
+      "street": "AV. EJEMPLO 123",
+      "establishment_code": "0000"
+    }
+  },
+  "lines": [
+    {
+      "document_type": "03",
+      "document_number": "B001-1",
+      "status": "1",
+      "customer_document_type": "1",
+      "customer_document_number": "12345678",
+      "customer_name": "JUAN PEREZ",
+      "total": "119.00",
+      "taxed": "100.00",
+      "igv": "18.00",
+      "igv_rate": "18.00",
+      "other_taxes": "1.00"
+    }
+  ]
+}

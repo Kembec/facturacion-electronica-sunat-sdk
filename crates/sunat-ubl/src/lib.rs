@@ -22,6 +22,7 @@ mod parties;
 mod references;
 mod retention;
 mod self_billed;
+mod summary_perception;
 mod tax;
 mod totals;
 mod writer;

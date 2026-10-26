@@ -14,6 +14,9 @@ pub(crate) const EXEMPT: TaxScheme = TaxScheme { id: "9997", name: "EXO", type_c
 pub(crate) const FREE: TaxScheme = TaxScheme { id: "9996", name: "GRA", type_code: "FRE" };
 pub(crate) const EXPORT: TaxScheme = TaxScheme { id: "9995", name: "EXP", type_code: "FRE" };
 pub(crate) const IVAP: TaxScheme = TaxScheme { id: "1016", name: "IVAP", type_code: "VAT" };
+pub(crate) const ISC: TaxScheme = TaxScheme { id: "2000", name: "ISC", type_code: "EXC" };
+/// Other taxes (9999): the Resumen Diario sheet fixes no name; `OTROS` as in catalog 05 and Greenter.
+pub(crate) const OTHER_TAXES: TaxScheme = TaxScheme { id: "9999", name: "OTROS", type_code: "OTH" };
 /// Plastic bags tax: a subtotal without `TaxableAmount` or `Percent` (SUNAT 3003, 2992).
 pub(crate) const ICBPER: TaxScheme = TaxScheme { id: "7152", name: "ICBPER", type_code: "OTH" };
 

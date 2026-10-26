@@ -29,6 +29,7 @@ mod free_sales;
 mod penalty_notes;
 mod rule_dates;
 mod scope;
+mod summary_taxes;
 mod text_format;
 mod self_billed;
 mod self_billed_lines;
@@ -38,7 +39,7 @@ mod total_taxes;
 mod types;
 mod validate;
 
-pub use daily::{DocumentReference, Summary, SummaryLine, Voided, VoidedLine};
+pub use daily::{DocumentReference, Summary, SummaryLine, SummaryPerception, Voided, VoidedLine};
 pub use datetime::{Date, DateTime, LimaDateTime};
 pub use decimal::Decimal;
 pub use despatch::{Carrier, Despatch, DespatchLine, DespatchParty, Driver, Place, RelatedDocument, Shipment, Vehicle};
@@ -46,6 +47,7 @@ pub use error::ModelError;
 pub use retention::{ExchangeRate, RetainedDocument, Retention, RetentionAmounts, RetentionLine, RetentionPayment, RetentionSupplier};
 pub use scope::is_xml_text;
 pub use self_billed::{IncomeTaxRetention, ItemProperty, OperationPlace, SelfBilled, SelfBilledLine, SelfBilledSeller, SelfBilledTotals, SellerAddress};
+pub use summary_taxes::perception_percent;
 pub use types::{
     Address, Advance, AllowanceCharge, Client, Company, DespatchReference, Detraction, DocumentType, IgvRetention, Installment, Invoice, Legend, Line, LineDiscount, Lodging, Note, NoteReference, PaymentTerms,
     Totals, Voucher,

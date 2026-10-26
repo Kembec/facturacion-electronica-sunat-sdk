@@ -181,7 +181,8 @@ fn check_summary(summary: &Summary) -> Result<(), ModelError> {
     summary.lines.iter().enumerate().try_for_each(|(index, line)| {
         check_summary_line(index, line)?;
         crate::free_sales::check(index, line, summary)?;
-        crate::icbper::check_summary_line(index, line, &summary.currency)
+        crate::icbper::check_summary_line(index, line, &summary.currency)?;
+        crate::summary_taxes::check(index, line, &summary.currency)
     })
 }
 
@@ -199,12 +200,13 @@ fn check_summary_line(index: usize, line: &SummaryLine) -> Result<(), ModelError
     if let Some(name) = &line.customer_name {
         check_format(&path("customer_name"), name, "3 to 250 characters, no line breaks or tabs (SUNAT 2022)", summary_customer_name)?;
     }
-    // The writer puts tax 1000 on every line, so SUNAT asks for its `cbc:Percent` on every line ("1000" without
-    // the tag, error 2992 of the Resumen Diario sheet), whatever the status.
-    let Some(rate) = &line.igv_rate else {
-        return Err(ModelError::rule("2992", path("igv_rate"), "the IGV rate is required on every summary line"));
-    };
-    check_summary_rate(&path("igv_rate"), rate, note)?;
+    // The writer puts tax 1000 on every line without IVAP, so SUNAT asks for its `cbc:Percent` there ("1000"
+    // without the tag, error 2992 of the Resumen Diario sheet), whatever the status. With IVAP it puts 1016 instead.
+    match (&line.igv_rate, &line.ivap) {
+        (Some(rate), _) => check_summary_rate(&path("igv_rate"), rate, note)?,
+        (None, Some(_)) => {}
+        (None, None) => return Err(ModelError::rule("2992", path("igv_rate"), "the IGV rate is required on every summary line without IVAP")),
+    }
     match (&line.reference_document, note) {
         (Some(_), false) => Err(ModelError::invalid(path("reference_document"), "applies to notes (07, 08) only")),
         (None, true) => Err(ModelError::missing(path("reference_document"))),

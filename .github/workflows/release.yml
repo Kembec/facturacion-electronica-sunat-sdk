@@ -544,7 +544,8 @@ jobs:
 
   # Publishes the five crates to crates.io in dependency order, from the tagged tree the crates job tested, with the
   # owner's CARGO_REGISTRY_TOKEN (publish-new and publish-update, `kembec-sunat-*`) from the `release` environment.
-  # After the first upload, Trusted Publishing can replace the token (docs/releasing.md).
+  # After the first upload, Trusted Publishing can replace the token (docs/releasing.md). One crate at a time, skipping
+  # a version crates.io already has: re-running this job finishes a publish the index left halfway (1.0.0-rc.8).
   publish-crates:
     needs: [changelog, crates]
     if: startsWith(github.ref, 'refs/tags/v')
@@ -559,7 +560,7 @@ jobs:
         run: |
           rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal
           rustup default "$RUST_TOOLCHAIN"
-      - name: cargo publish
+      - name: cargo publish, one crate at a time
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-        run: cargo publish --locked $(printf -- '-p %s ' $CRATES)
+        run: crates/scripts/publish.sh $CRATES

@@ -71,7 +71,10 @@ The library names follow the package: `kembec_sunat_sdk`, and so on.
 
 `publish-crates` uploads the five crates in dependency order with `CARGO_REGISTRY_TOKEN`, an API token of the owner's
 crates.io account with the `publish-new` and `publish-update` scopes, limited to the crate pattern `kembec-sunat-*`,
-stored in the `release` environment. `v0.1.0-beta.5` is the first tag that publishes them.
+stored in the `release` environment. `v0.1.0-beta.5` is the first tag that publishes them. It goes one crate at a
+time through `crates/scripts/publish.sh`, skips a version crates.io already has and waits up to 30 minutes for the sparse
+index to serve each crate before the next one, so if the index is slow the job fails naming the crate and re-running
+it publishes only what is missing.
 
 Once the crates exist, Trusted Publishing can replace the token: on each crate's settings on crates.io add owner
 `Kembec`, repository `facturacion-electronica-sunat-sdk`, workflow `release.yml`, environment `release`; give

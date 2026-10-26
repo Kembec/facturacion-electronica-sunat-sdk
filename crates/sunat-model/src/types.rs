@@ -137,6 +137,57 @@ pub struct Line {
     /// Guest data of an export line, operation types 0202 (lodging) and 0205 (tour package) only:
     /// one `cac:AdditionalItemProperty` per field, catalog 55 codes 4000 to 4009.
     pub lodging: Option<Lodging>,
+    /// Catch of a line of hydrobiological resources, operation type 1002 only: catalog 55 codes 3001
+    /// to 3006 on every line (3063, 3130 to 3135).
+    pub fishing: Option<FishingSale>,
+    /// Trip of a line of freight transport, operation type 1004 only: the line's `cac:Delivery` (3116
+    /// to 3126).
+    pub freight: Option<FreightService>,
+}
+
+/// The catch sold on a 1002 line. Every field is required by SUNAT; an absent one is rejected with
+/// its own code, so they are optional here.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FishingSale {
+    /// 3001: vessel's registration (3063).
+    pub vessel_registration: Option<String>,
+    /// 3002: vessel's name (3130).
+    pub vessel_name: Option<String>,
+    /// 3003: species sold (3131).
+    pub species: Option<String>,
+    /// 3004: landing place (3132).
+    pub landing_place: Option<String>,
+    /// 3005: landing date, `YYYY-MM-DD` (3134).
+    pub landing_date: Option<String>,
+    /// 3006: quantity of the species, in metric tons: the SDK writes `unitCode="TNE"` (3133).
+    pub quantity: Option<Decimal>,
+}
+
+/// The trip of a 1004 line: origin, destination, detail and the three reference values of
+/// `cac:DeliveryTerms` `01`, `02` and `03`, positive and in soles.
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FreightService {
+    /// Origin (3116 ubigeo, 3117 address).
+    pub origin: Option<FreightPlace>,
+    /// Destination (3118 ubigeo, 3119 address).
+    pub destination: Option<FreightPlace>,
+    /// `cbc:Instructions` (3120).
+    pub trip_detail: Option<String>,
+    /// Reference value of the service, `DeliveryTerms` `01` (3124).
+    pub reference_value: Option<Decimal>,
+    /// Reference value on the effective load, `02` (3125).
+    pub effective_load_value: Option<Decimal>,
+    /// Reference value on the nominal payload, `03` (3126).
+    pub nominal_load_value: Option<Decimal>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct FreightPlace {
+    pub ubigeo: Option<String>,
+    pub address: Option<String>,
 }
 
 /// The guest of a lodging (0202) or tour package (0205) line. SUNAT requires all ten fields with 0202

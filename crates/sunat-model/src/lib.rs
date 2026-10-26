@@ -14,6 +14,7 @@ mod despatch_text;
 mod despatch_transport;
 mod error;
 mod export;
+mod detraction_lines;
 mod export_lodging;
 mod icbper;
 mod icbper_rates;
@@ -47,7 +48,7 @@ pub use retention::{ExchangeRate, RetainedDocument, Retention, RetentionAmounts,
 pub use scope::is_xml_text;
 pub use self_billed::{IncomeTaxRetention, ItemProperty, OperationPlace, SelfBilled, SelfBilledLine, SelfBilledSeller, SelfBilledTotals, SellerAddress};
 pub use types::{
-    Address, Advance, AllowanceCharge, Client, Company, DespatchReference, Detraction, DocumentType, IgvRetention, Installment, Invoice, Legend, Line, LineDiscount, Lodging, Note, NoteReference, PaymentTerms,
+    Address, Advance, AllowanceCharge, Client, Company, DespatchReference, Detraction, DocumentType, IgvRetention, FishingSale, FreightPlace, FreightService, Installment, Invoice, Legend, Line, LineDiscount, Lodging, Note, NoteReference, PaymentTerms,
     Totals, Voucher,
 };
 

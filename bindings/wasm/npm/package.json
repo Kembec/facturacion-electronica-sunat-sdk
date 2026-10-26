@@ -40,6 +40,10 @@
       "types": "./wasm.d.ts",
       "default": "./wasm/sunat_sdk_wasm_bg.wasm"
     },
+    "./sdk.wasm": {
+      "types": "./wasm.d.ts",
+      "default": "./wasm/sunat_sdk_wasm_bg.wasm"
+    },
     "./package.json": "./package.json"
   },
   "files": [

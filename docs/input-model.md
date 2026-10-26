@@ -7,8 +7,7 @@ compute taxes.
 Documents: invoice `01`, receipt `03`, credit note `07`, debit note `08`, UBL 2.1, IGV (affectations
 10-16, 20, 21, 30-37, 40), IVAP (affectation 17, see IVAP) and ICBPER (tax 7152, see ICBPER). Not
 supported, rejected with an explicit error: ISC, other taxes, catalog 53 codes other than those of Discounts and
-charges, discounts and charges in notes, advances in notes, detraction on operation types 1002 and 1004,
-perception.
+charges, discounts and charges in notes, advances in notes, perception.
 
 The daily summary (RC), the void communication (RA), the sender's despatch advice (09) and the
 retention voucher (20) have their own sections below.
@@ -19,7 +18,7 @@ retention voucher (20) have their own sections below.
 |---|---|
 | `kind` | `"invoice"` (01, 03) or `"note"` (07, 08) |
 | `ubl_version` | `"2.1"` |
-| `operation_type` | catalog 51, invoice only (`"0101"`; `"1001"` or `"1003"` with `detraction`; `"0200"` to `"0208"`, see Export) |
+| `operation_type` | catalog 51, invoice only (`"0101"`; `"1001"` to `"1004"` with `detraction`; `"0200"` to `"0208"`, see Export) |
 | `document_type` | `"01"`, `"03"`, `"07"`, `"08"` |
 | `series` | `"F001"`, `"B001"` |
 | `number` | string, no padding added |
@@ -71,11 +70,36 @@ the amount carries `currencyID="PEN"` whatever the document currency (SUNAT 3208
 The caller decides whether the sale is subject to detraction and computes the amount, as for every
 amount; SUNAT checks neither the rate nor the amount against the total. The SDK rejects what SUNAT
 rejects: `detraction` is required with operation types 1001 to 1004 (3127, 3034) and refused with any
-other (3128); 1003 takes code `028` (3129); 1002 (hydrobiological resources) and 1004 (freight
-transport) need line details the SDK does not model and are rejected as out of scope. Whether a code is
+other (3128); the code follows the operation type (3129): 1002 takes `004`, 1003 `028` and 1004 `027`.
+1002 (hydrobiological resources) needs `lines[].fishing` and 1004 (freight transport) `lines[].freight` on
+every line; both are refused with any other operation type and in notes. Whether a code is
 in catalog 54 (3033) or 59 (3174) is left to SUNAT. The legend `2006` («Operación sujeta a detracción»)
 goes in `legends` like any other. Vectors `01-invoice-detraction` (F001-921) and
 `03-receipt-detraction` (B001-921) were accepted by beta on 16/10/2026 with code 0 and no notes.
+
+| Field of `lines[].fishing` (1002) | Catalog 55 | Missing |
+|---|---|---|
+| `vessel_registration` | 3001 | 3063 |
+| `vessel_name` | 3002 | 3130 |
+| `species` | 3003 | 3131 |
+| `landing_place` | 3004 | 3132 |
+| `landing_date` | 3005, `YYYY-MM-DD` | 3134 |
+| `quantity` | 3006, in metric tons: the SDK writes `unitCode="TNE"` | 3133 |
+
+A line of 1002 without `fishing` is 3063. Lengths are only observed by SUNAT (4280, 4281) and pass.
+
+| Field of `lines[].freight` (1004) | Rendered as | Missing |
+|---|---|---|
+| `origin.ubigeo`, `origin.address` | `cac:Despatch/cac:DespatchAddress` | 3116, 3117 |
+| `destination.ubigeo`, `destination.address` | `cac:DeliveryLocation/cac:Address` | 3118, 3119 |
+| `trip_detail` | `cac:Despatch/cbc:Instructions` | 3120 |
+| `reference_value` | `cac:DeliveryTerms` `01`, reference value of the service | 3124 |
+| `effective_load_value` | `DeliveryTerms` `02`, on the effective load | 3125 |
+| `nominal_load_value` | `DeliveryTerms` `03`, on the nominal payload | 3126 |
+
+The three values are positive amounts with up to 2 decimals (3122, 3123). They come from D.S.
+020-2021-MTC; the base of the detraction (the greater of the amount and the reference value) and the
+rate stay with the caller, as SUNAT checks neither. Blank texts count as missing.
 
 ## IGV retention
 

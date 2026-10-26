@@ -35,6 +35,9 @@ fn one_line(w: &mut XmlWriter, names: &LineNames, number: usize, line: &Line, cu
     w.leaf(names.quantity, &[("unitCode", line.unit.as_str())], &shortest(&line.quantity));
     w.leaf("cbc:LineExtensionAmount", &money, &two_decimals(&line.line_value));
     pricing_reference(w, line, currency);
+    if let Some(freight) = &line.freight {
+        crate::detraction_lines::freight_delivery(w, freight, currency);
+    }
     discounts(w, line, currency);
     line_tax_total(w, line, currency);
     item(w, line);
@@ -145,6 +148,9 @@ fn item(w: &mut XmlWriter, line: &Line) {
     }
     if let Some(lodging) = &line.lodging {
         crate::lodging::properties(w, lodging);
+    }
+    if let Some(fishing) = &line.fishing {
+        crate::detraction_lines::fishing_properties(w, fishing);
     }
     w.close();
 }

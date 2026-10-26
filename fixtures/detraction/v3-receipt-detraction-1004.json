@@ -1,0 +1,91 @@
+{
+  "kind": "invoice",
+  "ubl_version": "2.1",
+  "operation_type": "1004",
+  "document_type": "03",
+  "series": "B001",
+  "number": "923",
+  "issue_date": "2026-10-16T11:00:00-05:00",
+  "currency": "PEN",
+  "payment_terms": {
+    "type": "Contado"
+  },
+  "detraction": {
+    "code": "027",
+    "percent": "4.00",
+    "amount": "60.00",
+    "account": "00-741-123456",
+    "payment_means_code": "001"
+  },
+  "issuer": {
+    "ruc": "20123456789",
+    "legal_name": "EMPRESA DEMO ORACULO S.A.C.",
+    "trade_name": "DEMO ORACULO",
+    "email": "facturacion@example.com",
+    "telephone": "014000000",
+    "address": {
+      "ubigeo": "150101",
+      "country_code": "PE",
+      "department": "LIMA",
+      "province": "LIMA",
+      "district": "LIMA",
+      "urbanization": "-",
+      "street": "AV. EJEMPLO 123",
+      "establishment_code": "0000"
+    }
+  },
+  "customer": {
+    "document_type": "1",
+    "document_number": "12345678",
+    "legal_name": "JUAN PEREZ QUISPE"
+  },
+  "totals": {
+    "taxed": "1000.00",
+    "igv": "180.00",
+    "total_taxes": "180.00",
+    "sale_value": "1000.00",
+    "subtotal": "1180.00",
+    "payable": "1180.00"
+  },
+  "lines": [
+    {
+      "unit": "ZZ",
+      "quantity": "1",
+      "product_code": "TRA001",
+      "sunat_product_code": "78101800",
+      "description": "Servicio de transporte de carga por carretera, Arequipa - Lima",
+      "unit_value": "1000.00",
+      "igv_base": "1000.00",
+      "igv_rate": "18.00",
+      "igv": "180.00",
+      "affectation": "10",
+      "total_taxes": "180.00",
+      "unit_price": "1180.00",
+      "line_value": "1000.00",
+      "freight": {
+        "origin": {
+          "ubigeo": "040101",
+          "address": "CALLE MERCADERES 45, AREQUIPA"
+        },
+        "destination": {
+          "ubigeo": "150101",
+          "address": "AV. ARGENTINA 123, LIMA"
+        },
+        "trip_detail": "AREQUIPA - LIMA, CARGA GENERAL",
+        "reference_value": "1500.00",
+        "effective_load_value": "1400.00",
+        "nominal_load_value": "1600.00"
+      }
+    }
+  ],
+  "legends": [
+    {
+      "code": "1000",
+      "value": "SON MIL CIENTO OCHENTA CON 00/100 SOLES"
+    },
+    {
+      "code": "2006",
+      "value": "Operación sujeta a detracción"
+    }
+  ]
+}

@@ -49,14 +49,14 @@ fn detraction_goes_with_its_operation_types() {
     assert!(matches!(missing, Err(ModelError::Missing { .. })), "1001 without detraction (3127): {missing:?}");
     let wrong_type = edited(DETRACTION, |v| v["operation_type"] = serde_json::json!("0101"));
     assert!(matches!(wrong_type, Err(ModelError::Invalid { .. })), "detraction with 0101 (3128): {wrong_type:?}");
-    for (operation, feature) in [
-        ("1002", "detraction on hydrobiological resources (operation type 1002)"),
-        ("1004", "detraction on freight transport (operation type 1004)"),
-    ] {
-        match edited(DETRACTION, |v| v["operation_type"] = serde_json::json!(operation)) {
-            Err(ModelError::OutOfScope { feature: f, .. }) => assert_eq!(f, feature),
-            other => panic!("{operation}: {other:?}"),
-        }
+    // 1002 and 1004 are in scope since rc.8: without their line data SUNAT answers 3063 and 3116
+    // (tests/detraction_lines.rs has the rest).
+    for (operation, code, sunat) in [("1002", "004", "3063"), ("1004", "027", "3116")] {
+        let got = edited(DETRACTION, |v| {
+            v["operation_type"] = serde_json::json!(operation);
+            v["detraction"]["code"] = serde_json::json!(code);
+        });
+        assert_eq!(got.unwrap_err().sunat_code(), Some(sunat), "{operation}");
     }
     let rejected: [fn(&mut serde_json::Value); 7] = [
         |v| v["operation_type"] = serde_json::json!("1003"),

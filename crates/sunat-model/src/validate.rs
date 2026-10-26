@@ -16,6 +16,7 @@ impl Document {
                 crate::export::check(invoice)?;
                 crate::line_base::check(&invoice.voucher, None)?;
                 check_detraction(invoice)?;
+                crate::detraction_lines::check(invoice)?;
                 require(invoice.voucher.totals.sale_value.is_some(), "$.totals.sale_value")?;
                 crate::allowances::check(invoice)?;
                 crate::line_amounts::check(&invoice.voucher)?;
@@ -33,6 +34,7 @@ impl Document {
                     return Err(ModelError::OutOfScope { path, feature: "line charges in credit and debit notes" });
                 }
                 crate::export_lodging::reject_any(&note.voucher.lines, "applies to invoices only (operation_type 0202 or 0205)")?;
+                crate::detraction_lines::reject_any(&note.voucher.lines)?;
                 let totals = &note.voucher.totals;
                 if totals.prepaid.is_some() {
                     return Err(ModelError::OutOfScope { path: "$.totals.prepaid".into(), feature: "advances in credit and debit notes" });
@@ -120,6 +122,7 @@ fn check_retention(voucher: &Voucher, retention: &IgvRetention) -> Result<(), Mo
 const DETRACTION_OPERATIONS: &[&str] = &["1001", "1002", "1003", "1004"];
 
 /// What SUNAT rejects in the detraction blocks: the code each special operation type demands (3129),
+/// the line data of 1002 and 1004 (`detraction_lines`),
 /// the catalog formats (3033, 3174), the account (3034) and the amount (3037). The rate and the
 /// amount are the caller's: SUNAT does not check them against each other.
 fn check_detraction(invoice: &Invoice) -> Result<(), ModelError> {
@@ -133,22 +136,21 @@ fn check_detraction(invoice: &Invoice) -> Result<(), ModelError> {
         }
         (Some(detraction), true) => detraction,
     };
-    let feature = match operation {
-        "1002" => Some("detraction on hydrobiological resources (operation type 1002)"),
-        "1004" => Some("detraction on freight transport (operation type 1004)"),
-        _ => None,
-    };
-    if let Some(feature) = feature {
-        return Err(ModelError::OutOfScope { path: "$.operation_type".into(), feature });
-    }
     check_detraction_fields(detraction, operation)
 }
 
 fn check_detraction_fields(detraction: &Detraction, operation: &str) -> Result<(), ModelError> {
     let three_digits = |s: &str| s.len() == 3 && digits(s);
     check_format("$.detraction.code", &detraction.code, "a catalog 54 code, 3 digits", three_digits)?;
-    if operation == "1003" {
-        check_format("$.detraction.code", &detraction.code, "\"028\" for operation type 1003 (SUNAT 3129)", |s| s == "028")?;
+    let required = match operation {
+        "1002" => Some("004"),
+        "1003" => Some("028"),
+        "1004" => Some("027"),
+        _ => None,
+    };
+    if let Some(code) = required {
+        let expected = format!("\"{code}\" for operation type {operation} (SUNAT 3129)");
+        check_format("$.detraction.code", &detraction.code, &expected, |s| s == code)?;
     }
     let means = &detraction.payment_means_code;
     check_format("$.detraction.payment_means_code", means, "a catalog 59 code, 3 digits", three_digits)?;

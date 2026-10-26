@@ -14,6 +14,7 @@
 mod amount;
 mod daily;
 mod despatch;
+mod detraction_lines;
 mod document;
 mod error;
 mod lines;

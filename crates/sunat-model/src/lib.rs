@@ -47,6 +47,7 @@ pub use error::ModelError;
 pub use retention::{ExchangeRate, RetainedDocument, Retention, RetentionAmounts, RetentionLine, RetentionPayment, RetentionSupplier};
 pub use scope::is_xml_text;
 pub use self_billed::{IncomeTaxRetention, ItemProperty, OperationPlace, SelfBilled, SelfBilledLine, SelfBilledSeller, SelfBilledTotals, SellerAddress};
+pub use summary_taxes::perception_percent;
 pub use types::{
     Address, Advance, AllowanceCharge, Client, Company, DespatchReference, Detraction, DocumentType, IgvRetention, Installment, Invoice, Legend, Line, LineDiscount, Lodging, Note, NoteReference, PaymentTerms,
     Totals, Voucher,

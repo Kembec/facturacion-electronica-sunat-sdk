@@ -43,7 +43,7 @@ fn check_perception(index: usize, line: &SummaryLine, perception: &SummaryPercep
         let reason = "applies only to a receipt (03) whose status is not 2";
         return Err(ModelError::rule("2986", format!("$.lines[{index}].perception"), reason));
     }
-    let Some(&(_, rate)) = PERCEPTION_REGIMES.iter().find(|(code, _)| *code == perception.system_code) else {
+    let Some(rate) = regime_rate(&perception.system_code) else {
         return Err(ModelError::rule("2517", path("system_code"), "expected catalog 22: \"01\", \"02\" or \"03\""));
     };
     if currency != PEN {
@@ -56,6 +56,16 @@ fn check_perception(index: usize, line: &SummaryLine, perception: &SummaryPercep
     within_one(&path("amount"), &perception.amount, expected, "base × the regime's rate")?;
     let expected = cents(amount(&line.total) + amount(&perception.amount));
     within_one(&path("total_cashed"), &perception.total_cashed, expected, "total + amount")
+}
+
+/// The rate SUNAT expects for a perception regime (2891), as the text a writer renders (`"2.00"`); `None` outside
+/// catalog 22. The writer reads it from here so the table that validates is the one that writes.
+pub fn perception_percent(system_code: &str) -> Option<String> {
+    regime_rate(system_code).map(|rate| format!("{}.{:02}", rate / 100, rate % 100))
+}
+
+fn regime_rate(system_code: &str) -> Option<i128> {
+    PERCEPTION_REGIMES.iter().find(|(code, _)| *code == system_code).map(|&(_, rate)| rate)
 }
 
 fn positive(path: &str, value: &Decimal, code: &str) -> Result<(), ModelError> {
@@ -75,4 +85,17 @@ fn within_one(path: &str, given: &Decimal, expected: i128, formula: &str) -> Res
 /// In millionths; an amount too long to read exactly counts as zero.
 fn amount(value: &Decimal) -> i128 {
     units(value).unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::perception_percent;
+
+    #[test]
+    fn each_regime_renders_its_catalog_22_rate() {
+        assert_eq!(perception_percent("01").as_deref(), Some("2.00"));
+        assert_eq!(perception_percent("02").as_deref(), Some("1.00"));
+        assert_eq!(perception_percent("03").as_deref(), Some("0.50"));
+        assert_eq!(perception_percent("04"), None);
+    }
 }

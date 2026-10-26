@@ -7,7 +7,8 @@ use crate::amount::two_decimals;
 use crate::document::root;
 use crate::lines::tax_scheme;
 use crate::parties::{signature_reference, RUC_SCHEME};
-use crate::tax::{FREE, ICBPER, IGV};
+use crate::summary_perception::perception;
+use crate::tax::{TaxScheme, FREE, ICBPER, IGV, ISC, IVAP, OTHER_TAXES};
 use crate::writer::XmlWriter;
 use crate::Options;
 
@@ -85,6 +86,9 @@ fn summary_line(w: &mut XmlWriter, line_id: usize, line: &SummaryLine, currency:
         w.close();
         w.close();
     }
+    if let Some(reference) = &line.perception {
+        perception(w, reference);
+    }
     w.open("cac:Status", &[]);
     w.text("cbc:ConditionCode", &line.status);
     w.close();
@@ -96,47 +100,24 @@ fn summary_line(w: &mut XmlWriter, line_id: usize, line: &SummaryLine, currency:
         w.leaf("cbc:Amount", &money, &two_decimals(charges));
         w.close();
     }
-    igv_total(w, line.igv.as_ref(), line.igv_rate.as_ref(), &money);
+    match &line.ivap {
+        Some(ivap) => tax_total(w, IVAP, &two_decimals(ivap), None, &money),
+        None => {
+            let igv = line.igv.as_ref().map_or_else(|| "0.00".to_owned(), two_decimals);
+            tax_total(w, IGV, &igv, line.igv_rate.as_ref(), &money);
+        }
+    }
+    for (scheme, amount) in [(ISC, &line.isc), (OTHER_TAXES, &line.other_taxes)] {
+        if let Some(amount) = amount {
+            tax_total(w, scheme, &two_decimals(amount), None, &money);
+        }
+    }
     if let Some(free_igv) = non_zero(&line.free_igv) {
-        free_igv_total(w, free_igv, line.igv_rate.as_ref(), &money);
+        tax_total(w, FREE, &two_decimals(free_igv), line.igv_rate.as_ref(), &money);
     }
     if let Some(icbper) = &line.icbper {
-        icbper_total(w, icbper, &money);
+        tax_total(w, ICBPER, &two_decimals(icbper), None, &money);
     }
-    w.close();
-}
-
-/// IGV of free sales (field 25): its own `cac:TaxTotal` with tax 9996, after the IGV one. The model only lets
-/// it through from 2027-01-01. It carries the line's IGV rate as well: the Resumen Diario sheet asks for
-/// `cbc:Percent` in 9996 without condition (2992) and admits the same rates as in 1000 (3504).
-fn free_igv_total(w: &mut XmlWriter, amount: &Decimal, rate: Option<&Decimal>, money: &[(&str, &str)]) {
-    let amount = two_decimals(amount);
-    w.open("cac:TaxTotal", &[]);
-    w.leaf("cbc:TaxAmount", money, &amount);
-    w.open("cac:TaxSubtotal", &[]);
-    w.leaf("cbc:TaxAmount", money, &amount);
-    w.open("cac:TaxCategory", &[]);
-    if let Some(rate) = rate {
-        w.text("cbc:Percent", &two_decimals(rate));
-    }
-    tax_scheme(w, FREE);
-    w.close();
-    w.close();
-    w.close();
-}
-
-/// ICBPER as its own `cac:TaxTotal` after the IGV one, one per tax code (SUNAT 2355), with the same
-/// amount in its subtotal (2344).
-fn icbper_total(w: &mut XmlWriter, icbper: &Decimal, money: &[(&str, &str)]) {
-    let amount = two_decimals(icbper);
-    w.open("cac:TaxTotal", &[]);
-    w.leaf("cbc:TaxAmount", money, &amount);
-    w.open("cac:TaxSubtotal", &[]);
-    w.leaf("cbc:TaxAmount", money, &amount);
-    w.open("cac:TaxCategory", &[]);
-    tax_scheme(w, ICBPER);
-    w.close();
-    w.close();
     w.close();
 }
 
@@ -164,19 +145,21 @@ fn billing_payments(w: &mut XmlWriter, line: &SummaryLine, money: &[(&str, &str)
     }
 }
 
-/// The IGV total is always present: `0.00` when the line gives none. Its rate (`cbc:Percent`, field 21,
-/// SUNAT errors 2992, 3504 and 3102) only when the line gives one.
-fn igv_total(w: &mut XmlWriter, igv: Option<&Decimal>, rate: Option<&Decimal>, money: &[(&str, &str)]) {
-    let amount = igv.map_or_else(|| "0.00".to_owned(), two_decimals);
+/// One `cac:TaxTotal` per tax code (SUNAT 2355), with the same amount in its subtotal (2344), in the order
+/// 1000 or 1016, 2000, 9999, 9996, 7152. The IGV total (1000) is always present, `0.00` when the line gives
+/// none, unless the line carries IVAP (1016) in its place (2278). `cbc:Percent` (field 21) goes only where the
+/// sheet asks for it: 1000 and 9996 with the line's IGV rate (2992, 3504, 3102); IVAP, ISC, 9999 and ICBPER
+/// carry none. 9996 is the IGV of free sales (field 25), only let through by the model from 2027-01-01.
+fn tax_total(w: &mut XmlWriter, scheme: TaxScheme, amount: &str, rate: Option<&Decimal>, money: &[(&str, &str)]) {
     w.open("cac:TaxTotal", &[]);
-    w.leaf("cbc:TaxAmount", money, &amount);
+    w.leaf("cbc:TaxAmount", money, amount);
     w.open("cac:TaxSubtotal", &[]);
-    w.leaf("cbc:TaxAmount", money, &amount);
+    w.leaf("cbc:TaxAmount", money, amount);
     w.open("cac:TaxCategory", &[]);
     if let Some(rate) = rate {
         w.text("cbc:Percent", &two_decimals(rate));
     }
-    tax_scheme(w, IGV);
+    tax_scheme(w, scheme);
     w.close();
     w.close();
     w.close();

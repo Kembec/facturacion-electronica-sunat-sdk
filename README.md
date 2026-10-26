@@ -18,11 +18,11 @@ cualquiera de ellos. Guías y ejemplos: **https://fe.kembec.com**
 | JavaScript y TypeScript (Node 18 o posterior, navegador) | [`@kembec/facturacion-electronica-sunat-sdk`](https://www.npmjs.com/package/@kembec/facturacion-electronica-sunat-sdk) | `npm install @kembec/facturacion-electronica-sunat-sdk@beta` | WebAssembly, sin binarios ni procesos aparte |
 | PHP 7.4 o posterior | [`kembec/facturacion-electronica-sunat-sdk`](https://packagist.org/packages/kembec/facturacion-electronica-sunat-sdk) | `composer require kembec/facturacion-electronica-sunat-sdk:^0.1@beta` | ejecuta el binario `sunat-sdk` una vez por llamada |
 | Python 3.10 o posterior | [`facturacion-electronica-sunat-sdk`](https://pypi.org/project/facturacion-electronica-sunat-sdk/) | `pip install --pre facturacion-electronica-sunat-sdk` | wheels con el motor compilado adentro |
-| Swift 5.9 o posterior (macOS, iOS, Linux) | el producto `KembecSunatSDK` de este repositorio | SwiftPM por URL, `exact: "1.0.0-rc.7"` ([cómo](bindings/swift/README.md#instalación)) | xcframework de bibliotecas estáticas, enlazado en tu binario; en Linux, `libsunat_sdk_ffi.so` |
+| Swift 5.9 o posterior (macOS, iOS, Linux) | el producto `KembecSunatSDK` de este repositorio | SwiftPM por URL, `exact: "1.0.0-rc.8"` ([cómo](bindings/swift/README.md#instalación)) | xcframework de bibliotecas estáticas, enlazado en tu binario; en Linux, `libsunat_sdk_ffi.so` |
 | Rust | los paquetes de [`crates/`](crates) | desde este repositorio, [abajo](#rust) | crates, sin red |
 | Línea de comandos | el programa `sunat-sdk` | [descarga en GitHub](https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases) (Linux x86_64), o compílalo con `cargo build` | binario estático |
 
-La versión publicada es la 1.0.0-rc.7. Qué trae, en [Versiones](#versiones).
+La versión publicada es la 1.0.0-rc.8. Qué trae, en [Versiones](#versiones).
 
 ## Tu primer comprobante firmado
 
@@ -30,7 +30,7 @@ Baja a una carpeta vacía una factura de ejemplo y el certificado de prueba del 
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.7
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.8
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"
@@ -108,9 +108,9 @@ del tag, con la clave corta para que el código diga `sunat_model::…`. `sunat-
 
 ```toml
 [dependencies]
-sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.7" }
-sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.7" }
-sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.7" }
+sunat-model = { package = "kembec-sunat-model", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.8" }
+sunat-ubl = { package = "kembec-sunat-ubl", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.8" }
+sunat-xmldsig = { package = "kembec-sunat-xmldsig", git = "https://github.com/Kembec/facturacion-electronica-sunat-sdk", tag = "v1.0.0-rc.8" }
 ```
 
 ```rust
@@ -137,7 +137,7 @@ tú. Lo que expone cada crate está en la [arquitectura](docs/architecture.md).
 En Linux x86_64, el binario estático del release:
 
 ```bash
-url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v1.0.0-rc.7
+url=https://github.com/Kembec/facturacion-electronica-sunat-sdk/releases/download/v1.0.0-rc.8
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl"
 curl -fsSLO "$url/sunat-sdk-x86_64-unknown-linux-musl.sha256"
 sha256sum -c sunat-sdk-x86_64-unknown-linux-musl.sha256
@@ -181,7 +181,7 @@ La CDR es la constancia con la que la SUNAT responde a cada envío.
 - **IGV** con las tasas de 18 % y 10,5 %: operaciones gravadas, exoneradas, inafectas, de exportación y gratuitas
   (afectaciones 10 a 16, 20, 21, 30 a 37 y 40), en soles y en dólares, al contado o a crédito en cuotas.
 - **Resumen diario** con la tasa de IGV y el nombre del cliente en cada línea, como lo pide la SUNAT desde el
-  01/08/2026.
+  01/08/2026, y con IVAP, ISC, otros tributos y la percepción del IGV en las líneas de boletas.
 - **Descuentos y cargos** del catálogo 53, por línea y globales, en facturas y boletas.
 - **ICBPER** (bolsas plásticas, tributo 7152), en comprobantes, notas y líneas del resumen diario.
 - **Anticipos** en facturas y boletas: el comprobante del anticipo y el final que lo descuenta.
@@ -219,8 +219,7 @@ observa la boleta (4288).
 **Lo que el SDK no cubre lo rechaza con un error explícito**, en vez de generar un XML que la SUNAT rechazaría:
 
 - en comprobantes: ISC y otros tributos, descuentos y cargos en notas de crédito y débito, los códigos del catálogo 53
-  que no son de descuentos y cargos, anticipos en notas, detracción en operaciones 1002 y 1004 y percepción;
-- en resúmenes diarios: percepción, ISC e IVAP en las líneas;
+  que no son de descuentos y cargos, anticipos en notas y percepción;
 - en la liquidación de compra: el tipo de operación 0502 (anticipos) y `totals.prepaid`, las series que empiezan con un
   dígito (las impresas), las líneas gratuitas (9996) y otros tributos (9999).
 
@@ -238,8 +237,10 @@ ser rechazado por ella. Los campos, en el [modelo de entrada](docs/input-model.m
 (`despatch_references`, tipo 09 o 31), en facturas, boletas y notas. Antes de enviar, el SDK rechaza lo que la SUNAT
 observa (4005, 4006, 4233) y la guía citada dos veces (2364).
 
-**Detracción**: en facturas y boletas con operación 1001 o 1003 (`detraction`: código de bien o servicio, porcentaje,
-monto en soles, cuenta del Banco de la Nación y medio de pago). El monto lo calcula tu sistema; el SDK exige la
+**Detracción**: en facturas y boletas con operación 1001 a 1004 (`detraction`: código de bien o servicio, porcentaje,
+monto en soles, cuenta del Banco de la Nación y medio de pago). La 1002 (recursos hidrobiológicos) lleva en cada línea
+la descarga (`fishing`: matrícula y nombre de la embarcación, especie, lugar, fecha y toneladas) y la 1004 (transporte
+de carga), el viaje (`freight`: origen, destino, detalle y los tres valores referenciales). El monto lo calcula tu sistema; el SDK exige la
 detracción con esas operaciones y la rechaza con cualquier otra.
 
 **IVAP**: venta de arroz pilado en facturas, boletas y notas, con todas las líneas en afectación 17 y los totales
@@ -260,6 +261,16 @@ El comprobante de percepción no forma parte del SDK. El detalle de cada campo
 está en el [modelo de entrada](docs/input-model.md).
 
 ## Versiones
+
+La 1.0.0-rc.8 agrega, sin cambiar ninguna salida que ya existía:
+
+- en facturas (01) y boletas (03), la detracción de recursos hidrobiológicos (1002) y la de transporte de carga
+  (1004), con los datos de línea que pide la SUNAT para cada una (`lines[].fishing` y `lines[].freight`). La SUNAT beta
+  aceptó las tres de prueba con código 0 y sin observaciones;
+- en el resumen diario (RC), líneas con IVAP en lugar de IGV, ISC, otros tributos y la percepción del IGV. La SUNAT
+  beta aceptó los cuatro de prueba con código 0; el de IVAP, con la observación 4019, la misma línea que escribe
+  Greenter;
+- en npm, `npm install` sin versión instala esta candidata mientras no haya una versión estable.
 
 La 1.0.0-rc.7 cambia frente a la 1.0.0-rc.6 solo en los registros: la página del paquete en npm, Packagist, NuGet y Maven
 enlaza a [fe.kembec.com](https://fe.kembec.com). El SDK, su JSON de entrada y sus salidas no cambian.

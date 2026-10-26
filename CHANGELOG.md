@@ -10,6 +10,17 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+## [1.0.0-rc.8] - 2026-10-26
+
+### Added
+
+- Invoices (01) and receipts (03) accept the detraction on hydrobiological resources (1002) and on freight transport
+  (1004), with the line data SUNAT asks for each: `lines[].fishing` (catalog 55, 3001 to 3006) and `lines[].freight`
+  (origin, destination, trip detail and the three reference values); the detraction code follows rule 3129 (004 and
+  027). Until now both operation types were rejected (#96).
+- Daily summary (RC) lines carry IVAP (1016) in place of IGV, ISC (2000), other taxes (9999) and the IGV perception of
+  a receipt (`perception`, catalog 22, its rate taken from `system_code`). Until now they were rejected (#95).
+
 ### Changed
 
 - On npm, a prerelease newer than the one under `latest` goes under `latest` while there is no stable version, so
@@ -401,7 +412,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.7...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.8...HEAD
+[1.0.0-rc.8]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.7...v1.0.0-rc.8
 [1.0.0-rc.7]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.6...v1.0.0-rc.7
 [1.0.0-rc.6]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.5...v1.0.0-rc.6
 [1.0.0-rc.5]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.4...v1.0.0-rc.5

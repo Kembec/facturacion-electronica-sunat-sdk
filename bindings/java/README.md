@@ -26,11 +26,11 @@ El paquete todavía no está en Maven Central. Cuando se publique, se agregará 
 <dependency>
   <groupId>com.kembec</groupId>
   <artifactId>sunat-sdk</artifactId>
-  <version>1.0.0-rc.8</version>
+  <version>1.0.0-rc.9</version>
 </dependency>
 ```
 
-o con Gradle: `implementation("com.kembec:sunat-sdk:1.0.0-rc.8")`.
+o con Gradle: `implementation("com.kembec:sunat-sdk:1.0.0-rc.9")`.
 
 Hasta entonces, el CI del repositorio arma el jar en cada cambio: baja el artefacto `maven` de una ejecución del
 [workflow `java`](https://github.com/Kembec/facturacion-electronica-sunat-sdk/actions/workflows/java.yml),
@@ -39,7 +39,7 @@ desde ahí (en Gradle, con `mavenLocal()` en `repositories`):
 
 ```bash
 mvn org.apache.maven.plugins:maven-install-plugin:3.2.0:install-file \
-  -Dfile=sunat-sdk-1.0.0-rc.8.jar -DpomFile=sunat-sdk-1.0.0-rc.8.pom
+  -Dfile=sunat-sdk-1.0.0-rc.9.jar -DpomFile=sunat-sdk-1.0.0-rc.9.pom
 ```
 
 Es una versión beta. Corre en Java 8 o posterior (probado en 8, 11, 17, 21 y 25) y trae dentro del jar el núcleo en
@@ -57,7 +57,7 @@ Baja a la carpeta de tu proyecto la factura de prueba y el certificado de prueba
 autogenerado y no sirve para emitir.
 
 ```bash
-base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.8
+base=https://raw.githubusercontent.com/Kembec/facturacion-electronica-sunat-sdk/v1.0.0-rc.9
 curl -fsSLO "$base/fixtures/01-invoice-taxed-cash.json"
 curl -fsSLO "$base/tests/vectors/test-cert/test-cert.pem"
 curl -fsSLO "$base/tests/vectors/test-cert/test-key.pem"

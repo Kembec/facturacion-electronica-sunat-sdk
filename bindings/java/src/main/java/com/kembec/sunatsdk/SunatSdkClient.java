@@ -58,7 +58,7 @@ public final class SunatSdkClient {
     /**
      * The version of the native library loaded, which is the SDK's and equal to this package's. Loads the library.
      *
-     * @return {@code 1.0.0-rc.8}, for instance
+     * @return {@code 1.0.0-rc.9}, for instance
      * @throws SunatSdkLoadException if the library cannot be loaded
      */
     public static String nativeVersion() {

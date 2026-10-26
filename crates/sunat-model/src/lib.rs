@@ -29,6 +29,7 @@ mod free_sales;
 mod penalty_notes;
 mod rule_dates;
 mod scope;
+mod summary_taxes;
 mod text_format;
 mod self_billed;
 mod self_billed_lines;
@@ -38,7 +39,7 @@ mod total_taxes;
 mod types;
 mod validate;
 
-pub use daily::{DocumentReference, Summary, SummaryLine, Voided, VoidedLine};
+pub use daily::{DocumentReference, Summary, SummaryLine, SummaryPerception, Voided, VoidedLine};
 pub use datetime::{Date, DateTime, LimaDateTime};
 pub use decimal::Decimal;
 pub use despatch::{Carrier, Despatch, DespatchLine, DespatchParty, Driver, Place, RelatedDocument, Shipment, Vehicle};

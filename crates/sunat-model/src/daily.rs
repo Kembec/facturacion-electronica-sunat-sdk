@@ -5,16 +5,8 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use serde_json::Value;
 
-use crate::scope::{check_text, reject_keys};
+use crate::scope::check_text;
 use crate::{Company, Date, Decimal, Document, ModelError};
-
-/// Taxes and regimes a summary line may carry in SUNAT's format but this SDK does not render.
-const SUMMARY_LINE_KEYS: &[(&str, &str)] = &[
-    ("perception", "perception"),
-    ("isc", "ISC"),
-    ("ivap", "IVAP"),
-    ("other_taxes", "other taxes"),
-];
 
 /// Daily summary (RC).
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
@@ -67,6 +59,30 @@ pub struct SummaryLine {
     pub igv: Option<Decimal>,
     /// ICBPER (tax 7152) of the reported document, in PEN; `total` includes it.
     pub icbper: Option<Decimal>,
+    /// IVAP (tax 1016) of a receipt or note of rice under affectation 17, in place of the IGV: excludes `igv` and
+    /// `igv_rate` (2355), and the line then needs no `igv_rate`.
+    pub ivap: Option<Decimal>,
+    /// ISC (tax 2000).
+    pub isc: Option<Decimal>,
+    /// Other taxes (tax 9999).
+    pub other_taxes: Option<Decimal>,
+    /// IGV perception charged on a receipt (03) that is added or voided, never modified (2986).
+    pub perception: Option<SummaryPerception>,
+}
+
+/// `sac:SUNATPerceptionSummaryDocumentReference` of a summary line, in PEN. The rate is not input: the SDK takes it
+/// from the regime's code in catalog 22.
+#[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SummaryPerception {
+    /// Catalog 22: `01` (2 %), `02` (1 %), `03` (0.5 %).
+    pub system_code: String,
+    /// The amount the perception applies to (`cbc:TaxableAmount`).
+    pub base: Decimal,
+    /// The perception (`cbc:TotalInvoiceAmount`): `base` × the regime's rate.
+    pub amount: Decimal,
+    /// What the customer pays with the perception (`sac:SUNATTotalCashed`): the line's `total` + `amount`.
+    pub total_cashed: Decimal,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Deserialize)]
@@ -132,11 +148,6 @@ pub(crate) fn parse(kind: &str, mut value: Value) -> Result<Document, ModelError
     }
     if kind == "reversal" {
         return typed(value).map(Document::Reversal);
-    }
-    if let Some(Value::Array(lines)) = value.get("lines") {
-        for (index, line) in lines.iter().enumerate() {
-            reject_keys(line, &format!("$.lines[{index}]"), SUMMARY_LINE_KEYS)?;
-        }
     }
     typed(value).map(Document::Summary)
 }

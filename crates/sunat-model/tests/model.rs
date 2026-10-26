@@ -172,16 +172,6 @@ fn summary_lines_are_checked() {
 }
 
 #[test]
-fn summary_line_taxes_out_of_scope_get_named_errors() {
-    for (key, feature) in [("isc", "ISC"), ("perception", "perception"), ("ivap", "IVAP")] {
-        match edited(SUMMARY, |v| v["lines"][0][key] = serde_json::json!("1.00")) {
-            Err(ModelError::OutOfScope { feature: f, .. }) => assert_eq!(f, feature),
-            other => panic!("{key}: {other:?}"),
-        }
-    }
-}
-
-#[test]
 fn void_communication_is_checked() {
     let invalid: [(&str, fn(&mut serde_json::Value)); 4] = [
         ("$.lines[0].document_type", |v| v["lines"][0]["document_type"] = serde_json::json!("03")),

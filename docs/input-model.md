@@ -337,7 +337,7 @@ notes; as the country of use, `RS` was accepted and `AN` came back as 3099.
 
 # Daily summary (RC) and void communication (RA)
 
-Not supported, rejected with an explicit error: perception, ISC and IVAP in summary lines; despatch (GRE). The
+Not supported, rejected with an explicit error: despatch (GRE). The
 reversal summary (RR) of a purchase settlement is under [Purchase settlement (04)](#reversal-summary-kind-reversal-rr).
 
 ## Summary (`kind: "summary"`, RC)
@@ -358,12 +358,18 @@ or tabs), required `igv_rate` (`"18.00"` or `"10.50"` for a receipt; a note also
 optional `reference_document` (`{ "document_type": "03", "document_number":
 "B001-1" }`, required for notes and rejected on receipts), and the amounts `total` (required), `taxed`,
 `exempt`, `unaffected`, `export`, `free`, `free_taxed`, `free_exempt`, `free_unaffected`, `free_export`, `free_igv`, `other_charges`, `igv`, `icbper` (in PEN, positive, 2048; `total`
-includes it, and it renders as its own `cac:TaxTotal` 7152 after the IGV one). `igv` is always rendered (`0.00` when
+includes it, and it renders as its own `cac:TaxTotal` 7152 after the IGV one). `ivap` (tax 1016), `isc` (2000) and `other_taxes` (9999) are positive PEN amounts (2048), each its own `cac:TaxTotal`; a line with `ivap` takes neither `igv` nor `igv_rate` (2355) and then needs no `igv_rate`. `igv` is always rendered (`0.00` when
 absent); `taxed` is rendered whenever given, even `"0.00"`; `exempt`, `unaffected`, `export`, `free` and
 `other_charges` only when non-zero, so `"0.00"` there is the same as absent (the vectors' rule). Summary
 lines render `igv_rate` as the `cbc:Percent` of tax 1000, on every line whatever its status or amounts (the writer always puts tax 1000, and the Resumen Diario sheet answers 2992 to «Código de tributo 1000» without the tag), and `customer_name` as
 `cac:Party/cac:PartyLegalEntity/cbc:RegistrationName` of the customer. `reference_date` must not be after
 `generation_date`.
+
+`perception` (optional) carries the IGV perception of a receipt: `system_code` (catalog 22: `"01"` 2 %, `"02"` 1 %,
+`"03"` 0.5 %), `base`, `amount` and `total_cashed`, all positive PEN (2893, 2895, 2897). The rate is not input: the SDK
+takes it from the code, so `amount` must be `base` times that rate and `total_cashed` the line's `total` plus `amount`
+(each within 0.01); a `percent` field is rejected as unknown. Rejected: any other `system_code` (2517), a line that is
+not a receipt (03) or whose `status` is `"2"` (2986), and a summary whose `currency` is not `"PEN"` (2685).
 
 ### SUNAT's rule changes dated 01/08/2026
 

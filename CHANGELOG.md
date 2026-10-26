@@ -10,6 +10,12 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+### Added
+
+- On npm, the WebAssembly module is also exported as `./sdk.wasm`, so a Cloudflare Worker loads it with
+  `import wasm from '@kembec/facturacion-electronica-sunat-sdk/sdk.wasm'` and wrangler's default rule, without a
+  `rules` entry of its own; `./wasm` stays and points to the same file (#99).
+
 ## [1.0.0-rc.8] - 2026-10-26
 
 ### Added

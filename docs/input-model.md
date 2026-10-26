@@ -373,6 +373,10 @@ takes it from the code, so `amount` must be `base` times that rate and `total_ca
 `cac:BillingReference`) and `cac:Status`. Rejected: any other `system_code` (2517), a line that is
 not a receipt (03) or whose `status` is `"2"` (2986), and a summary whose `currency` is not `"PEN"` (2685).
 
+On 26/10/2026 SUNAT beta accepted, code 0, `RC-20261025-61251` to `61254`: one line each with `ivap`, `isc`,
+`other_taxes` and `perception` (`fixtures/rc-beta/rc-receipt-*`). The `ivap` one carries observation 4019 on tax 1000,
+which the line does not have; Greenter's summary template writes the same line (1016 in place of 1000, never both).
+
 ### SUNAT's rule changes dated 01/08/2026
 
 SUNAT's validation rules (version of 24/04/2026, «Control de Cambios» rows 508-545) date these changes

@@ -10,7 +10,7 @@
 
   <groupId>com.kembec</groupId>
   <artifactId>sunat-sdk</artifactId>
-  <version>1.0.0-rc.8</version>
+  <version>1.0.0-rc.9</version>
   <packaging>jar</packaging>
 
   <name>SUNAT electronic invoicing SDK</name>

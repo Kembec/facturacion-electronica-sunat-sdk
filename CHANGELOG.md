@@ -10,6 +10,8 @@ Each entry names its pull request (`#n`) or, before pull requests, its commit.
 
 ## [Unreleased]
 
+## [1.0.0-rc.9] - 2026-10-26
+
 ### Added
 
 - On npm, the WebAssembly module is also exported as `./sdk.wasm`, so a Cloudflare Worker loads it with
@@ -418,7 +420,8 @@ from a side branch, and everything it added is here too.
 - Compatibility vectors: every fixture gives the exact `DigestValue` and `SignatureValue` of its vector (`703a8df`,
   `0b840c9`).
 
-[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.8...HEAD
+[Unreleased]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.9...HEAD
+[1.0.0-rc.9]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.8...v1.0.0-rc.9
 [1.0.0-rc.8]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.7...v1.0.0-rc.8
 [1.0.0-rc.7]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.6...v1.0.0-rc.7
 [1.0.0-rc.6]: https://github.com/Kembec/facturacion-electronica-sunat-sdk/compare/v1.0.0-rc.5...v1.0.0-rc.6
